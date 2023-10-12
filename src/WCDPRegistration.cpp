@@ -1,5 +1,5 @@
 #include "Marmot/MarmotMaterialRegistrationHelper.h"
-#include "Marmot/WoodCreepDamagePlasticity.h"
+#include "Marmot/WCDP.h"
 
 namespace Marmot::Materials {
 
