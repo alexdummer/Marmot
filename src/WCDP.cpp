@@ -1,10 +1,10 @@
-#include "Marmot/WCDP.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotUtility.h"
 #include "Marmot/MarmotVoigt.h"
+#include "Marmot/WCP.h"
 
 namespace Marmot::Materials {
 
@@ -12,53 +12,56 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace ContinuumMechanics::Elasticity;
 
-  WoodCreepDamagePlasticity::WoodCreepDamagePlasticity( const double* materialProperties,
-                                                        int           nMaterialProperties,
-                                                        int           materialNumber )
+  WoodCreepPlasticity::WoodCreepPlasticity( const double* materialProperties,
+                                            int           nMaterialProperties,
+                                            int           materialNumber )
     : MarmotMaterialHypoElastic::MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialNumber ),
-      anisotropicType( static_cast< Type >( nMaterialProperties ) ),
-      E1( materialProperties[0] ),
-      E2( materialProperties[1] ),
-      E3( materialProperties[2] ),
-      nu12( materialProperties[3] ),
-      nu23( materialProperties[4] ),
-      nu13( materialProperties[5] ),
-      G12( materialProperties[6] ),
-      G23( materialProperties[7] ),
-      G13( materialProperties[8] ),
-      n1( { materialProperties[9], materialProperties[10], materialProperties[11] } ),
-      n2( { materialProperties[12], materialProperties[13], materialProperties[14] } )
+      ER( materialProperties[0] ),
+      ET( materialProperties[1] ),
+      EL( materialProperties[2] ),
+      nuTR( materialProperties[3] ),
+      nuLR( materialProperties[4] ),
+      nuLT( materialProperties[5] ),
+      GRT( materialProperties[6] ),
+      GRL( materialProperties[7] ),
+      GTL( materialProperties[8] ),
+      nR( { materialProperties[9], materialProperties[10], materialProperties[11] } ),
+      nT( { materialProperties[12], materialProperties[13], materialProperties[14] } )
   {
+    localElasticStiffnessTensor = Orthotropic::stiffnessTensor( ER, ET, EL, nuTR, nuLR, nuLT, GRT, GTL, GRL );
+    localCoordinateSystem       = Marmot::Math::orthonormalCoordinateSystem( nR, nT );
+
+    using namespace ContinuumMechanics::VoigtNotation::Transformations;
+    transformationMatrixStrain = transformationMatrixStrainVoigt( localCoordinateSystem );
+    transformationMatrixStress = transformationMatrixStressVoigt( localCoordinateSystem );
+
+    std::cout << "Cel = " << localElasticStiffnessTensor << std::endl;
+    std::cout << "Cel ^ -1 = " << localElasticStiffnessTensor.inverse() << std::endl;
   }
 
-  void WoodCreepDamagePlasticity::computeStress( double*       stress,
-                                                 double*       dStressDDStrain,
-                                                 const double* dStrain,
-                                                 const double* timeOld,
-                                                 const double  dT,
-                                                 double&       pNewDT )
+  void WoodCreepPlasticity::computeStress( double*       stress,
+                                           double*       dStressDDStrain,
+                                           const double* dStrain,
+                                           const double* timeOld,
+                                           const double  dT,
+                                           double&       pNewDT )
   {
-    Matrix6d localStiffnessTensor = Orthotropic::stiffnessTensor( E1, E2, E3, nu12, nu23, nu13, G12, G23, G13 );
-
-    Matrix3d localCoordinateSystem = Marmot::Math::orthonormalCoordinateSystem( n1, n2 );
-
-    // strain and stress transformation matrices
-    using namespace ContinuumMechanics::VoigtNotation::Transformations;
-    Matrix6d transformationStrainInv = transformationMatrixStrainVoigt( localCoordinateSystem ).inverse();
-    Matrix6d transformationStress    = transformationMatrixStressVoigt( localCoordinateSystem );
-
-    // transformation Cel into global coordinate system
-    C = transformationStrainInv * localStiffnessTensor * transformationStress;
-
     mVector6d             S( stress );
     Map< const Vector6d > dE( dStrain );
     mMatrix6d             mC( dStressDDStrain );
-    mC = C;
+
+    mC = transformationMatrixStress.inverse() * localElasticStiffnessTensor * transformationMatrixStrain;
 
     // Zero strain  increment check
     if ( ( dE.array() == 0 ).all() )
       return;
 
-    S += mC * dE;
+    const Vector6d dStrainLocal   = transformationMatrixStrain * dE;
+    const Vector6d stressLocalOld = transformationMatrixStress * S;
+
+    Vector6d stressLocalTrial = stressLocalOld + localElasticStiffnessTensor * dStrainLocal;
+
+    // transform stress into global coordinate system
+    S = transformationMatrixStress.inverse() * stressLocalTrial;
   }
 } // namespace Marmot::Materials

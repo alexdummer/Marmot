@@ -33,21 +33,25 @@
 
 namespace Marmot::Materials {
 
-  class WCDPPlasticity {
+  class WCPPlasticity {
   public:
     struct ReturnMappingFailedException : std::exception {};
 
     struct MaterialParameters {
-      double yieldStress;
-      double alpha;
-      double beta;
-      double hardeningModulus;
-      double tensileStrength;
+      double fcL;
+      double fcT;
+      double fcR;
+      double ftL;
+      double fsRT;
+      double fsRL;
+      double fsTL;
     };
 
     struct MaterialState {
       Marmot::Vector6d stress;
-      double           alphaP;
+      double           alphaL;
+      double           alphaR;
+      double           alphaT;
     };
 
     struct AlgorithmicModuli {
@@ -61,7 +65,7 @@ namespace Marmot::Materials {
       Eigen::MatrixXd  Jacobian;
     };
 
-    WCDPPlasticity( const MaterialParameters& );
+    WCPPlasticity( const MaterialParameters& );
 
     bool checkIfYielding( const MaterialState& trialState );
 
@@ -164,6 +168,11 @@ namespace Marmot::Materials {
     {
       T res = aR.dot( stress ) + stress.dot( bR.dot( stress ) ) + qR( alphaR ) - 1.0;
       return res;
+    }
+
+    template < typename T >
+    T qR( const T alphaR )
+    {
     }
 
     Marmot::Vector6d computePlasticStrainIncrement( const Marmot::Vector6d& stressNew,
