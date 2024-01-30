@@ -28,6 +28,7 @@
 
 #pragma once
 #include "Marmot/MarmotMaterialHypoElastic.h"
+#include "Marmot/WCPPlasticity.h"
 #include "Marmot/MarmotTypedefs.h"
 #include <iostream>
 #include <string>
@@ -55,6 +56,9 @@ namespace Marmot::Materials {
 
     // material coordinate system
     const Vector3d nR, nT;
+    
+    // plasticity parameters
+    const WCPPlasticity::MaterialParameters plasticityParams;
 
     void computeStress( double* stress,
                         double* dStressDDStrain,
