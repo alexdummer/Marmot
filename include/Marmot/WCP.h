@@ -28,8 +28,9 @@
 
 #pragma once
 #include "Marmot/MarmotMaterialHypoElastic.h"
-#include "Marmot/WCPPlasticity.h"
+#include "Marmot/MarmotStateVarVectorManager.h"
 #include "Marmot/MarmotTypedefs.h"
+#include "Marmot/WCPPlasticity.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -56,7 +57,7 @@ namespace Marmot::Materials {
 
     // material coordinate system
     const Vector3d nR, nT;
-    
+
     // plasticity parameters
     const WCPPlasticity::MaterialParameters plasticityParams;
 
@@ -66,10 +67,33 @@ namespace Marmot::Materials {
                         const double* dStrain,
                         const double* timeOld,
                         const double  dT,
-                        double&       pNewDT );
+                        double&       pNewDT ) override;
 
-    StateView getStateView( const std::string& result ) { return { nullptr, 0 }; };
+    class WCPStateVarManager : public MarmotStateVarVectorManager {
 
-    int getNumberOfRequiredStateVars() { return 0; }
+    public:
+      inline const static auto layout = makeLayout( {
+        { .name = "alphaR", .length = 1 },
+        { .name = "alphaT", .length = 1 },
+        { .name = "alphaL", .length = 1 },
+      } );
+
+      double& alphaR;
+      double& alphaT;
+      double& alphaL;
+
+      WCPStateVarManager( double* theStateVarVector )
+        : MarmotStateVarVectorManager( theStateVarVector, layout ),
+          alphaR( find( "alphaR" ) ),
+          alphaT( find( "alphaT" ) ),
+          alphaL( find( "alphaL" ) ){};
+    };
+    std::unique_ptr< WCPStateVarManager > managedStateVars;
+
+    StateView getStateView( const std::string& result ) override;
+
+    int getNumberOfRequiredStateVars() override { return WCPStateVarManager::layout.nRequiredStateVars; }
+
+    void assignStateVars( double* stateVars, int nStateVars ) override;
   };
 } // namespace Marmot::Materials
