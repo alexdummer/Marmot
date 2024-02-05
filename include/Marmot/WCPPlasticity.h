@@ -69,9 +69,7 @@ namespace Marmot::Materials {
 
     struct MaterialState {
       Marmot::Vector6d stress;
-      double           alphaR;
-      double           alphaT;
-      double           alphaL;
+      Eigen::Vector3d  alpha;
     };
 
     struct AlgorithmicModuli {
@@ -116,7 +114,7 @@ namespace Marmot::Materials {
 
     const MaterialParameters mp;
 
-    /* Marmot::NumericalAlgorithms::YieldSurfaceCombinationManager< nYieldSurfaces > yieldSurfCombiManager; */
+    Marmot::NumericalAlgorithms::YieldSurfaceCombinationManager< nYieldSurfaces > yieldSurfCombiManager;
 
     typedef Marmot::NumericalAlgorithms::YieldSurfaceCombinationManager< nYieldSurfaces >::YieldSurfFlagArr
       YieldSurfFlagArr;
@@ -128,16 +126,16 @@ namespace Marmot::Materials {
       YieldSurfFlagArr activeSurfaces;
       activeSurfaces.setConstant( false );
       // check if radial direction is yielding
-      double f = yieldFunction( trialState.stress, materialDirection::radial, trialState.alphaR );
-      if ( f > 0.0 )
+      double f = yieldFunction( trialState.stress, materialDirection::radial, trialState.alpha( 0 ) );
+      if ( f > 1e-8 )
         activeSurfaces( 0 ) = true;
       // check if tangential direction is yielding
-      f = yieldFunction( trialState.stress, materialDirection::tangential, trialState.alphaT );
-      if ( f > 0.0 )
+      f = yieldFunction( trialState.stress, materialDirection::tangential, trialState.alpha( 1 ) );
+      if ( f > 1e-8 )
         activeSurfaces( 1 ) = true;
       // chekc if longitudinal direction is yielding
-      f = yieldFunction( trialState.stress, materialDirection::longitudinal, trialState.alphaL );
-      if ( f > 0.0 )
+      f = yieldFunction( trialState.stress, materialDirection::longitudinal, trialState.alpha( 2 ) );
+      if ( f > 1e-8 )
         activeSurfaces( 2 ) = true;
       return activeSurfaces;
     }
@@ -168,49 +166,21 @@ namespace Marmot::Materials {
 
       int idxCurrentSurface  = idxSurface;
       int idxCurrentInternal = idxInternal;
-      if ( activeSurfaces( 0 ) ) {
-        // yield surface  in radial direction is active
-        // get corresponding internal variable and consistency
-        const T alpha   = X( idxCurrentInternal );
-        const T dLambda = X( idxCurrentSurface );
-        // set direction
-        const auto          dir                  = materialDirection::radial;
-        const Vector6t< T > plasticFlowDirection = computeA( dir ) + 2. * computeB( dir ) * stress;
-        R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
-        R( idxCurrentInternal ) = alpha - dLambda - trialState.alphaR;
-        R( idxCurrentSurface )  = yieldFunction( stress, dir, alpha );
-        idxCurrentInternal += 2;
-        idxCurrentSurface += 2;
-      }
-      if ( activeSurfaces( 1 ) ) {
-        // yield surface  in tenagential direction is active
-        // get corresponding internal variable and consistency
-        const T alpha   = X( idxCurrentInternal );
-        const T dLambda = X( idxCurrentSurface );
-        // set direction
-        const auto dir = materialDirection::tangential;
-        // compute plastic flow direction
-        const Vector6t< T > plasticFlowDirection = computeA( dir ) + 2. * computeB( dir ) * stress;
-        R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
-        R( idxCurrentInternal ) = alpha - dLambda - trialState.alphaT;
-        R( idxCurrentSurface )  = yieldFunction( stress, dir, alpha );
-        idxCurrentInternal += 2;
-        idxCurrentSurface += 2;
-      }
-      if ( activeSurfaces( 2 ) ) {
-        // yield surface  in longitudinal direction is active
-        // get corresponding internal variable and consistency
-        const T alpha   = X( idxCurrentInternal );
-        const T dLambda = X( idxCurrentSurface );
-        // set direction
-        const auto dir = materialDirection::longitudinal;
-        // compute plastic flow direction
-        const Vector6t< T > plasticFlowDirection = computeA( dir ) + 2. * computeB( dir ) * stress;
-        R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
-        R( idxCurrentInternal ) = alpha - dLambda - trialState.alphaL;
-        R( idxCurrentSurface )  = yieldFunction( stress, dir, alpha );
-        idxCurrentInternal += 2;
-        idxCurrentSurface += 2;
+      for ( int i = 0; i < nYieldSurfaces; i++ ) {
+        if ( activeSurfaces( i ) ) {
+          // yield surface  in radial direction is active
+          // get corresponding internal variable and consistency
+          const T alpha   = X( idxCurrentInternal );
+          const T dLambda = X( idxCurrentSurface );
+          // set direction
+          const auto          dir                  = materialDirection( i );
+          const Vector6t< T > plasticFlowDirection = computeA( dir ) + 2. * computeB( dir ) * stress;
+          R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
+          R( idxCurrentInternal ) = alpha - dLambda - trialState.alpha( i );
+          R( idxCurrentSurface )  = yieldFunction( stress, dir, alpha );
+          idxCurrentInternal += 2;
+          idxCurrentSurface += 2;
+        }
       }
 
       return R;
@@ -295,6 +265,7 @@ namespace Marmot::Materials {
       const Vector6d a   = computeA( dir );
       const Diag6d   b   = computeB( dir );
       const T        res = a.dot( stress ) + stress.dot( b * stress ) - q( alpha, dir ) - 1.0;
+      /* std::cout << "yield function: " << res << std::endl; */
       return res;
     }
 
@@ -337,11 +308,6 @@ namespace Marmot::Materials {
                                           const Marmot::Matrix6d& elasticStiffness,
                                           const Marmot::Matrix6d& elasticCompliance,
                                           YieldSurfFlagArr&       activeSurfaces );
-
-    ReturnMapResult retryReturnMapping( const MaterialState&    trialState,
-                                        const MaterialState&    initialGuessState,
-                                        const Marmot::Matrix6d& elasticStiffness,
-                                        const Marmot::Matrix6d& elasticCompliance );
 
     MaterialState extractMaterialState( const Eigen::VectorXd&  X,
                                         const MaterialState&    trialState,

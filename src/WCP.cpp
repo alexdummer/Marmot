@@ -48,12 +48,15 @@ namespace Marmot::Materials {
         materialProperties[38],                             // actual moisture content
       } )
   {
-    localElasticStiffnessTensor = Orthotropic::stiffnessTensor( ER, ET, EL, nuTR, nuLR, nuLT, GRT, GTL, GRL );
-    localCoordinateSystem       = Marmot::Math::orthonormalCoordinateSystem( nR, nT );
+    localElasticStiffnessTensor  = Orthotropic::stiffnessTensor( ER, ET, EL, nuTR, nuLR, nuLT, GRT, GTL, GRL );
+    localElasticComplianceTensor = Orthotropic::complianceTensor( ER, ET, EL, nuTR, nuLR, nuLT, GRT, GTL, GRL );
+    localCoordinateSystem        = Marmot::Math::orthonormalCoordinateSystem( nR, nT );
 
     using namespace ContinuumMechanics::VoigtNotation::Transformations;
-    transformationMatrixStrain = transformationMatrixStrainVoigt( localCoordinateSystem );
-    transformationMatrixStress = transformationMatrixStressVoigt( localCoordinateSystem );
+    transformationMatrixStrain    = transformationMatrixStrainVoigt( localCoordinateSystem );
+    transformationMatrixStrainInv = transformationMatrixStrain.colPivHouseholderQr().inverse();
+    transformationMatrixStress    = transformationMatrixStressVoigt( localCoordinateSystem );
+    transformationMatrixStressInv = transformationMatrixStress.colPivHouseholderQr().inverse();
   }
 
   void WoodCreepPlasticity::computeStress( double*       stress,
@@ -81,24 +84,22 @@ namespace Marmot::Materials {
 
     Vector6d stressLocalTrial = stressLocalOld + localElasticStiffnessTensor * dStrainLocal;
 
-    WCPPlasticity::MaterialState trialState = { stressLocalTrial, alphaR, alphaT, alphaL };
+    WCPPlasticity::MaterialState trialState = { stressLocalTrial, { alphaR, alphaT, alphaL } };
 
     WCPPlasticity plasticity = WCPPlasticity( plasticityParams );
 
     if ( plasticity.checkIfYielding( trialState ) ) {
-      WCPPlasticity::MaterialState oldState = { stressLocalOld, alphaR, alphaT, alphaL };
+      WCPPlasticity::MaterialState oldState = { stressLocalOld, { alphaR, alphaT, alphaL } };
       try {
-        WCPPlasticity::ReturnMapResult result = plasticity
-                                                  .performSmartReturnMapping( trialState,
-                                                                              oldState,
-                                                                              localElasticStiffnessTensor,
-                                                                              localElasticStiffnessTensor.inverse() );
-        S      = transformationMatrixStress.inverse() * result.materialState.stress;
-        alphaR = result.materialState.alphaR;
-        alphaT = result.materialState.alphaT;
-        alphaL = result.materialState.alphaL;
-        mC     = transformationMatrixStress.inverse() * result.algorithmicModuli.dStress_dStrain *
-             transformationMatrixStrain;
+        WCPPlasticity::ReturnMapResult result = plasticity.performSmartReturnMapping( trialState,
+                                                                                      oldState,
+                                                                                      localElasticStiffnessTensor,
+                                                                                      localElasticComplianceTensor );
+        S                                     = transformationMatrixStressInv * result.materialState.stress;
+        alphaR                                = result.materialState.alpha( 0 );
+        alphaT                                = result.materialState.alpha( 1 );
+        alphaL                                = result.materialState.alpha( 2 );
+        mC = transformationMatrixStressInv * result.algorithmicModuli.dStress_dStrain * transformationMatrixStrain;
       }
       catch ( WCPPlasticity::ReturnMappingFailedException& e ) {
         pNewDT = 0.5;
@@ -106,8 +107,8 @@ namespace Marmot::Materials {
       }
     }
     else {
-      S  = transformationMatrixStress.inverse() * stressLocalTrial;
-      mC = transformationMatrixStress.inverse() * localElasticStiffnessTensor * transformationMatrixStrain;
+      S  = transformationMatrixStressInv * stressLocalTrial;
+      mC = transformationMatrixStressInv * localElasticStiffnessTensor * transformationMatrixStrain;
     }
   }
 

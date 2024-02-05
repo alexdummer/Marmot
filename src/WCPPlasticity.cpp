@@ -37,39 +37,29 @@ namespace Marmot::Materials {
     }
   }
 
-  WCPPlasticity::ReturnMapResult WCPPlasticity::retryReturnMapping( const MaterialState& trialState,
-                                                                    const MaterialState& initialGuessState,
-                                                                    const Matrix6d&      elasticStiffness,
-                                                                    const Matrix6d&      elasticCompliance )
-  {
-
-    /* YieldSurfFlagArr newActiveSurfaces; */
-    /* if ( !yieldSurfCombiManager.getAnotherYieldFlagCombination( newActiveSurfaces ) ) */
-    /*   throw ReturnMappingFailedException(); */
-
-    /* return returnMappingAttempt( trialState, */
-    /*                              initialGuessState, */
-    /*                              elasticStiffness, */
-    /*                              elasticCompliance, */
-    /*                              newActiveSurfaces ); */
-    return ReturnMapResult();
-  }
-
   WCPPlasticity::ReturnMapResult WCPPlasticity::returnMappingAttempt( const MaterialState& trialState,
                                                                       const MaterialState& initialGuessState,
                                                                       const Matrix6d&      elasticStiffness,
                                                                       const Matrix6d&      elasticCompliance,
                                                                       YieldSurfFlagArr&    activeSurfaces )
   {
-    /* std::cout << "activeSurfaces" << activeSurfaces << std::endl; */
+
     const auto nActiveYieldSurfaces = activeSurfaces.count();
     const auto sizeEq               = nStress + nActiveYieldSurfaces * 2;
 
-    /* yieldSurfCombiManager.markYieldFlagCombinationAsUsed( activeSurfaces ); */
+    yieldSurfCombiManager.markYieldFlagCombinationAsUsed( activeSurfaces );
 
     // solution vector X, intialize with initial guess
     Eigen::VectorXd X = VectorXd::Zero( sizeEq );
     X.head( nStress ) = initialGuessState.stress;
+
+    int idxCurrentInternal = idxInternal;
+    for ( int i = 0; i < nYieldSurfaces; i++ ) {
+      if ( activeSurfaces( i ) ) {
+        X( idxCurrentInternal ) = initialGuessState.alpha( i );
+        idxCurrentInternal += 2;
+      }
+    }
 
     Eigen::VectorXd dX = VectorXd::Zero( sizeEq );
     // aux vectors for solving the nonlinear equation system using Newton
@@ -86,12 +76,6 @@ namespace Marmot::Materials {
                                                                  1e-8,  // innerNewtonTolAlt,
                                                                  1e-6   // innerNewtonRTolAlt
     );
-
-    /* std::cout << "R: " << std::endl << R.transpose() << std::endl; */
-    /* std::cout << "dR_dX_: "<< std::endl << dR_dX_ << std::endl; */
-
-    /* std::cout << "R: " << std::endl << R.transpose() << std::endl; */
-    /* std::cout << "dR_dX_: "<< std::endl << dR_dX_ << std::endl; */
 
     try {
 
@@ -116,23 +100,9 @@ namespace Marmot::Materials {
 
     catch ( const FailedToConverge& e ) {
       throw ReturnMappingFailedException();
-      /* std::exit(1); */
-      /* return retryReturnMapping( trialState, initialGuessState, elasticStiffness, elasticCompliance ); */
     }
 
-    /* if ( ( X.tail( nActiveYieldSurfaces ).array() < 1e-5 ).any() ) { */
-    /*   return retryReturnMapping( trialState, initialGuessState, elasticStiffness, elasticCompliance ); */
-    /* } */
-
     const MaterialState newMaterialState = extractMaterialState( X, trialState, activeSurfaces );
-
-    /* std::cout << "newMaterialState.stress: " << std::endl << newMaterialState.stress.transpose() << std::endl; */
-
-    /* std::exit(1); */
-
-    /* if ( checkIfYielding( newMaterialState ) ) { */
-    /*   return retryReturnMapping( trialState, initialGuessState, elasticStiffness, elasticCompliance ); */
-    /* } */
 
     return ReturnMapResult{ .materialState     = newMaterialState,
                             .dStrainPlastic    = computePlasticStrainIncrement( newMaterialState.stress,
@@ -141,20 +111,12 @@ namespace Marmot::Materials {
                             .algorithmicModuli = computeAlgorithmicModuli( dR_dX_,
                                                                            elasticStiffness,
                                                                            elasticCompliance ) };
-  } // namespace Marmot::Materials
+  }
   VectorXd WCPPlasticity::createResidualScaleVector( const VectorXd& LHS )
   {
     const auto nRows = LHS.rows();
     VectorXd   S( nRows );
     S.setOnes();
-    /* const double maxAbsStress = LHS.segment< nStress >( idxS ).array().abs().maxCoeff(); */
-    /* S.segment< nStress >( idxS ).setConstant( 1. / std::max( 1.0, maxAbsStress ) ); */
-    /* S( idxInternal ) = 1. / std::max( 1.0, std::abs( LHS( idxInternal ) ) ); */
-
-    /* const int nActiveYieldSurfaces = nRows - nStress - nInternalVariables; */
-
-    // yielding is checked anyway to a certain toS.setConstant( 1. );
-
     return S;
   }
 
@@ -170,12 +132,10 @@ namespace Marmot::Materials {
     Eigen::MatrixXd dYdE   = Eigen::MatrixXd::Identity( sizeEq, sizeEq );
 
     const Eigen::MatrixXd dXdE = dF_dX.colPivHouseholderQr().solve( dYdE );
-    /* std::cout << "dFdX: " << std::endl << dF_dX << std::endl; */
-    /* std::cout << "dXdE: " << std::endl << dXdE.transpose() << std::endl; */
+
     result.dStress_dStrain        = dXdE.block< nStress, nStress >( idxS, idxS ) * Cel;
     result.dStrainPlastic_dStrain = -elasticCompliance * result.dStress_dStrain + Matrix6d::Identity();
-    /* std::cout << "dStress_dStrain: " << std::endl << result.dStress_dStrain << std::endl; */
-    /* std::exit(1); */
+
     return result;
   }
   Vector6d WCPPlasticity::computePlasticStrainIncrement( const Vector6d& stressNew,
@@ -189,23 +149,19 @@ namespace Marmot::Materials {
                                                                     const MaterialState&    trialState,
                                                                     const YieldSurfFlagArr& activeSurfaces )
   {
+    // initialize new material state with trial state
     MaterialState newMaterialState = trialState;
     /* std::cout << "X: " << std::endl << X.transpose() << std::endl; */
     newMaterialState.stress = X.segment< nStress >( idxS );
 
     int idxInternal_ = idxInternal;
-    if ( activeSurfaces( 0 ) ) {
-      newMaterialState.alphaR = X( idxInternal_ );
-      idxInternal_ += 2;
+    for ( int i = 0; i < nYieldSurfaces; i++ ) {
+      if ( activeSurfaces( i ) ) {
+        newMaterialState.alpha( i ) = X( idxInternal_ );
+        idxInternal_ += 2;
+      }
     }
-    if ( activeSurfaces( 1 ) ) {
-      newMaterialState.alphaT = X( idxInternal_ );
-      idxInternal_ += 2;
-    }
-    if ( activeSurfaces( 2 ) ) {
-      newMaterialState.alphaT = X( idxInternal_ );
-      idxInternal_ += 2;
-    }
+
     return newMaterialState;
   };
   std::tuple< VectorXd, MatrixXd > WCPPlasticity::dR_dX( const VectorXd&                  X,

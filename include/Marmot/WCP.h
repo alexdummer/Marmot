@@ -47,7 +47,8 @@ namespace Marmot::Materials {
     WoodCreepPlasticity( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
   protected:
-    Matrix6d transformationMatrixStrain, transformationMatrixStress, localElasticStiffnessTensor;
+    Matrix6d transformationMatrixStrain, transformationMatrixStrainInv, transformationMatrixStress,
+      transformationMatrixStressInv, localElasticStiffnessTensor, localElasticComplianceTensor;
     Matrix3d localCoordinateSystem;
 
     // elastic constants
