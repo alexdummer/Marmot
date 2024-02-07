@@ -30,25 +30,26 @@
 #include "Marmot/MarmotMaterialHypoElastic.h"
 #include "Marmot/MarmotStateVarVectorManager.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/WCPPlasticity.h"
+#include "Marmot/WMPPlasticity.h"
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace Marmot::Materials {
   /**
-   * \brief Implementation of the Model proposed by Hassani et al. (2015) restricted to constant humidity.
+   * \brief Implementation of the multisurface plasticity model by Schmidt & Kaliske (2006).
    *
    */
-  class WoodCreepPlasticity : public MarmotMaterialHypoElastic {
+  class WoodMultisurfacePlasticity : public MarmotMaterialHypoElastic {
   public:
     using MarmotMaterialHypoElastic::MarmotMaterialHypoElastic;
 
-    WoodCreepPlasticity( const double* materialProperties, int nMaterialProperties, int materialNumber );
+    WoodMultisurfacePlasticity( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
   protected:
     Matrix6d transformationMatrixStrain, transformationMatrixStrainInv, transformationMatrixStress,
-      transformationMatrixStressInv, localElasticStiffnessTensor, localElasticComplianceTensor;
+      transformationMatrixStressInv, localElasticStiffnessTensor, localElasticComplianceTensor,
+      globalElasticStiffnessTensor;
     Matrix3d localCoordinateSystem;
 
     // elastic constants
@@ -59,8 +60,8 @@ namespace Marmot::Materials {
     // material coordinate system
     const Vector3d nR, nT;
 
-    // plasticity parameters
-    const WCPPlasticity::MaterialParameters plasticityParams;
+    // plasticity
+    WMPPlasticity plasticity;
 
     void computeStress( double* stress,
                         double* dStressDDStrain,
@@ -70,30 +71,23 @@ namespace Marmot::Materials {
                         const double  dT,
                         double&       pNewDT ) override;
 
-    class WCPStateVarManager : public MarmotStateVarVectorManager {
+    class WMPStateVarManager : public MarmotStateVarVectorManager {
 
     public:
       inline const static auto layout = makeLayout( {
-        { .name = "alphaR", .length = 1 },
-        { .name = "alphaT", .length = 1 },
-        { .name = "alphaL", .length = 1 },
+        { .name = "alpha", .length = 7 },
       } );
 
-      double& alphaR;
-      double& alphaT;
-      double& alphaL;
+      Eigen::Map< Eigen::Vector< double, 7 > > alpha;
 
-      WCPStateVarManager( double* theStateVarVector )
-        : MarmotStateVarVectorManager( theStateVarVector, layout ),
-          alphaR( find( "alphaR" ) ),
-          alphaT( find( "alphaT" ) ),
-          alphaL( find( "alphaL" ) ){};
+      WMPStateVarManager( double* theStateVarVector )
+        : MarmotStateVarVectorManager( theStateVarVector, layout ), alpha( &find( "alpha" ) ){};
     };
-    std::unique_ptr< WCPStateVarManager > managedStateVars;
+    std::unique_ptr< WMPStateVarManager > managedStateVars;
 
     StateView getStateView( const std::string& result ) override;
 
-    int getNumberOfRequiredStateVars() override { return WCPStateVarManager::layout.nRequiredStateVars; }
+    int getNumberOfRequiredStateVars() override { return WMPStateVarManager::layout.nRequiredStateVars; }
 
     void assignStateVars( double* stateVars, int nStateVars ) override;
   };

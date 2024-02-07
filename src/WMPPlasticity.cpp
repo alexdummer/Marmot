@@ -1,4 +1,4 @@
-#include "Marmot/WCPPlasticity.h"
+#include "Marmot/WMPPlasticity.h"
 #include "Marmot/MarmotAutomaticDifferentiation.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/NewtonConvergenceChecker.h"
@@ -11,9 +11,9 @@ namespace Marmot {
 namespace Marmot::Materials {
 
   using namespace Eigen;
-  WCPPlasticity::WCPPlasticity( const MaterialParameters& matParams ) : mp( matParams ) {}
+  WMPPlasticity::WMPPlasticity( const parameters& matParams ) : mp( matParams ) {}
 
-  WCPPlasticity::ReturnMapResult WCPPlasticity::performReturnMapping( const MaterialState& trialState,
+  WMPPlasticity::ReturnMapResult WMPPlasticity::performReturnMapping( const MaterialState& trialState,
                                                                       const MaterialState& initialGuessState,
                                                                       const Matrix6d&      elasticStiffness,
                                                                       const Matrix6d&      elasticCompliance )
@@ -24,7 +24,7 @@ namespace Marmot::Materials {
     return returnMappingAttempt( trialState, initialGuessState, elasticStiffness, elasticCompliance, activeSurfaces );
   }
 
-  WCPPlasticity::ReturnMapResult WCPPlasticity::performSmartReturnMapping( const MaterialState& trialState,
+  WMPPlasticity::ReturnMapResult WMPPlasticity::performSmartReturnMapping( const MaterialState& trialState,
                                                                            const MaterialState& oldState,
                                                                            const Matrix6d&      elasticStiffness,
                                                                            const Matrix6d&      elasticCompliance )
@@ -37,7 +37,7 @@ namespace Marmot::Materials {
     }
   }
 
-  WCPPlasticity::ReturnMapResult WCPPlasticity::returnMappingAttempt( const MaterialState& trialState,
+  WMPPlasticity::ReturnMapResult WMPPlasticity::returnMappingAttempt( const MaterialState& trialState,
                                                                       const MaterialState& initialGuessState,
                                                                       const Matrix6d&      elasticStiffness,
                                                                       const Matrix6d&      elasticCompliance,
@@ -69,20 +69,19 @@ namespace Marmot::Materials {
     std::tie( R, dR_dX_ ) = dR_dX( X, trialState, elasticStiffness, activeSurfaces );
 
     NumericalAlgorithms::NewtonConvergenceChecker newtonChecker( createResidualScaleVector( R ),
-                                                                 10,    // nMaxInnerNewtonCycles,
-                                                                 15,    // nMaxInnerNewtonCyclesAlt,
-                                                                 1e-12, // innerNewtonTol,
-                                                                 1e-10, // innerNewtonRTol,
-                                                                 1e-8,  // innerNewtonTolAlt,
-                                                                 1e-6   // innerNewtonRTolAlt
-    );
+                                                                 nMaxInnerNewtonCycles,
+                                                                 nMaxInnerNewtonCyclesAlt,
+                                                                 innerNewtonTol,
+                                                                 innerNewtonRTol,
+                                                                 innerNewtonTolAlt,
+                                                                 innerNewtonRTolAlt );
 
     try {
 
       int iterationCounter = 0;
       while ( newtonChecker.isConverged( R, X, dX, iterationCounter ) == false ) {
 
-        if ( iterationCounter > 15 )
+        if ( iterationCounter > nMaxInnerNewtonCyclesAlt )
           throw FailedToConverge();
 
         if ( Math::isNaN( R ) )
@@ -112,7 +111,7 @@ namespace Marmot::Materials {
                                                                            elasticStiffness,
                                                                            elasticCompliance ) };
   }
-  VectorXd WCPPlasticity::createResidualScaleVector( const VectorXd& LHS )
+  VectorXd WMPPlasticity::createResidualScaleVector( const VectorXd& LHS )
   {
     const auto nRows = LHS.rows();
     VectorXd   S( nRows );
@@ -120,7 +119,7 @@ namespace Marmot::Materials {
     return S;
   }
 
-  WCPPlasticity::AlgorithmicModuli WCPPlasticity::computeAlgorithmicModuli( const MatrixXd& dF_dX,
+  WMPPlasticity::AlgorithmicModuli WMPPlasticity::computeAlgorithmicModuli( const MatrixXd& dF_dX,
                                                                             const Matrix6d& elasticStiffness,
                                                                             const Matrix6d& elasticCompliance )
   {
@@ -138,21 +137,20 @@ namespace Marmot::Materials {
 
     return result;
   }
-  Vector6d WCPPlasticity::computePlasticStrainIncrement( const Vector6d& stressNew,
+  Vector6d WMPPlasticity::computePlasticStrainIncrement( const Vector6d& stressNew,
                                                          const Vector6d& trialStress,
                                                          const Matrix6d& elasticCompliance )
   {
     return elasticCompliance * ( trialStress - stressNew );
   }
 
-  WCPPlasticity::MaterialState WCPPlasticity::extractMaterialState( const Eigen::VectorXd&  X,
+  WMPPlasticity::MaterialState WMPPlasticity::extractMaterialState( const Eigen::VectorXd&  X,
                                                                     const MaterialState&    trialState,
                                                                     const YieldSurfFlagArr& activeSurfaces )
   {
     // initialize new material state with trial state
     MaterialState newMaterialState = trialState;
-    /* std::cout << "X: " << std::endl << X.transpose() << std::endl; */
-    newMaterialState.stress = X.segment< nStress >( idxS );
+    newMaterialState.stress        = X.segment< nStress >( idxS );
 
     int idxInternal_ = idxInternal;
     for ( int i = 0; i < nYieldSurfaces; i++ ) {
@@ -164,10 +162,10 @@ namespace Marmot::Materials {
 
     return newMaterialState;
   };
-  std::tuple< VectorXd, MatrixXd > WCPPlasticity::dR_dX( const VectorXd&                  X,
+  std::tuple< VectorXd, MatrixXd > WMPPlasticity::dR_dX( const VectorXd&                  X,
                                                          const MaterialState&             trialState,
                                                          const Matrix6d&                  elasticStiffness,
-                                                         WCPPlasticity::YieldSurfFlagArr& activeSurfaces )
+                                                         WMPPlasticity::YieldSurfFlagArr& activeSurfaces )
   {
 
     using namespace Marmot::AutomaticDifferentiation;
