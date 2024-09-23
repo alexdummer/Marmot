@@ -474,8 +474,8 @@ namespace Marmot::Elements {
 
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
 
-      if ( pNewDT < 1.0 )
-        return;
+      /* if ( pNewDT < 1.0 ) */
+      /*   return; */
 
       const double l = nonLocalRadius;
 
