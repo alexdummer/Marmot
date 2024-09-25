@@ -28,7 +28,7 @@
 #pragma once
 #include "Marmot/MarmotMaterial.h"
 
-class MarmotMaterialPhaseFieldMechanical : public MarmotMaterial {
+class MarmotMaterialGeneralGradientEnhancedMechanical : public MarmotMaterial {
 
 public:
   using MarmotMaterial::MarmotMaterial;

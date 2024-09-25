@@ -2,14 +2,14 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotKinematics.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotMaterialPhaseFieldHypoElastic.h"
+#include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElastic.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotVoigt.h"
 
 using namespace Eigen;
 
-void MarmotMaterialPhaseFieldHypoElastic::computeStress( double*       stress_,
+void MarmotMaterialGeneralGradientEnhancedHypoElastic::computeStress( double*       stress_,
                                                                double*       K_local,
                                                                double&       nonLocalRadius,
                                                                double*       dStressDDDeformationGradient_,

@@ -27,12 +27,12 @@
  */
 
 #pragma once
-#include "Marmot/MarmotMaterialPhaseFieldMechanical.h"
+#include "Marmot/MarmotMaterialGeneralGradientEnhancedMechanical.h"
 
-class MarmotMaterialPhaseFieldHypoElastic : public MarmotMaterialPhaseFieldMechanical {
+class MarmotMaterialGeneralGradientEnhancedHypoElastic : public MarmotMaterialGeneralGradientEnhancedMechanical {
 
 public:
-  using MarmotMaterialPhaseFieldMechanical::MarmotMaterialPhaseFieldMechanical;
+  using MarmotMaterialGeneralGradientEnhancedMechanical::MarmotMaterialGeneralGradientEnhancedMechanical;
 
   virtual void computeStress( double*       stress,
                               double*       KLocal,
@@ -61,7 +61,7 @@ public:
                               const double time,
                               const double  dT) = 0;
 
-  /* using MarmotMaterialPhaseFieldMechanical::computePlaneStress; */
+  /* using MarmotMaterialGeneralGradientEnhancedMechanical::computePlaneStress; */
   /* virtual void computePlaneStress( double*       stress2D, */
   /*                                  double*       KLocal2D, */
   /*                                  double&       nonLocalRadius, */
