@@ -33,7 +33,7 @@
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotMaterialPhaseFieldHypoElastic.h"
+#include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElastic.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateVarVectorManager.h"
 #include "Marmot/MarmotTypedefs.h"
@@ -47,8 +47,9 @@ using namespace Eigen;
 
 namespace Marmot::Elements {
 
-  template < int nDim, int nNodes, int nPhaseFields = 1 >
-  class PhaseFieldDisplacementFiniteElement : public MarmotElement, public MarmotGeometryElement< nDim, nNodes > {
+  template < int nDim, int nNodes, int nNonlocalVariables = 1 >
+  class GeneralGradientEnhancedDisplacementFiniteElement : public MarmotElement,
+                                                           public MarmotGeometryElement< nDim, nNodes > {
 
   public:
     enum SectionType {
@@ -58,7 +59,7 @@ namespace Marmot::Elements {
     };
 
     static constexpr int nDofPerNodeU = nDim;
-    static constexpr int nDofPerNodeK = nPhaseFields;
+    static constexpr int nDofPerNodeK = nNonlocalVariables;
     static constexpr int nDofPerNode  = nDofPerNodeU + nDofPerNodeK;
 
     static constexpr int sizeLoadVector = nNodes * nDofPerNode;
@@ -121,7 +122,7 @@ namespace Marmot::Elements {
 
       std::unique_ptr< QPStateVarManager > managedStateVars;
 
-      std::unique_ptr< MarmotMaterialPhaseFieldHypoElastic > material;
+      std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > > material;
 
       int getNumberOfRequiredStateVarsQuadraturePointOnly()
       {
@@ -146,9 +147,9 @@ namespace Marmot::Elements {
 
     std::vector< QuadraturePoint > qps;
 
-    PhaseFieldDisplacementFiniteElement( int                                         elementID,
-                                               FiniteElement::Quadrature::IntegrationTypes integrationType,
-                                               SectionType                                 sectionType );
+    GeneralGradientEnhancedDisplacementFiniteElement( int                                         elementID,
+                                                      FiniteElement::Quadrature::IntegrationTypes integrationType,
+                                                      SectionType                                 sectionType );
 
     int getNumberOfRequiredStateVars();
 
@@ -226,11 +227,11 @@ namespace Marmot::Elements {
     int getNumberOfQuadraturePoints();
   };
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields >::PhaseFieldDisplacementFiniteElement(
-    int                                         elementID,
-    FiniteElement::Quadrature::IntegrationTypes integrationType,
-    SectionType                                 sectionType )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+    GeneralGradientEnhancedDisplacementFiniteElement( int                                         elementID,
+                                                      FiniteElement::Quadrature::IntegrationTypes integrationType,
+                                                      SectionType                                 sectionType )
     : ParentGeometryElement(), elementProperties( nullptr, 0 ), elLabel( elementID ), sectionType( sectionType )
   {
     for ( const auto& qpInfo : FiniteElement::Quadrature::getGaussPointInfo( this->shape, integrationType ) ) {
@@ -239,14 +240,17 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  int PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::getNumberOfRequiredStateVars()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+    getNumberOfRequiredStateVars()
   {
     return qps[0].getNumberOfRequiredStateVars() * qps.size();
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::assignStateVars( double* stateVars, int nStateVars )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignStateVars(
+    double* stateVars,
+    int     nStateVars )
   {
     const int nQpStateVars = nStateVars / qps.size();
 
@@ -257,20 +261,21 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::assignProperty(
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignProperty(
     const ElementProperties& elementPropertiesInfo )
   {
     new ( &elementProperties )
       Map< const VectorXd >( elementPropertiesInfo.elementProperties, elementPropertiesInfo.nElementProperties );
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::assignProperty( const MarmotMaterialSection& section )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignProperty(
+    const MarmotMaterialSection& section )
   {
     for ( auto& qp : qps ) {
-      qp.material = std::unique_ptr< MarmotMaterialPhaseFieldHypoElastic >(
-        dynamic_cast< MarmotMaterialPhaseFieldHypoElastic* >(
+      qp.material = std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > >(
+        dynamic_cast< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >* >(
           MarmotLibrary::MarmotMaterialFactory::createMaterial( section.materialCode,
                                                                 section.materialProperties,
                                                                 section.nMaterialProperties,
@@ -278,8 +283,11 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  std::vector< std::vector< std::string > > PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::getNodeFields()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  std::vector< std::vector< std::string > > GeneralGradientEnhancedDisplacementFiniteElement<
+    nDim,
+    nNodes,
+    nNonlocalVariables >::getNodeFields()
   {
     using namespace std;
 
@@ -288,14 +296,16 @@ namespace Marmot::Elements {
       for ( int i = 0; i < nNodes; i++ ) {
         nodeFields.push_back( vector< string >() );
         nodeFields[i].push_back( "displacement" );
-        for ( int j = 0; j < nPhaseFields; j++ )
-          nodeFields[i].push_back( "phase field" );
+        nodeFields[i].push_back( "nonlocal damage" );
+        for ( int j = 1; j < nNonlocalVariables; j++ )
+          nodeFields[i].push_back( "nonlocal damage " + to_string( j ) );
       }
     return nodeFields;
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  std::vector< int > PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::getDofIndicesPermutationPattern()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  std::vector< int > GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+    getDofIndicesPermutationPattern()
   {
     static std::vector< int > permutationPattern;
 
@@ -310,14 +320,15 @@ namespace Marmot::Elements {
     return permutationPattern;
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::assignNodeCoordinates( const double* coordinates )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignNodeCoordinates(
+    const double* coordinates )
   {
     ParentGeometryElement::assignNodeCoordinates( coordinates );
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::initializeYourself()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::initializeYourself()
   {
     for ( QuadraturePoint& qp : qps ) {
       const auto          dNdXi = this->dNdXi( qp.xi );
@@ -342,14 +353,15 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::computeYourself( const double* QTotal_,
-                                                                                   const double* dQ_,
-                                                                                   double*       Pe_,
-                                                                                   double*       Ke_,
-                                                                                   const double* time,
-                                                                                   double        dT,
-                                                                                   double&       pNewDT )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeYourself(
+    const double* QTotal_,
+    const double* dQ_,
+    double*       Pe_,
+    double*       Ke_,
+    const double* time,
+    double        dT,
+    double&       pNewDT )
   {
 
     Map< const RhsSized > QTotal( QTotal_ );
@@ -380,6 +392,9 @@ namespace Marmot::Elements {
 
     Voigt  S, dE, dSdPF, dPF_Local_dDE;
     CSized C;
+    using response  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
+    using tangents  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::tangents;
+    using increment = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::increment;
 
     for ( size_t i = 0; i < this->qps.size(); i++ ) {
 
@@ -388,111 +403,102 @@ namespace Marmot::Elements {
       const BSized&     B    = qp.B;
       const NSized&     N    = qp.N;
       const dNdXiSized& dNdX = qp.dNdX;
-    
-      const Matrix< double, nPhaseFields, nPhaseFields * nNodes> NB_pf = Marmot::FiniteElement::NB( N, nPhaseFields );
-        
+
       dE = B * dQU;
 
       // delta of _K at Gausspoint
-      Vector<double, nPhaseFields> PF    = N * qPF;
-      Vector<double, nPhaseFields> dPF   = NB_pf * dQPF;
-      Vector<double, nPhaseFields> PF_old = PF - dPF;
-      Matrix<double, nPhaseFields, nPhaseFields> dPFlocal_dPF;
+      Vector< double, nNonlocalVariables > PF  = N * qPF;
+      Vector< double, nNonlocalVariables > dPF = N * dQPF;
 
-      // initialize references passed in material
-      Vector<double, nPhaseFields> PF_local;
-      PF_local.setZero();
-      double nonLocalRadius = 0;
+      response  res;
+      tangents  tan;
+      increment inc;
+      try {
+        /* if constexpr ( nDim == 2 ) { */
 
-      /* if constexpr ( nDim == 2 ) { */
+        /*   if ( sectionType == SectionType::PlaneStress ) { */
 
-      /*   if ( sectionType == SectionType::PlaneStress ) { */
+        /*     S = reduce3DVoigt< ParentGeometryElement::voigtSize >( qp.managedStateVars->stress ); */
+        /*     qp.material->computePlaneStress( S.data(), */
+        /*                                      KLocal.data(), */
+        /*                                      nonLocalRadius, */
+        /*                                      C.data(), */
+        /*                                      dK_Local_dDE.data(), */
+        /*                                      dSdK.data(), */
+        /*                                      dE.data(), */
+        /*                                      KOld.data(), */
+        /*                                      dK.data(), */
+        /*                                      time, */
+        /*                                      dT, */
+        /*                                      pNewDT ); */
+        /*     qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( S ); */
+        /*   } */
 
-      /*     S = reduce3DVoigt< ParentGeometryElement::voigtSize >( qp.managedStateVars->stress ); */
-      /*     qp.material->computePlaneStress( S.data(), */
-      /*                                      KLocal.data(), */
-      /*                                      nonLocalRadius, */
-      /*                                      C.data(), */
-      /*                                      dK_Local_dDE.data(), */
-      /*                                      dSdK.data(), */
-      /*                                      dE.data(), */
-      /*                                      KOld.data(), */
-      /*                                      dK.data(), */
-      /*                                      time, */
-      /*                                      dT, */
-      /*                                      pNewDT ); */
-      /*     qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( S ); */
-      /*   } */
+        /*   else if ( sectionType == SectionType::PlaneStrain ) { */
 
-      /*   else if ( sectionType == SectionType::PlaneStrain ) { */
+        /*     Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE ); */
+        /*     Vector6d dSdK6, dK_Local_dDE6; */
+        /*     Matrix6d C66; */
 
-      /*     Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE ); */
-      /*     Vector6d dSdK6, dK_Local_dDE6; */
-      /*     Matrix6d C66; */
+        /*     Vector6d S6 = qp.managedStateVars->stress; */
+        /*     qp.material->computeStress( S6.data(), */
+        /*                                 KLocal.data(), */
+        /*                                 nonLocalRadius, */
+        /*                                 C66.data(), */
+        /*                                 dK_Local_dDE6.data(), */
+        /*                                 dSdK6.data(), */
+        /*                                 dE6.data(), */
+        /*                                 KOld.data(), */
+        /*                                 dK.data(), */
+        /*                                 time, */
+        /*                                 dT, */
+        /*                                 pNewDT ); */
+        /*     qp.managedStateVars->stress = S6; */
 
-      /*     Vector6d S6 = qp.managedStateVars->stress; */
-      /*     qp.material->computeStress( S6.data(), */
-      /*                                 KLocal.data(), */
-      /*                                 nonLocalRadius, */
-      /*                                 C66.data(), */
-      /*                                 dK_Local_dDE6.data(), */
-      /*                                 dSdK6.data(), */
-      /*                                 dE6.data(), */
-      /*                                 KOld.data(), */
-      /*                                 dK.data(), */
-      /*                                 time, */
-      /*                                 dT, */
-      /*                                 pNewDT ); */
-      /*     qp.managedStateVars->stress = S6; */
+        /*     S            = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( S6 ); */
+        /*     dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dSdK6 ); */
+        /*     dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dK_Local_dDE6 ); */
+        /*     C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 ); */
+        /*   } */
+        /* } */
 
-      /*     S            = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( S6 ); */
-      /*     dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dSdK6 ); */
-      /*     dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dK_Local_dDE6 ); */
-      /*     C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 ); */
-      /*   } */
-      /* } */
-
-      /* else if ( nDim == 3 ) { */
+        /* else if ( nDim == 3 ) { */
         if ( sectionType == Solid ) {
 
-          S = qp.managedStateVars->stress;
-          qp.material->computeStress( S.data(),
-                                      PF_local.data(),
-                                      nonLocalRadius,
-                                      C.data(),
-                                      dPF_Local_dDE.data(),
-                                      dSdPF.data(),
-                                      dPFlocal_dPF.data(),
-                                      dE.data(),
-                                      PF_old.data(),
-                                      dPF.data(),
-                                      time[1],
-                                      dT);
-          qp.managedStateVars->stress = S;
+          S          = qp.managedStateVars->stress;
+          res.stress = S;
+          inc        = { dE, PF, dPF, time[1], dT };
+          qp.material->computeStress( res, tan, inc );
+          qp.managedStateVars->stress = res.stress;
         }
-      /* } */
-
+        /* } */
+      }
+      catch ( std::exception& e ) {
+        pNewDT = 0.25;
+        return;
+      }
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
 
       /* if ( pNewDT < 1.0 ) */
       /*   return; */
 
-      const double l = nonLocalRadius;
+      /* const double l = nonLocalRadius; */
 
-      fU -= B.transpose() * S * qp.J0xW;
-      fPF -= ( N.transpose() * PF  + l * l * dNdX.transpose() * dNdX * qPF - N.transpose() * PF_local ) * qp.J0xW;
+      fU -= B.transpose() * res.stress * qp.J0xW;
+      fPF -= ( N.transpose() * PF + res.c[0] * dNdX.transpose() * dNdX * qPF - N.transpose() * res.KLocal ) * qp.J0xW;
 
-      kUU += B.transpose() * C * B * qp.J0xW;
-        
-      kUPF += B.transpose() * dSdPF * N * qp.J0xW;
-      kPFU += N.transpose() * -dPF_Local_dDE.transpose() * B * qp.J0xW;
-      kPFPF += ( N.transpose() * N + l * l * dNdX.transpose() * dNdX - N.transpose() * dPFlocal_dPF * N ) * qp.J0xW;
-      
+      kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
+
+      kUPF += B.transpose() * tan.dStressddK * N * qp.J0xW;
+      kPFU += N.transpose() * -tan.dKLocalddStrain.transpose() * B * qp.J0xW;
+      kPFPF += ( N.transpose() * N + res.c[0] * dNdX.transpose() * dNdX +
+                 tan.dcddK[0] * dNdX.transpose() * dNdX * qPF * N - N.transpose() * tan.dKLocalddK * N ) *
+               qp.J0xW;
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::computeDistributedLoad(
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeDistributedLoad(
     MarmotElement::DistributedLoadTypes loadType,
     double*                             P,
     double*                             K,
@@ -528,9 +534,10 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::setInitialConditions( StateTypes    state,
-                                                                                        const double* values )
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::setInitialConditions(
+    StateTypes    state,
+    const double* values )
   {
     if constexpr ( nDim > 1 ) {
       switch ( state ) {
@@ -547,8 +554,8 @@ namespace Marmot::Elements {
           using namespace Math;
           qp.managedStateVars->stress( 1 ) = linearInterpolation( coordAtGauss[1], y1, y2, sigY1, sigY2 ); // sigma_y
           qp.managedStateVars->stress( 0 ) = values[4] * qp.managedStateVars->stress( 1 );                 // sigma_x
-          qp.managedStateVars->stress( 2 ) = values[5] * qp.managedStateVars->stress( 1 );
-        } // sigma_z
+          qp.managedStateVars->stress( 2 ) = values[5] * qp.managedStateVars->stress( 1 );                 // sigma_z
+        }
         break;
       }
       case MarmotElement::MarmotMaterialStateVars: {
@@ -559,14 +566,15 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  void PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::computeBodyForce( double*       P_,
-                                                                                    double*       K,
-                                                                                    const double* load,
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeBodyForce(
+    double*       P_,
+    double*       K,
+    const double* load,
 
-                                                                                    const double* QTotal,
-                                                                                    const double* time,
-                                                                                    double        dT )
+    const double* QTotal,
+    const double* time,
+    double        dT )
   {
     Map< RhsSized >                              P( P_ );
     Ref< USizedVector >                          Pe( P.head( sizeDoFU ) );
@@ -576,8 +584,9 @@ namespace Marmot::Elements {
       Pe += this->NB( this->N( qp.xi ) ).transpose() * f * qp.J0xW;
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  std::vector< double > PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::getCoordinatesAtCenter()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  std::vector< double > GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+    getCoordinatesAtCenter()
   {
     std::vector< double > coords( nDim );
 
@@ -587,9 +596,11 @@ namespace Marmot::Elements {
     return coords;
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  std::vector< std::vector< double > > PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::
-    getCoordinatesAtQuadraturePoints()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  std::vector< std::vector< double > > GeneralGradientEnhancedDisplacementFiniteElement<
+    nDim,
+    nNodes,
+    nNonlocalVariables >::getCoordinatesAtQuadraturePoints()
   {
     std::vector< std::vector< double > > listedCoords;
 
@@ -604,8 +615,9 @@ namespace Marmot::Elements {
     return listedCoords;
   }
 
-  template < int nDim, int nNodes, int nPhaseFields >
-  int PhaseFieldDisplacementFiniteElement< nDim, nNodes, nPhaseFields  >::getNumberOfQuadraturePoints()
+  template < int nDim, int nNodes, int nNonlocalVariables >
+  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+    getNumberOfQuadraturePoints()
   {
     return qps.size();
   }

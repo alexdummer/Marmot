@@ -1,9 +1,9 @@
 set(MODULE_NAME
-    "PhaseFieldDisplacementFiniteElement")
+    "GeneralGradientEnhancedDisplacementFiniteElement")
 
 set(MODULES_DEPENDENCIES
     MarmotMechanicsCore
-    MarmotPhaseFieldCore
+    MarmotGradientMechanicsCore
     MarmotFiniteElementCore 
     )
 
