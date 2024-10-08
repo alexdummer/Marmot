@@ -27,39 +27,81 @@
  */
 
 #pragma once
+#include "Marmot/HughesWinget.h"
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedMechanical.h"
+#include "Marmot/MarmotTypedefs.h"
 
-class MarmotMaterialGeneralGradientEnhancedHypoElastic : public MarmotMaterialGeneralGradientEnhancedMechanical {
+using namespace Eigen;
+using namespace Marmot;
+
+template < int nNonlocalVariables >
+class MarmotMaterialGeneralGradientEnhancedHypoElastic
+  : public MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables > {
 
 public:
-  using MarmotMaterialGeneralGradientEnhancedMechanical::MarmotMaterialGeneralGradientEnhancedMechanical;
+  using MarmotMaterialGeneralGradientEnhancedMechanical<
+    nNonlocalVariables >::MarmotMaterialGeneralGradientEnhancedMechanical;
 
-  virtual void computeStress( double*       stress,
-                              double*       KLocal,
-                              double&       nonLocalRadius,
+  using response  = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::response;
+  using tangents  = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::tangents;
+  using increment = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::increment;
+
+  virtual void computeStress( double*       stress_,
+                              double*       KLocal_,
+                              double*       nonLocalRadius,
                               double*       dStress_dDeformationGradient,
                               double*       dKLocal_dDeformationGradient,
                               double*       dStress_dK,
                               double*       dKlocal_dK,
-                              const double* FOld,
-                              const double* FNew,
+                              const double* FOld_,
+                              const double* FNew_,
                               const double* KOld,
                               const double* dK,
-                              const double time,
-                              const double  dT) override;
+                              const double  time,
+                              const double  dT )
+  {
+    // Standard implemenation of the Abaqus like Hughes-Winget algorithm
+    // Approximation of the algorithmic tangent in order to
+    // facilitate the dCauchy_dStrain tangent provided by
+    // small strain material models
 
-  virtual void computeStress( double*       stress,
-                              double*       K_local,
-                              double&       nonLocalRadius,
-                              double*       dStressDDStrain,
-                              double*       dK_localDDStrain,
-                              double*       dStressDK,
-                              double*       dKlocal_dK,
-                              const double* dStrain,
-                              const double*       KOld,
-                              const double*       dK,
-                              const double time,
-                              const double  dT) = 0;
+    using namespace Marmot;
+    const Map< const Matrix3d > FNew( FNew_ );
+    const Map< const Matrix3d > FOld( FOld_ );
+    Marmot::mVector6d           stress( stress_ );
+
+    using mVectorNd      = Map< Vector< double, nNonlocalVariables > >;
+    using constmVectorNd = const Map< const Vector< double, nNonlocalVariables > >;
+    using mMatrixNd      = Map< Matrix< double, nNonlocalVariables, nNonlocalVariables > >;
+    using mMatrix6Nd     = Map< Matrix< double, 6, nNonlocalVariables > >;
+
+    Matrix6d CJaumann                = Matrix6d::Zero();
+    Vector6d dK_LocalDStretchingRate = Vector6d::Zero();
+
+    Marmot::NumericalAlgorithms::HughesWinget
+      hughesWingetIntegrator( FOld, FNew, Marmot::NumericalAlgorithms::HughesWinget::Formulation::AbaqusLike );
+
+    auto dEps = hughesWingetIntegrator.getStrainIncrement();
+    stress    = hughesWingetIntegrator.rotateTensor( stress );
+
+    response        res = { stress, mVectorNd( KLocal_ ), mVectorNd( nonLocalRadius ) };
+    tangents        tan = { mMatrix6d( dStress_dDeformationGradient ),
+                            mMatrix6Nd( dKLocal_dDeformationGradient ),
+                            mMatrix6Nd( dStress_dK ),
+                            mMatrixNd( dKlocal_dK ) };
+    const increment inc = { dEps, constmVectorNd( KOld ), constmVectorNd( dK ), dT, time };
+
+    computeStress( res, tan, inc );
+
+    TensorMap< Eigen::Tensor< double, 3 > > dS_dF( tan.dStressddStrain.data(), 6, 3, 3 );
+    Map< Matrix3d >                         dKLocal_dF( tan.dKLocalddStrain.data() );
+
+    Matrix3d FInv = FNew.inverse();
+    dS_dF         = hughesWingetIntegrator.compute_dS_dF( stress, FInv, CJaumann );
+    dKLocal_dF    = hughesWingetIntegrator.compute_dScalar_dF( FInv, dK_LocalDStretchingRate );
+  }
+
+  virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
 
   /* using MarmotMaterialGeneralGradientEnhancedMechanical::computePlaneStress; */
   /* virtual void computePlaneStress( double*       stress2D, */

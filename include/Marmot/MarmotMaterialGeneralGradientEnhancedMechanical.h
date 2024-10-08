@@ -27,25 +27,43 @@
 
 #pragma once
 #include "Marmot/MarmotMaterial.h"
+#include "Marmot/MarmotTypedefs.h"
 
+using namespace Eigen;
+using namespace Marmot;
+
+template < int nNonlocalVariables >
 class MarmotMaterialGeneralGradientEnhancedMechanical : public MarmotMaterial {
 
 public:
   using MarmotMaterial::MarmotMaterial;
 
-  virtual void computeStress( double*       stress,
-                              double*       K_local,
-                              double&       nonLocalRadius,
-                              double*       dStressDDFNew,
-                              double*       dK_localDDFNew,
-                              double*       dStressDK,
-                              double*       dKlocal_dK,
-                              const double* FOld,
-                              const double* FNew,
-                              const double* KOld,
-                              const double* dK,
-                              const double  time,
-                              const double  dT ) = 0;
+  struct increment {
+    Marmot::Vector6d                            dStrain;
+    Eigen::Vector< double, nNonlocalVariables > K;
+    Eigen::Vector< double, nNonlocalVariables > dK;
+    double                                      time;
+    double                                      dT;
+  };
+
+  struct response {
+    Marmot::Vector6d                            stress;
+    Eigen::Vector< double, nNonlocalVariables > KLocal;
+    Eigen::Vector< double, nNonlocalVariables > c;
+  };
+
+  struct tangents {
+    Marmot::Matrix6d                               dStressddStrain = Marmot::Matrix6d::Zero();
+    Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, 6, nNonlocalVariables >
+      dKLocalddStrain = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      dcddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+  };
+
+  virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
 
   virtual void computePlaneStress( double*       stress,
                                    double*       K_local,
@@ -59,7 +77,7 @@ public:
                                    double*       KOld,
                                    double*       dK,
                                    const double  time,
-                                   const double  dT ) {};
+                                   const double  dT );
 
   virtual void computeUniaxialStress( double*       stress,
                                       double*       K_local,
@@ -72,5 +90,5 @@ public:
                                       double*       KOld,
                                       double*       dK,
                                       const double  time,
-                                      const double  dT ) {};
+                                      const double  dT );
 };
