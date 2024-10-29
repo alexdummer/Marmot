@@ -77,7 +77,9 @@ public:
                                    double*       KOld,
                                    double*       dK,
                                    const double  time,
-                                   const double  dT );
+                                   const double  dT )
+  {
+  }
 
   virtual void computeUniaxialStress( double*       stress,
                                       double*       K_local,
@@ -90,5 +92,7 @@ public:
                                       double*       KOld,
                                       double*       dK,
                                       const double  time,
-                                      const double  dT );
+                                      const double  dT )
+  {
+  }
 };
