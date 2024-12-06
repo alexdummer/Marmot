@@ -312,9 +312,10 @@ namespace Marmot::Elements {
     if ( permutationPattern.empty() ) {
       for ( int i = 0; i < nNodes; i++ )
         for ( int j = 0; j < nDim; j++ )
-          permutationPattern.push_back( i * ( nDim + 1 ) + j );
+          permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + j );
       for ( int i = 0; i < nNodes; i++ )
-        permutationPattern.push_back( i * ( nDim + 1 ) + nDim );
+        for ( int j = 0; j < nNonlocalVariables; j++ )
+          permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + nDim + j );
     }
 
     return permutationPattern;
