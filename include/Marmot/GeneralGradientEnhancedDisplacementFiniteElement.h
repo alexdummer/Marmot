@@ -117,7 +117,7 @@ namespace Marmot::Elements {
             stress( &find( "stress" ) ),
             strain( &find( "strain" ) ),
             materialStateVars( &find( "begin of material state" ),
-                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
+                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ) {};
       };
 
       std::unique_ptr< QPStateVarManager > managedStateVars;
@@ -142,7 +142,7 @@ namespace Marmot::Elements {
       }
 
       QuadraturePoint( XiSized xi, double weight )
-        : xi( xi ), weight( weight ), detJ( 0.0 ), J0xW( 0.0 ), dNdX( dNdXiSized::Zero() ), B( BSized::Zero() ){};
+        : xi( xi ), weight( weight ), detJ( 0.0 ), J0xW( 0.0 ), dNdX( dNdXiSized::Zero() ), B( BSized::Zero() ) {};
     };
 
     std::vector< QuadraturePoint > qps;
@@ -313,9 +313,14 @@ namespace Marmot::Elements {
       for ( int i = 0; i < nNodes; i++ )
         for ( int j = 0; j < nDim; j++ )
           permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + j );
-      for ( int i = 0; i < nNodes; i++ )
-        for ( int j = 0; j < nNonlocalVariables; j++ )
+      for ( int j = 0; j < nNonlocalVariables; j++ )
+        for ( int i = 0; i < nNodes; i++ )
           permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + nDim + j );
+
+      std::cout << "Permutation pattern: [" << std::endl;
+      for ( unsigned int i = 0; i < permutationPattern.size(); i++ )
+        std::cout << permutationPattern[i] << ", ";
+      std::cout << "]" << std::endl;
     }
 
     return permutationPattern;
@@ -372,26 +377,26 @@ namespace Marmot::Elements {
 
     // incremental nodal displacements Q and nodal internal parameters qK
     const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
-    const Ref< const KSizedVector > dQPF( dQ.tail( sizeDoFK ) );
+    const Ref< const KSizedVector > dQK( dQ.tail( sizeDoFK ) );
     const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
-    const Ref< const KSizedVector > qPF( QTotal.tail( sizeDoFK ) );
+    const Ref< const KSizedVector > qK( QTotal.tail( sizeDoFK ) );
 
     // substiffness matrices
     // [k_qq    k_qQK
     //  k_QKQ   k_QKQK ]
     Ref< Matrix< double, sizeDoFU, sizeDoFU > > kUU( Ke.topLeftCorner( sizeDoFU, sizeDoFU ) );
-    Ref< Matrix< double, sizeDoFU, sizeDoFK > > kUPF( Ke.topRightCorner( sizeDoFU, sizeDoFK ) );
-    Ref< Matrix< double, sizeDoFK, sizeDoFU > > kPFU( Ke.bottomLeftCorner( sizeDoFK, sizeDoFU ) );
-    Ref< Matrix< double, sizeDoFK, sizeDoFK > > kPFPF( Ke.bottomRightCorner( sizeDoFK, sizeDoFK ) );
+    Ref< Matrix< double, sizeDoFU, sizeDoFK > > kUK( Ke.topRightCorner( sizeDoFU, sizeDoFK ) );
+    Ref< Matrix< double, sizeDoFK, sizeDoFU > > kKU( Ke.bottomLeftCorner( sizeDoFK, sizeDoFU ) );
+    Ref< Matrix< double, sizeDoFK, sizeDoFK > > kKK( Ke.bottomRightCorner( sizeDoFK, sizeDoFK ) );
 
     // Righthandside
     Ref< USizedVector > fU( Pe.head( sizeDoFU ) );
-    Ref< KSizedVector > fPF( Pe.tail( sizeDoFK ) );
+    Ref< KSizedVector > fK( Pe.tail( sizeDoFK ) );
 
     using namespace Marmot;
     using namespace ContinuumMechanics::VoigtNotation;
 
-    Voigt  S, dE, dSdPF, dPF_Local_dDE;
+    Voigt  S, dE, dSdK, dK_Local_dDE;
     CSized C;
     using response  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
     using tangents  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::tangents;
@@ -408,8 +413,14 @@ namespace Marmot::Elements {
       dE = B * dQU;
 
       // delta of _K at Gausspoint
-      Vector< double, nNonlocalVariables > PF  = N * qPF;
-      Vector< double, nNonlocalVariables > dPF = N * dQPF;
+      Vector< double, nNonlocalVariables > K;
+      Vector< double, nNonlocalVariables > dK;
+
+      for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+        double idx = n * nNodes;
+        K( n )     = N * qK.segment( idx, nNodes );
+        dK( n )    = N * dQK.segment( idx, nNodes );
+      }
 
       response  res;
       tangents  tan;
@@ -468,7 +479,7 @@ namespace Marmot::Elements {
 
           S          = qp.managedStateVars->stress;
           res.stress = S;
-          inc        = { dE, PF, dPF, time[1], dT };
+          inc        = { dE, K, dK, time[1], dT };
           qp.material->computeStress( res, tan, inc );
           qp.managedStateVars->stress = res.stress;
         }
@@ -486,15 +497,24 @@ namespace Marmot::Elements {
       /* const double l = nonLocalRadius; */
 
       fU -= B.transpose() * res.stress * qp.J0xW;
-      fPF -= ( N.transpose() * PF + res.c[0] * dNdX.transpose() * dNdX * qPF - N.transpose() * res.KLocal ) * qp.J0xW;
-
       kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
 
-      kUPF += B.transpose() * tan.dStressddK * N * qp.J0xW;
-      kPFU += N.transpose() * -tan.dKLocalddStrain.transpose() * B * qp.J0xW;
-      kPFPF += ( N.transpose() * N + res.c[0] * dNdX.transpose() * dNdX +
-                 tan.dcddK[0] * dNdX.transpose() * dNdX * qPF * N - N.transpose() * tan.dKLocalddK * N ) *
-               qp.J0xW;
+      for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+        double idx = n * nNodes;
+        fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
+                                       res.c[0] * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
+                                       N.transpose() * res.KLocal( n ) ) *
+                                     qp.J0xW;
+
+        kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * tan.dStressddK.col( n ) * N * qp.J0xW;
+        kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -tan.dKLocalddStrain.col( n ).transpose() * B *
+                                                 qp.J0xW;
+        kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c[0] * dNdX.transpose() * dNdX +
+                                                   tan.dcddK( 0 ) * dNdX.transpose() * dNdX *
+                                                     qK.segment( idx, nNodes ) * N -
+                                                   N.transpose() * tan.dKLocalddK( n, n ) * N ) *
+                                                 qp.J0xW;
+      }
     }
   }
 
