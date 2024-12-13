@@ -45,6 +45,8 @@ namespace Marmot::Elements::Registration {
     GGC3D8R  = CONCAT( 1193, 816 ),
     GGC3D20  = CONCAT( 1193, 2013 ),
     GGC3D20R = CONCAT( 1193, 2016 ),
+    // solid with two damage fields
+    G2GC3D8 = CONCAT( 1193, 823 ),
 
   };
 
@@ -159,6 +161,18 @@ namespace Marmot::Elements::Registration {
                          20 >( elementID,
                                Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
                                GeneralGradientEnhancedDisplacementFiniteElement< 3, 20 >::SectionType::Solid );
+                     } );
+
+  const static bool G2GC3D8_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G2GC3D8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D8,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         8,
+                         2 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid );
                      } );
 
 } // namespace Marmot::Elements::Registration
