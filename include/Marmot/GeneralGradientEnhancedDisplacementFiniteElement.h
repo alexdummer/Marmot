@@ -298,7 +298,7 @@ namespace Marmot::Elements {
         nodeFields[i].push_back( "displacement" );
         nodeFields[i].push_back( "nonlocal damage" );
         for ( int j = 1; j < nNonlocalVariables; j++ )
-          nodeFields[i].push_back( "nonlocal damage " + to_string( j ) );
+          nodeFields[i].push_back( "nonlocal damage " + to_string( j + 1 ) );
       }
     return nodeFields;
   }
