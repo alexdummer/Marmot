@@ -47,6 +47,9 @@ namespace Marmot::Elements::Registration {
     GGC3D20R = CONCAT( 1193, 2016 ),
     // solid with two damage fields
     G2GC3D8 = CONCAT( 1193, 823 ),
+    // G2GC3D8R  = CONCAT( 1193, 826 ),
+    G2GC3D20  = CONCAT( 1193, 2023 ),
+    G2GC3D20R = CONCAT( 1193, 2026 ),
 
   };
 
@@ -173,6 +176,42 @@ namespace Marmot::Elements::Registration {
                          2 >( elementID,
                               Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
                               GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid );
+                     } );
+
+  // const static bool G2GC3D8R_isRegistered = MarmotLibrary::MarmotElementFactory::
+  //   registerElement( "G2GC3D8R",
+  //                    GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D8R,
+  //                    []( int elementID ) -> MarmotElement* {
+  //                      return new GeneralGradientEnhancedDisplacementFiniteElement<
+  //                        3,
+  //                        8,
+  //                        2 >( elementID,
+  //                             Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
+  //                             GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid );
+  //                    } );
+
+  const static bool G2GC3D20_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G2GC3D20",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D20,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         2 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 2 >::SectionType::Solid );
+                     } );
+
+  const static bool G2GC3D20R_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G2GC3D20R",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D20R,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         2 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 2 >::SectionType::Solid );
                      } );
 
 } // namespace Marmot::Elements::Registration
