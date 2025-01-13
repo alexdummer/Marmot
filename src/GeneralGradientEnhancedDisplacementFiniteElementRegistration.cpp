@@ -66,51 +66,45 @@ namespace Marmot::Elements::Registration {
   using namespace MarmotLibrary;
   using namespace Marmot::FiniteElement::Quadrature;
 
-  /* const static bool GGCPS4_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPS4", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS4, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >, */
-  /*                                         FullIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >::PlaneStress >()
-   * ); */
+  const static bool GGCPS4_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPS4",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS4,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >,
+                                          FullIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >::PlaneStress >() );
 
-  /* const static bool GGCPS8_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPS8", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS8, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >, */
-  /*                                         FullIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStress >()
-   * ); */
+  const static bool GGCPS8_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPS8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS8,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >,
+                                          FullIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStress >() );
 
-  /* const static bool GGCPE4_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPE4", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE4, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >, */
-  /*                                         FullIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >::PlaneStrain >()
-   * ); */
+  const static bool GGCPE4_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPE4",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE4,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >,
+                                          FullIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 4 >::PlaneStrain >() );
 
-  /* const static bool GGCPE8_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPE8", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE8, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >, */
-  /*                                         FullIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStrain >()
-   * ); */
-  /* const static bool GGCPS8R_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPS8R", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS8R, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >, */
-  /*                                         ReducedIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStress >()
-   * ); */
-  /* const static bool GGCPE8R_isRegistered = MarmotElementFactory:: */
-  /*   registerElement( "GGCPE8R", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE8R, */
-  /*                    makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >, */
-  /*                                         ReducedIntegration, */
-  /*                                         GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStrain >()
-   * ); */
+  const static bool GGCPE8_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPE8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE8,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >,
+                                          FullIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStrain >() );
+  const static bool GGCPS8R_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPS8R",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPS8R,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >,
+                                          ReducedIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStress >() );
+  const static bool GGCPE8R_isRegistered = MarmotElementFactory::
+    registerElement( "GGCPE8R",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::GGCPE8R,
+                     makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >,
+                                          ReducedIntegration,
+                                          GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStrain >() );
 
   /* const static bool GGC3D4_isRegistered = MarmotLibrary::MarmotElementFactory:: */
   /*   registerElement( "GGC3D4", */

@@ -117,7 +117,7 @@ namespace Marmot::Elements {
             stress( &find( "stress" ) ),
             strain( &find( "strain" ) ),
             materialStateVars( &find( "begin of material state" ),
-                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ) {};
+                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
       };
 
       std::unique_ptr< QPStateVarManager > managedStateVars;
@@ -142,7 +142,7 @@ namespace Marmot::Elements {
       }
 
       QuadraturePoint( XiSized xi, double weight )
-        : xi( xi ), weight( weight ), detJ( 0.0 ), J0xW( 0.0 ), dNdX( dNdXiSized::Zero() ), B( BSized::Zero() ) {};
+        : xi( xi ), weight( weight ), detJ( 0.0 ), J0xW( 0.0 ), dNdX( dNdXiSized::Zero() ), B( BSized::Zero() ){};
     };
 
     std::vector< QuadraturePoint > qps;
@@ -426,95 +426,83 @@ namespace Marmot::Elements {
       tangents  tan;
       increment inc;
       try {
-        /* if constexpr ( nDim == 2 ) { */
+        if constexpr ( nDim == 2 ) {
+          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          res.stress   = qp.managedStateVars->stress;
+          inc          = { dE6, K, dK, time[1], dT };
+          Matrix3d C;
+          Vector3d S;
 
-        /*   if ( sectionType == SectionType::PlaneStress ) { */
+          if ( sectionType == SectionType::PlaneStress ) {
+            qp.material->computePlaneStress( res, tan, inc );
+            S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+          }
+          else if ( sectionType == SectionType::PlaneStrain ) {
+            qp.material->computeStress( res, tan, inc );
+            S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+          }
 
-        /*     S = reduce3DVoigt< ParentGeometryElement::voigtSize >( qp.managedStateVars->stress ); */
-        /*     qp.material->computePlaneStress( S.data(), */
-        /*                                      KLocal.data(), */
-        /*                                      nonLocalRadius, */
-        /*                                      C.data(), */
-        /*                                      dK_Local_dDE.data(), */
-        /*                                      dSdK.data(), */
-        /*                                      dE.data(), */
-        /*                                      KOld.data(), */
-        /*                                      dK.data(), */
-        /*                                      time, */
-        /*                                      dT, */
-        /*                                      pNewDT ); */
-        /*     qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( S ); */
-        /*   } */
+          fU -= B.transpose() * S * qp.J0xW;
+          kUU += B.transpose() * C * B * qp.J0xW;
 
-        /*   else if ( sectionType == SectionType::PlaneStrain ) { */
+          for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+            double idx = n * nNodes;
+            fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
+                                           res.c( n ) * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
+                                           N.transpose() * res.KLocal( n ) ) *
+                                         qp.J0xW;
+            const auto dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddK.col( n ) );
+            const auto dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt(
+              tan.dKLocalddStrain.col( n ) );
 
-        /*     Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE ); */
-        /*     Vector6d dSdK6, dK_Local_dDE6; */
-        /*     Matrix6d C66; */
-
-        /*     Vector6d S6 = qp.managedStateVars->stress; */
-        /*     qp.material->computeStress( S6.data(), */
-        /*                                 KLocal.data(), */
-        /*                                 nonLocalRadius, */
-        /*                                 C66.data(), */
-        /*                                 dK_Local_dDE6.data(), */
-        /*                                 dSdK6.data(), */
-        /*                                 dE6.data(), */
-        /*                                 KOld.data(), */
-        /*                                 dK.data(), */
-        /*                                 time, */
-        /*                                 dT, */
-        /*                                 pNewDT ); */
-        /*     qp.managedStateVars->stress = S6; */
-
-        /*     S            = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( S6 ); */
-        /*     dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dSdK6 ); */
-        /*     dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( dK_Local_dDE6 ); */
-        /*     C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 ); */
-        /*   } */
-        /* } */
-
-        /* else if ( nDim == 3 ) { */
-        if ( sectionType == Solid ) {
-
-          S          = qp.managedStateVars->stress;
-          res.stress = S;
-          inc        = { dE, K, dK, time[1], dT };
-          qp.material->computeStress( res, tan, inc );
-          qp.managedStateVars->stress = res.stress;
+            kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * dSdK * N * qp.J0xW;
+            kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -dK_Local_dDE.transpose() * B * qp.J0xW;
+            kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c( n ) * dNdX.transpose() * dNdX +
+                                                       tan.dcddK( n ) * dNdX.transpose() * dNdX *
+                                                         qK.segment( idx, nNodes ) * N -
+                                                       N.transpose() * tan.dKLocalddK( n, n ) * N ) *
+                                                     qp.J0xW;
+          }
         }
-        /* } */
+
+        else if ( nDim == 3 ) {
+          if ( sectionType == Solid ) {
+
+            S          = qp.managedStateVars->stress;
+            res.stress = S;
+            inc        = { dE, K, dK, time[1], dT };
+            qp.material->computeStress( res, tan, inc );
+
+            fU -= B.transpose() * res.stress * qp.J0xW;
+            kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
+
+            for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+              double idx = n * nNodes;
+              fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
+                                             res.c( n ) * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
+                                             N.transpose() * res.KLocal( n ) ) *
+                                           qp.J0xW;
+
+              kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * tan.dStressddK.col( n ) * N * qp.J0xW;
+              kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -tan.dKLocalddStrain.col( n ).transpose() * B *
+                                                       qp.J0xW;
+              kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c( n ) * dNdX.transpose() * dNdX +
+                                                         tan.dcddK( n ) * dNdX.transpose() * dNdX *
+                                                           qK.segment( idx, nNodes ) * N -
+                                                         N.transpose() * tan.dKLocalddK( n, n ) * N ) *
+                                                       qp.J0xW;
+            }
+          }
+        }
       }
       catch ( std::exception& e ) {
         pNewDT = 0.25;
         return;
       }
+      qp.managedStateVars->stress = res.stress;
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-
-      /* if ( pNewDT < 1.0 ) */
-      /*   return; */
-
-      /* const double l = nonLocalRadius; */
-
-      fU -= B.transpose() * res.stress * qp.J0xW;
-      kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
-
-      for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
-        double idx = n * nNodes;
-        fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
-                                       res.c[0] * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
-                                       N.transpose() * res.KLocal( n ) ) *
-                                     qp.J0xW;
-
-        kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * tan.dStressddK.col( n ) * N * qp.J0xW;
-        kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -tan.dKLocalddStrain.col( n ).transpose() * B *
-                                                 qp.J0xW;
-        kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c[0] * dNdX.transpose() * dNdX +
-                                                   tan.dcddK( 0 ) * dNdX.transpose() * dNdX *
-                                                     qK.segment( idx, nNodes ) * N -
-                                                   N.transpose() * tan.dKLocalddK( n, n ) * N ) *
-                                                 qp.J0xW;
-      }
     }
   }
 
