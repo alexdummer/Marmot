@@ -103,6 +103,58 @@ public:
 
   virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
 
+  using MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::computePlaneStress;
+  virtual void computePlaneStress( response& res, tangents& tan, const increment& inc )
+  {
+    using namespace Marmot;
+    using namespace ContinuumMechanics::VoigtNotation;
+
+    Map< VectorXd > stateVars( this->stateVars, this->nStateVars );
+
+    VectorXd  stateVarsOld = stateVars;
+    response  resTemp;
+    increment incTemp = { inc.dStrain, inc.K, inc.dK, inc.time, inc.dT };
+    // assumption of isochoric deformation for initial guess
+
+    double residual = 1;
+    // assumption of isochoric deformation for initial guess
+    double strainIncrement = ( -incTemp.dStrain( 0 ) - incTemp.dStrain( 1 ) );
+    incTemp.dStrain( 2 )   = strainIncrement;
+
+    int planeStressCount = 1;
+    while ( true ) {
+      // set old response
+      resTemp = { res.stress, res.KLocal, res.c };
+      // set old state variables
+      stateVars = stateVarsOld;
+
+      // compute stress
+      computeStress( resTemp, tan, incTemp );
+
+      // evauate residual
+      residual = std::abs( resTemp.stress.array().abs()[2] / std::max( resTemp.stress.array().abs().maxCoeff(), 1. ) );
+      /* std::cout << "residual: " << residual << std::endl; */
+      if ( residual < 1e-12 && std::abs( strainIncrement ) < 1e-10 ) {
+        break;
+      }
+
+      // correct strain increment
+      double tangentCompliance = 1. / tan.dStressddStrain( 2, 2 );
+      if ( Math::isNaN( tangentCompliance ) || std::abs( tangentCompliance ) > 1e10 ) {
+        tangentCompliance = 1e10;
+      }
+
+      strainIncrement = -resTemp.stress( 2 ) * tangentCompliance;
+      incTemp.dStrain( 2 ) += strainIncrement;
+
+      planeStressCount += 1;
+      if ( planeStressCount > 10 ) {
+        throw std::runtime_error( "PlaneStressWrapper requires cutback" );
+      }
+    }
+    res = { resTemp.stress, resTemp.KLocal, resTemp.c };
+  }
+
   /* using MarmotMaterialGeneralGradientEnhancedMechanical::computePlaneStress; */
   /* virtual void computePlaneStress( double*       stress2D, */
   /*                                  double*       KLocal2D, */
