@@ -61,26 +61,13 @@ public:
       dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dcddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      d2cddK2 = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
   };
 
   virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
 
   virtual void computePlaneStress( response& res, tangents&, const increment& inc ){};
-  /* virtual void computePlaneStress( double*       stress, */
-  /*                                  double*       K_local, */
-  /*                                  double&       nonLocalRadius, */
-  /*                                  double*       dStressDDFNew, */
-  /*                                  double*       dK_localDDFNew, */
-  /*                                  double*       dStressDK, */
-  /*                                  double*       dKlocal_dK, */
-  /*                                  const double* FOld, */
-  /*                                  const double* FNew, */
-  /*                                  double*       KOld, */
-  /*                                  double*       dK, */
-  /*                                  const double  time, */
-  /*                                  const double  dT ) */
-  /* { */
-  /* } */
 
   virtual void computeUniaxialStress( double*       stress,
                                       double*       K_local,

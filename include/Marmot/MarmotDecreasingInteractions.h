@@ -59,6 +59,14 @@ namespace Marmot::GradientDamage {
       std::tuple< double, double > sigmoid( double omega, double R, double a, double b );
 
     } // namespace FirstOrderDerived
+
+    namespace SecondOrderDerived {
+
+      std::tuple< double, double, double > poh( double omega, double eta, double R );
+
+      std::tuple< double, double, double > sigmoid( double omega, double R, double a, double b );
+
+    } // namespace SecondOrderDerived
   }   // namespace DecreasingInteractions
 
 } // namespace Marmot::GradientDamage
