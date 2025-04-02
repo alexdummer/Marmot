@@ -45,6 +45,10 @@ namespace Marmot::Elements::Registration {
     GGC3D8R  = CONCAT( 1193, 816 ),
     GGC3D20  = CONCAT( 1193, 2013 ),
     GGC3D20R = CONCAT( 1193, 2016 ),
+    // plane stress with two damage fields
+    G2GCPS4  = CONCAT( 1193, 422 ),
+    G2GCPS8  = CONCAT( 1193, 822 ),
+    G2GCPS8R = CONCAT( 1193, 825 ),
     // solid with two damage fields
     G2GC3D8 = CONCAT( 1193, 823 ),
     // G2GC3D8R  = CONCAT( 1193, 826 ),
@@ -159,6 +163,30 @@ namespace Marmot::Elements::Registration {
                                Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
                                GeneralGradientEnhancedDisplacementFiniteElement< 3, 20 >::SectionType::Solid );
                      } );
+
+  const static bool G2GCPS4_isRegistered = MarmotElementFactory::
+    registerElement( "G2GCPS4",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GCPS4,
+                     makeFactoryFunction<
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 4, 2 >,
+                       FullIntegration,
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 4, 2 >::PlaneStress >() );
+
+  const static bool G2GCPS8_isRegistered = MarmotElementFactory::
+    registerElement( "G2GCPS8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GCPS8,
+                     makeFactoryFunction<
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 2 >,
+                       FullIntegration,
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 2 >::PlaneStress >() );
+
+  const static bool G2GCPS8R_isRegistered = MarmotElementFactory::
+    registerElement( "G2GCPS8R",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G2GCPS8R,
+                     makeFactoryFunction<
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 2 >,
+                       ReducedIntegration,
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 2 >::PlaneStress >() );
 
   const static bool G2GC3D8_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "G2GC3D8",
