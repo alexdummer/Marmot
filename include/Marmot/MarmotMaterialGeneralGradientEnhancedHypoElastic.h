@@ -149,6 +149,9 @@ public:
       incTemp.dStrain( 2 ) += strainIncrement;
 
       planeStressCount += 1;
+      if ( planeStressCount > 13 ) {
+        throw std::runtime_error( "PlaneStressWrapper requires cutback" );
+      }
     }
 
     res = { resTemp.stress, resTemp.KLocal, resTemp.c };
