@@ -26,9 +26,9 @@
  */
 
 #pragma once
-#include <Eigen/Core>
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotStateVarVectorManager.h"
+#include <Eigen/Core>
 #include <string>
 
 namespace Marmot::Materials {
@@ -44,7 +44,6 @@ namespace Marmot::Materials {
                         const Deformation< 3 >&,
                         const TimeIncrement& );
 
-
     class ViscoelasticNeoHookeStateVarManager : public MarmotStateVarVectorManager {
 
     public:
@@ -54,24 +53,28 @@ namespace Marmot::Materials {
       } );
 
       Fastor::TensorMap< double, 3, 3 > S0;
-      double* maxwellStateVars;
+      double*                           maxwellStateVars;
 
-    ViscoelasticNeoHookeStateVarManager( double* theStateVarVector )
-        : MarmotStateVarVectorManager( theStateVarVector, layout ), 
-        S0( &find("S0")  ), 
-        maxwellStateVars( &find( "maxwellStateVars" ) ){};
+      ViscoelasticNeoHookeStateVarManager( double* theStateVarVector )
+        : MarmotStateVarVectorManager( theStateVarVector, layout ),
+          S0( &find( "S0" ) ),
+          maxwellStateVars( &find( "maxwellStateVars" ) ){};
     };
     std::unique_ptr< ViscoelasticNeoHookeStateVarManager > stateVars;
 
-    int getNumberOfRequiredStateVars() { return ViscoelasticNeoHookeStateVarManager::layout.nRequiredStateVars + nMaxwellElements * 9; };
+    int getNumberOfRequiredStateVars()
+    {
+      return ViscoelasticNeoHookeStateVarManager::layout.nRequiredStateVars + nMaxwellElements * 9;
+    };
 
     void assignStateVars( double* stateVars, int nStateVars );
 
     StateView getStateView( const std::string& result );
+
   protected:
     const double K; // bulk modulus
     const double G; // shear modulus
-    
+
     const size_t nMaxwellElements;
 
     Eigen::VectorXd tau;

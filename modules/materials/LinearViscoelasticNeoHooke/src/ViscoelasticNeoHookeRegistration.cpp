@@ -1,5 +1,5 @@
-#include "Marmot/ViscoelasticNeoHooke.h"
 #include "Marmot/MarmotMaterialRegistrationHelper.h"
+#include "Marmot/ViscoelasticNeoHooke.h"
 
 namespace Marmot::Materials {
 
