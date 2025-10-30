@@ -174,6 +174,6 @@ namespace Marmot::Materials {
       return R( X_, trialState, elasticStiffness, activeSurfaces );
     };
 
-    return AutomaticDifferentiation::jacobian( func, X );
+    return AutomaticDifferentiation::dF_dX( func, X );
   }
 } // namespace Marmot::Materials
