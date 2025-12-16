@@ -55,6 +55,16 @@ namespace Marmot::Elements::Registration {
     G2GC3D20  = CONCAT( 1193, 2023 ),
     G2GC3D20R = CONCAT( 1193, 2026 ),
 
+    // plane stress with 6 fields
+    G6GCPS8 = CONCAT( 1239, 862 ),
+    // solid with 6 fields
+    G6GC3D8   = CONCAT( 1239, 863 ),
+    G6GC3D20  = CONCAT( 1239, 2063 ),
+    G6GC3D20R = CONCAT( 1239, 2066 ),
+
+    G6GCPS84   = CONCAT( 1239, 8862 ),
+    G6GC3D20R8 = CONCAT( 1239, 20866 ),
+    G6GC3D208  = CONCAT( 1239, 20863 ),
   };
 
 #undef CONCAT
@@ -234,6 +244,84 @@ namespace Marmot::Elements::Registration {
                          2 >( elementID,
                               Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
                               GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 2 >::SectionType::Solid );
+                     } );
+
+  const static bool G6GCPS8_isRegistered = MarmotElementFactory::
+    registerElement( "G6GCPS8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GCPS8,
+                     makeFactoryFunction<
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6 >,
+                       FullIntegration,
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6 >::PlaneStress >() );
+
+  const static bool G6GC3D8_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G6GC3D8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GC3D8,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         8,
+                         6 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 6 >::SectionType::Solid );
+                     } );
+
+  const static bool G6GC3D20_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G6GC3D20",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GC3D20,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         6 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6 >::SectionType::Solid );
+                     } );
+
+  const static bool G6GC3D20R_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G6GC3D20R",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GC3D20R,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         6 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6 >::SectionType::Solid );
+                     } );
+
+  const static bool G6GCPS84_isRegistered = MarmotElementFactory::
+    registerElement( "G6GCPS84",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GCPS84,
+                     makeFactoryFunction<
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6, 4 >,
+                       FullIntegration,
+                       GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6, 4 >::PlaneStress >() );
+
+  const static bool G6GC3D20R8_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G6GC3D20R8",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GC3D20R8,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         6,
+                         8 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >::SectionType::Solid );
+                     } );
+
+  const static bool G6GC3D208_isRegistered = MarmotLibrary::MarmotElementFactory::
+    registerElement( "G6GC3D208",
+                     GeneralGradientEnhancedDisplacementFiniteElementCode::G6GC3D208,
+                     []( int elementID ) -> MarmotElement* {
+                       return new GeneralGradientEnhancedDisplacementFiniteElement<
+                         3,
+                         20,
+                         6,
+                         8 >( elementID,
+                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration,
+                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >::SectionType::Solid );
                      } );
 
 } // namespace Marmot::Elements::Registration
