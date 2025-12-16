@@ -47,9 +47,8 @@ using namespace Eigen;
 
 namespace Marmot::Elements {
 
-  template < int nDim, int nNodes, int nNonlocalVariables = 1 >
-  class GeneralGradientEnhancedDisplacementFiniteElement : public MarmotElement,
-                                                           public MarmotGeometryElement< nDim, nNodes > {
+  template < int nDim, int nNodes, int nNonlocalVariables = 1, int nNonLocalNodes = nNodes >
+  class GeneralGradientEnhancedDisplacementFiniteElement : public MarmotElement {
 
   public:
     enum SectionType {
@@ -60,13 +59,15 @@ namespace Marmot::Elements {
 
     static constexpr int nDofPerNodeU = nDim;
     static constexpr int nDofPerNodeK = nNonlocalVariables;
-    static constexpr int nDofPerNode  = nDofPerNodeU + nDofPerNodeK;
 
-    static constexpr int sizeLoadVector = nNodes * nDofPerNode;
+    static constexpr int sizeLoadVector = nNodes * nDofPerNodeU + nNonLocalNodes * nDofPerNodeK;
     static constexpr int nCoordinates   = nNodes * nDim;
 
     static constexpr int sizeDoFU = nNodes * nDofPerNodeU;
-    static constexpr int sizeDoFK = nNodes * nDofPerNodeK;
+    static constexpr int sizeDoFK = nNonLocalNodes * nDofPerNodeK;
+
+    MarmotGeometryElement< nDim, nNodes >         localGeometryElement;
+    MarmotGeometryElement< nDim, nNonLocalNodes > nonLocalGeometryElement;
 
     using ParentGeometryElement = MarmotGeometryElement< nDim, nNodes >;
     using JacobianSized         = typename ParentGeometryElement::JacobianSized;
@@ -81,6 +82,12 @@ namespace Marmot::Elements {
     using CSized                = Matrix< double, ParentGeometryElement::voigtSize, ParentGeometryElement::voigtSize >;
     using Voigt                 = Matrix< double, ParentGeometryElement::voigtSize, 1 >;
 
+    using ParentGeometryElementK = MarmotGeometryElement< nDim, nNonLocalNodes >;
+    using JacobianSizedK         = typename ParentGeometryElementK::JacobianSized;
+    using NSizedK                = typename ParentGeometryElementK::NSized;
+    using dNdXiSizedK            = typename ParentGeometryElementK::dNdXiSized;
+    using BSizedK                = typename ParentGeometryElementK::BSized;
+
     Map< const VectorXd > elementProperties;
     const int             elLabel;
 
@@ -91,11 +98,14 @@ namespace Marmot::Elements {
       const XiSized xi;
       const double  weight;
 
-      double     detJ;
-      double     J0xW;
-      NSized     N;
-      dNdXiSized dNdX;
-      BSized     B;
+      double      detJ;
+      double      J0xW;
+      NSized      N;
+      dNdXiSized  dNdX;
+      BSized      B;
+      NSizedK     N_K;
+      dNdXiSizedK dNdX_K;
+      BSizedK     B_K;
 
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
@@ -117,7 +127,7 @@ namespace Marmot::Elements {
             stress( &find( "stress" ) ),
             strain( &find( "strain" ) ),
             materialStateVars( &find( "begin of material state" ),
-                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
+                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ) {};
       };
 
       std::unique_ptr< QPStateVarManager > managedStateVars;
@@ -142,7 +152,14 @@ namespace Marmot::Elements {
       }
 
       QuadraturePoint( XiSized xi, double weight )
-        : xi( xi ), weight( weight ), detJ( 0.0 ), J0xW( 0.0 ), dNdX( dNdXiSized::Zero() ), B( BSized::Zero() ){};
+        : xi( xi ),
+          weight( weight ),
+          detJ( 0.0 ),
+          J0xW( 0.0 ),
+          dNdX( dNdXiSized::Zero() ),
+          B( BSized::Zero() ),
+          dNdX_K( dNdXiSizedK::Zero() ),
+          B_K( BSizedK::Zero() ) {};
     };
 
     std::vector< QuadraturePoint > qps;
@@ -163,7 +180,7 @@ namespace Marmot::Elements {
 
     int getNDofPerElement() { return sizeLoadVector; }
 
-    std::string getElementShape() { return ParentGeometryElement::getElementShape(); }
+    std::string getElementShape() { return localGeometryElement.getElementShape(); }
 
     void assignStateVars( double* stateVars, int nStateVars );
 
@@ -227,30 +244,30 @@ namespace Marmot::Elements {
     int getNumberOfQuadraturePoints();
   };
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     GeneralGradientEnhancedDisplacementFiniteElement( int                                         elementID,
                                                       FiniteElement::Quadrature::IntegrationTypes integrationType,
                                                       SectionType                                 sectionType )
-    : ParentGeometryElement(), elementProperties( nullptr, 0 ), elLabel( elementID ), sectionType( sectionType )
+    : elementProperties( nullptr, 0 ), elLabel( elementID ), sectionType( sectionType )
   {
-    for ( const auto& qpInfo : FiniteElement::Quadrature::getGaussPointInfo( this->shape, integrationType ) ) {
+    for ( const auto& qpInfo :
+          FiniteElement::Quadrature::getGaussPointInfo( localGeometryElement.shape, integrationType ) ) {
       QuadraturePoint qp( qpInfo.xi, qpInfo.weight );
       qps.push_back( std::move( qp ) );
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     getNumberOfRequiredStateVars()
   {
     return qps[0].getNumberOfRequiredStateVars() * qps.size();
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignStateVars(
-    double* stateVars,
-    int     nStateVars )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    assignStateVars( double* stateVars, int nStateVars )
   {
     const int nQpStateVars = nStateVars / qps.size();
 
@@ -261,17 +278,17 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignProperty(
-    const ElementProperties& elementPropertiesInfo )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    assignProperty( const ElementProperties& elementPropertiesInfo )
   {
     new ( &elementProperties )
       Map< const VectorXd >( elementPropertiesInfo.elementProperties, elementPropertiesInfo.nElementProperties );
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignProperty(
-    const MarmotMaterialSection& section )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    assignProperty( const MarmotMaterialSection& section )
   {
     for ( auto& qp : qps ) {
       qp.material = std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > >(
@@ -283,11 +300,12 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   std::vector< std::vector< std::string > > GeneralGradientEnhancedDisplacementFiniteElement<
     nDim,
     nNodes,
-    nNonlocalVariables >::getNodeFields()
+    nNonlocalVariables,
+    nNonLocalNodes >::getNodeFields()
   {
     using namespace std;
 
@@ -296,25 +314,35 @@ namespace Marmot::Elements {
       for ( int i = 0; i < nNodes; i++ ) {
         nodeFields.push_back( vector< string >() );
         nodeFields[i].push_back( "displacement" );
-        nodeFields[i].push_back( "nonlocal damage" );
-        for ( int j = 1; j < nNonlocalVariables; j++ )
-          nodeFields[i].push_back( "nonlocal damage " + to_string( j + 1 ) );
+        if ( i < nNonLocalNodes ) {
+          if constexpr ( nNonlocalVariables == 6 )
+            nodeFields[i].push_back( "strain symmetric" );
+          else {
+            nodeFields[i].push_back( "nonlocal damage" );
+            for ( int j = 1; j < nNonlocalVariables; j++ )
+              nodeFields[i].push_back( "nonlocal damage " + to_string( j + 1 ) );
+          }
+        }
       }
     return nodeFields;
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  std::vector< int > GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
-    getDofIndicesPermutationPattern()
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  std::vector< int > GeneralGradientEnhancedDisplacementFiniteElement<
+    nDim,
+    nNodes,
+    nNonlocalVariables,
+    nNonLocalNodes >::getDofIndicesPermutationPattern()
   {
     static std::vector< int > permutationPattern;
 
     if ( permutationPattern.empty() ) {
       for ( int i = 0; i < nNodes; i++ )
         for ( int j = 0; j < nDim; j++ )
-          permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + j );
+          permutationPattern.push_back( i * nDim + nNonlocalVariables * ( i < nNonLocalNodes ? i : nNonLocalNodes ) +
+                                        j );
       for ( int j = 0; j < nNonlocalVariables; j++ )
-        for ( int i = 0; i < nNodes; i++ )
+        for ( int i = 0; i < nNonLocalNodes; i++ )
           permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + nDim + j );
 
       std::cout << "Permutation pattern: [" << std::endl;
@@ -322,28 +350,37 @@ namespace Marmot::Elements {
         std::cout << permutationPattern[i] << ", ";
       std::cout << "]" << std::endl;
     }
-
     return permutationPattern;
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::assignNodeCoordinates(
-    const double* coordinates )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    assignNodeCoordinates( const double* coordinates )
   {
-    ParentGeometryElement::assignNodeCoordinates( coordinates );
+    localGeometryElement.assignNodeCoordinates( coordinates );
+    nonLocalGeometryElement.assignNodeCoordinates( coordinates );
+    // This assumes that the corner nodes (vertices) are listed before the mid-edge nodes!
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::initializeYourself()
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    initializeYourself()
   {
     for ( QuadraturePoint& qp : qps ) {
-      const auto          dNdXi = this->dNdXi( qp.xi );
-      const JacobianSized J     = this->Jacobian( dNdXi );
+      const auto          dNdXi = localGeometryElement.dNdXi( qp.xi );
+      const JacobianSized J     = localGeometryElement.Jacobian( dNdXi );
       const JacobianSized JInv  = J.inverse();
       qp.detJ                   = J.determinant();
-      qp.N                      = this->N( qp.xi );
-      qp.dNdX                   = this->dNdX( dNdXi, JInv );
-      qp.B                      = this->B( qp.dNdX );
+      qp.N                      = localGeometryElement.N( qp.xi );
+      qp.dNdX                   = localGeometryElement.dNdX( dNdXi, JInv );
+      qp.B                      = localGeometryElement.B( qp.dNdX );
+
+      const auto           dNdXi_K = nonLocalGeometryElement.dNdXi( qp.xi );
+      const JacobianSizedK J_K     = nonLocalGeometryElement.Jacobian( dNdXi_K );
+      const JacobianSizedK JInv_K  = J_K.inverse();
+      qp.N_K                       = nonLocalGeometryElement.N( qp.xi );
+      qp.dNdX_K                    = nonLocalGeometryElement.dNdX( dNdXi_K, JInv_K );
+      qp.B_K                       = nonLocalGeometryElement.B( qp.dNdX_K );
 
       if constexpr ( nDim == 3 ) {
         qp.J0xW = qp.weight * qp.detJ;
@@ -359,15 +396,15 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeYourself(
-    const double* QTotal_,
-    const double* dQ_,
-    double*       Pe_,
-    double*       Ke_,
-    const double* time,
-    double        dT,
-    double&       pNewDT )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeYourself( const double* QTotal_,
+                     const double* dQ_,
+                     double*       Pe_,
+                     double*       Ke_,
+                     const double* time,
+                     double        dT,
+                     double&       pNewDT )
   {
 
     Map< const RhsSized > QTotal( QTotal_ );
@@ -406,9 +443,9 @@ namespace Marmot::Elements {
 
       QuadraturePoint& qp = this->qps[i];
 
-      const BSized&     B    = qp.B;
-      const NSized&     N    = qp.N;
-      const dNdXiSized& dNdX = qp.dNdX;
+      const BSized&      B      = qp.B;
+      const NSizedK&     N_K    = qp.N_K;
+      const dNdXiSizedK& dNdX_K = qp.dNdX_K;
 
       dE = B * dQU;
 
@@ -417,9 +454,9 @@ namespace Marmot::Elements {
       Vector< double, nNonlocalVariables > dK;
 
       for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
-        double idx = n * nNodes;
-        K( n )     = N * qK.segment( idx, nNodes );
-        dK( n )    = N * dQK.segment( idx, nNodes );
+        double idx = n * nNonLocalNodes;
+        K( n )     = N_K * qK.segment( idx, nNonLocalNodes );
+        dK( n )    = N_K * dQK.segment( idx, nNonLocalNodes );
       }
 
       response  res;
@@ -448,22 +485,25 @@ namespace Marmot::Elements {
           kUU += B.transpose() * C * B * qp.J0xW;
 
           for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
-            double idx = n * nNodes;
-            fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
-                                           res.c( n ) * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
-                                           N.transpose() * res.KLocal( n ) ) *
-                                         qp.J0xW;
+            double idx = n * nNonLocalNodes;
+            fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
+                                                   res.c( n ) * dNdX_K.transpose() * dNdX_K *
+                                                     qK.segment( idx, nNonLocalNodes ) -
+                                                   N_K.transpose() * res.KLocal( n ) ) *
+                                                 qp.J0xW;
             const auto dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddK.col( n ) );
             const auto dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt(
               tan.dKLocalddStrain.col( n ) );
 
-            kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * dSdK * N * qp.J0xW;
-            kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -dK_Local_dDE.transpose() * B * qp.J0xW;
-            kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c( n ) * dNdX.transpose() * dNdX +
-                                                       tan.dcddK( n ) * dNdX.transpose() * dNdX *
-                                                         qK.segment( idx, nNodes ) * N -
-                                                       N.transpose() * tan.dKLocalddK( n, n ) * N ) *
-                                                     qp.J0xW;
+            kUK.block( 0, idx, sizeDoFU, nNonLocalNodes ) += B.transpose() * dSdK * N_K * qp.J0xW;
+            kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() * -dK_Local_dDE.transpose() * B * qp.J0xW;
+            kKK.block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += ( N_K.transpose() * N_K +
+                                                                       res.c( n ) * dNdX_K.transpose() * dNdX_K +
+                                                                       tan.dcddK( n ) * dNdX_K.transpose() * dNdX_K *
+                                                                         qK.segment( idx, nNonLocalNodes ) * N_K -
+                                                                       N_K.transpose() * tan.dKLocalddK( n, n ) *
+                                                                         N_K ) *
+                                                                     qp.J0xW;
           }
         }
 
@@ -479,20 +519,23 @@ namespace Marmot::Elements {
             kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
 
             for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
-              double idx = n * nNodes;
-              fK.segment( idx, nNodes ) -= ( N.transpose() * K( n ) +
-                                             res.c( n ) * dNdX.transpose() * dNdX * qK.segment( idx, nNodes ) -
-                                             N.transpose() * res.KLocal( n ) ) *
-                                           qp.J0xW;
+              double idx = n * nNonLocalNodes;
+              fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
+                                                     res.c( n ) * dNdX_K.transpose() * dNdX_K *
+                                                       qK.segment( idx, nNonLocalNodes ) -
+                                                     N_K.transpose() * res.KLocal( n ) ) *
+                                                   qp.J0xW;
 
-              kUK.block( 0, idx, sizeDoFU, nNodes ) += B.transpose() * tan.dStressddK.col( n ) * N * qp.J0xW;
-              kKU.block( idx, 0, nNodes, sizeDoFU ) += N.transpose() * -tan.dKLocalddStrain.col( n ).transpose() * B *
-                                                       qp.J0xW;
-              kKK.block( idx, idx, nNodes, nNodes ) += ( N.transpose() * N + res.c( n ) * dNdX.transpose() * dNdX +
-                                                         tan.dcddK( n ) * dNdX.transpose() * dNdX *
-                                                           qK.segment( idx, nNodes ) * N -
-                                                         N.transpose() * tan.dKLocalddK( n, n ) * N ) *
-                                                       qp.J0xW;
+              kUK.block( 0, idx, sizeDoFU, nNonLocalNodes ) += B.transpose() * tan.dStressddK.col( n ) * N_K * qp.J0xW;
+              kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() *
+                                                               -tan.dKLocalddStrain.col( n ).transpose() * B * qp.J0xW;
+              kKK.block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += ( N_K.transpose() * N_K +
+                                                                         res.c( n ) * dNdX_K.transpose() * dNdX_K +
+                                                                         tan.dcddK( n ) * dNdX_K.transpose() * dNdX_K *
+                                                                           qK.segment( idx, nNonLocalNodes ) * N_K -
+                                                                         N_K.transpose() * tan.dKLocalddK( n, n ) *
+                                                                           N_K ) *
+                                                                       qp.J0xW;
             }
           }
         }
@@ -506,16 +549,16 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeDistributedLoad(
-    MarmotElement::DistributedLoadTypes loadType,
-    double*                             P,
-    double*                             K,
-    const int                           elementFace,
-    const double*                       load,
-    const double*                       QTotal,
-    const double*                       time,
-    double                              dT )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeDistributedLoad( MarmotElement::DistributedLoadTypes loadType,
+                            double*                             P,
+                            double*                             K,
+                            const int                           elementFace,
+                            const double*                       load,
+                            const double*                       QTotal,
+                            const double*                       time,
+                            double                              dT )
   {
 
     Map< RhsSized >     P_( P );
@@ -526,7 +569,10 @@ namespace Marmot::Elements {
     case MarmotElement::Pressure: {
       const double p = load[0];
 
-      FiniteElement::BoundaryElement boundaryEl( this->shape, elementFace, nDim, this->coordinates );
+      FiniteElement::BoundaryElement boundaryEl( localGeometryElement.shape,
+                                                 elementFace,
+                                                 nDim,
+                                                 localGeometryElement.coordinates );
 
       VectorXd Pk = -p * boundaryEl.computeSurfaceNormalVectorialLoadVector();
 
@@ -543,17 +589,17 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::setInitialConditions(
-    StateTypes    state,
-    const double* values )
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    setInitialConditions( StateTypes state, const double* values )
   {
     if constexpr ( nDim > 1 ) {
       switch ( state ) {
       case MarmotElement::GeostaticStress: {
         for ( QuadraturePoint& qp : qps ) {
 
-          XiSized coordAtGauss = this->NB( this->N( qp.xi ) ) * this->coordinates;
+          XiSized coordAtGauss = localGeometryElement.NB( localGeometryElement.N( qp.xi ) ) *
+                                 localGeometryElement.coordinates;
 
           const double sigY1 = values[0];
           const double sigY2 = values[2];
@@ -575,41 +621,44 @@ namespace Marmot::Elements {
     }
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::computeBodyForce(
-    double*       P_,
-    double*       K,
-    const double* load,
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeBodyForce( double*       P_,
+                      double*       K,
+                      const double* load,
 
-    const double* QTotal,
-    const double* time,
-    double        dT )
+                      const double* QTotal,
+                      const double* time,
+                      double        dT )
   {
     Map< RhsSized >                              P( P_ );
     Ref< USizedVector >                          Pe( P.head( sizeDoFU ) );
     const Map< const Matrix< double, nDim, 1 > > f( load );
 
     for ( const auto& qp : qps )
-      Pe += this->NB( this->N( qp.xi ) ).transpose() * f * qp.J0xW;
+      Pe += localGeometryElement.NB( localGeometryElement.N( qp.xi ) ).transpose() * f * qp.J0xW;
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  std::vector< double > GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
-    getCoordinatesAtCenter()
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  std::vector< double > GeneralGradientEnhancedDisplacementFiniteElement< nDim,
+                                                                          nNodes,
+                                                                          nNonlocalVariables,
+                                                                          nNonLocalNodes >::getCoordinatesAtCenter()
   {
     std::vector< double > coords( nDim );
 
     Eigen::Map< XiSized > coordsMap( &coords[0] );
     const auto            centerXi = XiSized::Zero();
-    coordsMap                      = this->NB( this->N( centerXi ) ) * this->coordinates;
+    coordsMap = localGeometryElement.NB( localGeometryElement.N( centerXi ) ) * localGeometryElement.coordinates;
     return coords;
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   std::vector< std::vector< double > > GeneralGradientEnhancedDisplacementFiniteElement<
     nDim,
     nNodes,
-    nNonlocalVariables >::getCoordinatesAtQuadraturePoints()
+    nNonlocalVariables,
+    nNonLocalNodes >::getCoordinatesAtQuadraturePoints()
   {
     std::vector< std::vector< double > > listedCoords;
 
@@ -617,15 +666,15 @@ namespace Marmot::Elements {
     Eigen::Map< XiSized > coordsMap( &coords[0] );
 
     for ( const auto& qp : qps ) {
-      coordsMap = this->NB( this->N( qp.xi ) ) * this->coordinates;
+      coordsMap = localGeometryElement.NB( localGeometryElement.N( qp.xi ) ) * localGeometryElement.coordinates;
       listedCoords.push_back( coords );
     }
 
     return listedCoords;
   }
 
-  template < int nDim, int nNodes, int nNonlocalVariables >
-  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables >::
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  int GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     getNumberOfQuadraturePoints()
   {
     return qps.size();
