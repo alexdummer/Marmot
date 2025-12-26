@@ -27,92 +27,71 @@
  */
 
 #pragma once
-#include "Marmot/HughesWinget.h"
-#include "Marmot/MarmotMaterialGeneralGradientEnhancedMechanical.h"
+#include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include "Marmot/MarmotVoigt.h"
 
 using namespace Eigen;
 using namespace Marmot;
 
 template < int nNonlocalVariables >
-class MarmotMaterialGeneralGradientEnhancedHypoElastic
-  : public MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables > {
+class MarmotMaterialGeneralGradientEnhancedHypoElastic {
+
+protected:
+  const double* materialProperties;
+  const int     nMaterialProperties;
 
 public:
-  using MarmotMaterialGeneralGradientEnhancedMechanical<
-    nNonlocalVariables >::MarmotMaterialGeneralGradientEnhancedMechanical;
-
-  using response  = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::response;
-  using tangents  = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::tangents;
-  using increment = typename MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::increment;
-
-  virtual void computeStress( double*       stress_,
-                              double*       KLocal_,
-                              double*       nonLocalRadius,
-                              double*       dStress_dDeformationGradient,
-                              double*       dKLocal_dDeformationGradient,
-                              double*       dStress_dK,
-                              double*       dKlocal_dK,
-                              const double* FOld_,
-                              const double* FNew_,
-                              const double* KOld,
-                              const double* dK,
-                              const double  time,
-                              const double  dT )
+  const int materialNumber;
+  MarmotMaterialGeneralGradientEnhancedHypoElastic( const double* matProperties_,
+                                                    int           nMaterialProperties_,
+                                                    int           materialNumber_ )
+    : materialProperties( matProperties_ ),
+      nMaterialProperties( nMaterialProperties_ ),
+      materialNumber( materialNumber_ )
   {
-    // Standard implemenation of the Abaqus like Hughes-Winget algorithm
-    // Approximation of the algorithmic tangent in order to
-    // facilitate the dCauchy_dStrain tangent provided by
-    // small strain material models
-
-    using namespace Marmot;
-    const Map< const Matrix3d > FNew( FNew_ );
-    const Map< const Matrix3d > FOld( FOld_ );
-    Marmot::mVector6d           stress( stress_ );
-
-    using mVectorNd      = Map< Vector< double, nNonlocalVariables > >;
-    using constmVectorNd = const Map< const Vector< double, nNonlocalVariables > >;
-    using mMatrixNd      = Map< Matrix< double, nNonlocalVariables, nNonlocalVariables > >;
-    using mMatrix6Nd     = Map< Matrix< double, 6, nNonlocalVariables > >;
-
-    Matrix6d CJaumann                = Matrix6d::Zero();
-    Vector6d dK_LocalDStretchingRate = Vector6d::Zero();
-
-    Marmot::NumericalAlgorithms::HughesWinget
-      hughesWingetIntegrator( FOld, FNew, Marmot::NumericalAlgorithms::HughesWinget::Formulation::AbaqusLike );
-
-    auto dEps = hughesWingetIntegrator.getStrainIncrement();
-    stress    = hughesWingetIntegrator.rotateTensor( stress );
-
-    response        res = { stress, mVectorNd( KLocal_ ), mVectorNd( nonLocalRadius ) };
-    tangents        tan = { mMatrix6d( dStress_dDeformationGradient ),
-                            mMatrix6Nd( dKLocal_dDeformationGradient ),
-                            mMatrix6Nd( dStress_dK ),
-                            mMatrixNd( dKlocal_dK ) };
-    const increment inc = { dEps, constmVectorNd( KOld ), constmVectorNd( dK ), dT, time };
-
-    computeStress( res, tan, inc );
-
-    TensorMap< Eigen::Tensor< double, 3 > > dS_dF( tan.dStressddStrain.data(), 6, 3, 3 );
-    Map< Matrix3d >                         dKLocal_dF( tan.dKLocalddStrain.data() );
-
-    Matrix3d FInv = FNew.inverse();
-    dS_dF         = hughesWingetIntegrator.compute_dS_dF( stress, FInv, CJaumann );
-    dKLocal_dF    = hughesWingetIntegrator.compute_dScalar_dF( FInv, dK_LocalDStretchingRate );
   }
+  struct increment {
+    Marmot::Vector6d                            dStrain;
+    Eigen::Vector< double, nNonlocalVariables > K;
+    Eigen::Vector< double, nNonlocalVariables > dK;
+    double                                      time;
+    double                                      dT;
+  };
 
-  virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
+  struct response {
+    Marmot::Vector6d                            stress;
+    Eigen::Vector< double, nNonlocalVariables > KLocal;
+    Eigen::Vector< double, nNonlocalVariables > c;
+    double*                                     stateVars;
+  };
 
-  using MarmotMaterialGeneralGradientEnhancedMechanical< nNonlocalVariables >::computePlaneStress;
-  virtual void computePlaneStress( response& res, tangents& tan, const increment& inc )
+  struct tangents {
+    Marmot::Matrix6d                               dStressddStrain = Marmot::Matrix6d::Zero();
+    Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, 6, nNonlocalVariables >
+      dKLocalddStrain = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      dcddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
+      d2cddK2 = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+  };
+
+  MarmotStateLayoutDynamic stateLayout;
+
+  virtual void computeStress( response& res, tangents& tan, const increment& inc ) const = 0;
+
+  virtual void computePlaneStress( response& res, tangents& tan, const increment& inc ) const
   {
     using namespace Marmot;
     using namespace ContinuumMechanics::VoigtNotation;
 
-    Map< VectorXd > stateVars( this->stateVars, this->nStateVars );
+    Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );
 
     VectorXd  stateVarsOld = stateVars;
-    response  resTemp      = { res.stress, res.KLocal, res.c };
+    response  resTemp      = { res.stress, res.KLocal, res.c, res.stateVars };
     increment incTemp      = { inc.dStrain, inc.K, inc.dK, inc.time, inc.dT };
     // assumption of isochoric deformation for initial guess
 
@@ -126,7 +105,7 @@ public:
     while ( true ) {
 
       // set old response
-      resTemp = { res.stress, res.KLocal, res.c };
+      resTemp = { res.stress, res.KLocal, res.c, res.stateVars };
       // set old state variables
       stateVars = stateVarsOld;
       // compute stress
@@ -154,6 +133,46 @@ public:
       }
     }
 
-    res = { resTemp.stress, resTemp.KLocal, resTemp.c };
+    res = { resTemp.stress, resTemp.KLocal, resTemp.c, resTemp.stateVars };
   }
+
+  /**
+   * @brief Initialize the layout of the state variables.
+   *
+   * This method has to be implemented in derived classes.
+   * @warning This method has to be called in the constructor of the derived class.
+   */
+  virtual void initializeStateLayout() = 0;
+
+  /**
+   * @brief Get a view to the state variables.
+   * @param stateName Name of the state variable
+   * @param stateVars Pointer to the state variable array
+   * @return StatView to access the state variable
+   */
+  StateView getStateView( const std::string& stateName, double* stateVars ) const
+  {
+    return stateLayout.getStateView( stateVars, stateName );
+  }
+
+  /**
+   * @brief Get the total number of required state variables.
+   * @return Total number of required state variables
+   */
+  int getNumberOfRequiredStateVars() const { return stateLayout.totalSize(); }
+  /**
+   * @brief Initialize the state variables at a material point.
+   * @param stateVars Pointer to the state variable array
+   * @param nStateVars Number of state variables
+   *
+   * @note The default implementation initializes all state variables to zero.
+   */
+  virtual void initializeYourself( double* stateVars, int nStateVars )
+  {
+    for ( int i = 0; i < nStateVars; ++i ) {
+      stateVars[i] = 0.0;
+    }
+  }
+
+  virtual double getDensity() { return -1; }
 };
