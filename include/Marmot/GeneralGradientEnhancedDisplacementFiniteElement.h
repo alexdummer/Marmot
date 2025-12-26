@@ -26,14 +26,14 @@
  * ---------------------------------------------------------------------
  */
 #pragma once
-#include "Marmot/Marmot.h"
-#include "Marmot/MarmotConstants.h"
+#include "Marmot/MarmotElement.h"
 #include "Marmot/MarmotElementProperty.h"
 #include "Marmot/MarmotFiniteElement.h"
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElastic.h"
+#include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElasticFactory.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateVarVectorManager.h"
 #include "Marmot/MarmotTypedefs.h"
@@ -127,7 +127,7 @@ namespace Marmot::Elements {
             stress( &find( "stress" ) ),
             strain( &find( "strain" ) ),
             materialStateVars( &find( "begin of material state" ),
-                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ) {};
+                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
       };
 
       std::unique_ptr< QPStateVarManager > managedStateVars;
@@ -147,8 +147,8 @@ namespace Marmot::Elements {
       void assignStateVars( double* stateVars, int nStateVars )
       {
         managedStateVars = std::make_unique< QPStateVarManager >( stateVars, nStateVars );
-        material->assignStateVars( managedStateVars->materialStateVars.data(),
-                                   managedStateVars->materialStateVars.size() );
+        /* material->assignStateVars( managedStateVars->materialStateVars.data(), */
+        /*                            managedStateVars->materialStateVars.size() ); */
       }
 
       QuadraturePoint( XiSized xi, double weight )
@@ -159,7 +159,7 @@ namespace Marmot::Elements {
           dNdX( dNdXiSized::Zero() ),
           B( BSized::Zero() ),
           dNdX_K( dNdXiSizedK::Zero() ),
-          B_K( BSizedK::Zero() ) {};
+          B_K( BSizedK::Zero() ){};
     };
 
     std::vector< QuadraturePoint > qps;
@@ -233,7 +233,7 @@ namespace Marmot::Elements {
         return qp.managedStateVars->getStateView( stateName );
       }
       else {
-        return qp.material->getStateView( stateName );
+        return qp.material->getStateView( stateName, qp.managedStateVars->materialStateVars.data() );
       }
     }
 
@@ -292,11 +292,8 @@ namespace Marmot::Elements {
   {
     for ( auto& qp : qps ) {
       qp.material = std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > >(
-        dynamic_cast< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >* >(
-          MarmotLibrary::MarmotMaterialFactory::createMaterial( section.materialCode,
-                                                                section.materialProperties,
-                                                                section.nMaterialProperties,
-                                                                elLabel ) ) );
+        MarmotLibrary::MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< nNonlocalVariables >::
+          createMaterial( section.materialName, section.materialProperties, section.nMaterialProperties, elLabel ) );
     }
   }
 
@@ -344,11 +341,6 @@ namespace Marmot::Elements {
       for ( int j = 0; j < nNonlocalVariables; j++ )
         for ( int i = 0; i < nNonLocalNodes; i++ )
           permutationPattern.push_back( i * ( nDim + nNonlocalVariables ) + nDim + j );
-
-      std::cout << "Permutation pattern: [" << std::endl;
-      for ( unsigned int i = 0; i < permutationPattern.size(); i++ )
-        std::cout << permutationPattern[i] << ", ";
-      std::cout << "]" << std::endl;
     }
     return permutationPattern;
   }
@@ -464,9 +456,10 @@ namespace Marmot::Elements {
       increment inc;
       try {
         if constexpr ( nDim == 2 ) {
-          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-          res.stress   = qp.managedStateVars->stress;
-          inc          = { dE6, K, dK, time[1], dT };
+          Vector6d dE6  = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          res.stress    = qp.managedStateVars->stress;
+          res.stateVars = qp.managedStateVars->materialStateVars.data();
+          inc           = { dE6, K, dK, time[1], dT };
           Matrix3d C;
           Vector3d S;
 
@@ -510,9 +503,10 @@ namespace Marmot::Elements {
         else if ( nDim == 3 ) {
           if ( sectionType == Solid ) {
 
-            S          = qp.managedStateVars->stress;
-            res.stress = S;
-            inc        = { dE, K, dK, time[1], dT };
+            S             = qp.managedStateVars->stress;
+            res.stress    = S;
+            res.stateVars = qp.managedStateVars->materialStateVars.data();
+            inc           = { dE, K, dK, time[1], dT };
             qp.material->computeStress( res, tan, inc );
 
             fU -= B.transpose() * res.stress * qp.J0xW;
