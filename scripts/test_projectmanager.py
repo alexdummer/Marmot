@@ -79,18 +79,18 @@ class TestWalkModules(unittest.TestCase):
         module3.mkdir(parents=True)
         (module3 / "module.cmake").touch()
 
-        # Test with levels=2 - should find only module1 (1 separator)
+        # Test with levels=2 - should find only module1 (up to 1 level deep)
         result = walk_modules(".", levels=2)
         self.assertEqual(len(result), 1)
         self.assertTrue(any('module1' in r for r in result))
 
-        # Test with levels=3 - should find module1 and module2 (up to 2 separators)
+        # Test with levels=3 - should find module1 and module2 (up to 2 levels deep)
         result = walk_modules(".", levels=3)
         self.assertEqual(len(result), 2)
         self.assertTrue(any('module1' in r for r in result))
         self.assertTrue(any('module2' in r for r in result))
 
-        # Test with levels=4 - should find all three modules (up to 3 separators)
+        # Test with levels=4 - should find all three modules (up to 3 levels deep)
         result = walk_modules(".", levels=4)
         self.assertEqual(len(result), 3)
         self.assertTrue(any('module1' in r for r in result))
