@@ -238,10 +238,10 @@ void testTensorToScalarThirdOrder()
 
   // For f(C) = sum(C^2), at identity C: psi = 3, dPsi_dC = 2*C = 2*I, d2Psi_dC2 = 2*delta, d3Psi_dC3 = 0
   double expected_psi = 3.0;
-  
+
   throwExceptionOnFailure( std::isfinite( psi ),
                            MakeString() << __PRETTY_FUNCTION__ << "psi is not finite (NaN or Inf)" );
-  
+
   throwExceptionOnFailure( checkIfEqual( psi, expected_psi, 1e-10 ),
                            MakeString() << __PRETTY_FUNCTION__ << "computation of psi failed" );
 
