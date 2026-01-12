@@ -127,7 +127,7 @@ namespace Marmot::Materials {
 
       // Temporary data structures
       ConstitutiveResponse< 3 > subResponse;
-      subResponse.stateVars = response.stateVars + 9; // Skip our F_n state vars
+      subResponse.stateVars = this->stateLayout.getPtr( response.stateVars, "materialstate" );
 
       AlgorithmicModuli< 3 >                         subTangents;
       MarmotMaterialFiniteStrain::StateSensitivities subSensitivities;
