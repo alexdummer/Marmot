@@ -48,30 +48,37 @@ namespace Marmot {
 
     MatrixXd centralDifference( const vector_to_vector_function_type& F, const VectorXd& X )
     {
-
       const auto xSize = X.rows();
-      MatrixXd   J( xSize, xSize );
+
+      MatrixXd J;
 
       VectorXd leftX( xSize );
       VectorXd rightX( xSize );
 
       for ( auto i = 0; i < xSize; i++ ) {
         double volatile h = std::max( 1.0, std::abs( X( i ) ) ) * Marmot::Constants::CubicRootEps;
-        // clang-format off
+
         leftX  = X;
         rightX = X;
         leftX( i ) -= h;
         rightX( i ) += h;
 
-        J.col( i ) = (  F( rightX )  - F( leftX ) )
-            / //------------------------------------
-                             ( 2. * h );
+        VectorXd yRight = F( rightX );
+        VectorXd yLeft  = F( leftX );
+
+        if ( i == 0 ) {
+          J.resize( yRight.size(), xSize );
+        }
+
+        // clang-format off
+        J.col( i ) = ( yRight - yLeft )
+            / //-----------------------
+                     ( 2. * h );
         // clang-format on
       }
 
       return J;
     }
-
     namespace Complex {
       /*
        * Implementation of Numerical Differantiation using Complex Step Approximations

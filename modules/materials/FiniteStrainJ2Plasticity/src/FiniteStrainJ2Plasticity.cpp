@@ -684,6 +684,6 @@ namespace Marmot::Materials {
     }
 
     Tensor33d& Fp = stateLayout.getAs< Tensor33d& >( stateVars, "Fp" );
-    Fp.eye();
+    memcpy( Fp.data(), Spatial3D::I.data(), 9 * sizeof( double ) );
   }
 } // namespace Marmot::Materials
