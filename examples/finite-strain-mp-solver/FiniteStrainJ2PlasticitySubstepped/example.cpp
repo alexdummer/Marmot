@@ -74,7 +74,7 @@ int main()
   // Reverse direction: target increment is -0.10 to go back to 0
   step2.gradUIncrementTarget( 0, 0 ) = -1;
 
-  /* solver.addStep( step2 ); */
+  solver.addStep( step2 );
 
   // 6) Run the solver
   try {
