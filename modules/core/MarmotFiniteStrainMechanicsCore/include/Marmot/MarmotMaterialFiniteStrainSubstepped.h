@@ -106,10 +106,6 @@ namespace Marmot::Materials {
       using namespace Eigen;
       using namespace FastorStandardTensors;
 
-      // print state vars
-      /* std::cout << "State Vars: " << VectorXd::Map(response.stateVars, this->stateLayout.totalSize()) .transpose() <<
-       * std::endl; */
-
       // 1. Recover F_n (State at t_n)
       Tensor33d&      Fn_ref = this->stateLayout.getAs< Tensor33d& >( response.stateVars, "Substepping_F_n" );
       const Tensor33d Fn     = Fn_ref;
