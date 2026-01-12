@@ -81,7 +81,7 @@ namespace Marmot {
     }
     namespace Complex {
       /*
-       * Implementation of Numerical Differantiation using Complex Step Approximations
+       * Implementation of Numerical Differentiation using Complex Step Approximations
        *
        * further Information can be found in
        *   - Martins et al. (2003) The Complex-Step Derivative Approximation
