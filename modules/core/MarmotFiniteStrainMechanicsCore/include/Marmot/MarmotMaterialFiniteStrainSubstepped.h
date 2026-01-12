@@ -41,8 +41,8 @@ namespace Marmot::Materials {
   /**
    * @class MarmotMaterialFiniteStrainSubstepped
    * @brief A decorator that applies time substepping with analytical tangent accumulation.
-   * * @tparam BaseMaterialType The concrete material class to wrap.
-   * * Properties: [nSubsteps, Prop1, Prop2, ...]
+   * @tparam BaseMaterialType The concrete material class to wrap.
+   * Properties: [nSubsteps, Prop1, Prop2, ...]
    */
   template < typename BaseMaterialType >
   class MarmotMaterialFiniteStrainSubstepped : public MarmotMaterialFiniteStrain {
