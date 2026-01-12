@@ -57,13 +57,8 @@ int main()
 
   // Control gradU_11 (stretch to 10%)
   step1.gradUIncrementTarget( 0, 0 )        = 1;
-  step1.gradUIncrementTarget( 0, 1 )        = 1;
   step1.isGradUComponentControlled( 0, 0 )  = true;
-  step1.isGradUComponentControlled( 0, 1 )  = true;
-  step1.isGradUComponentControlled( 1, 0 )  = true;
   step1.isStressComponentControlled( 0, 0 ) = false;
-  step1.isStressComponentControlled( 1, 0 ) = false;
-  step1.isStressComponentControlled( 0, 1 ) = false;
 
   // Mixed control for lateral contraction (Plane Stress approximation via Solver)
   // We keep stress 22 and 33 controlled to 0.0 (default true)
