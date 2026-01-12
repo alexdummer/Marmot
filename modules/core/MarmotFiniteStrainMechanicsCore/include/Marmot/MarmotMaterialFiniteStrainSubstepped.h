@@ -152,16 +152,6 @@ namespace Marmot::Materials {
         // Matrix form (9x9) is xi * Identity
         double dFsub_dFglobal = xi;
 
-        /* std::cout << "Substep " << i << "/" << nSubsteps << ", xi=" << xi << ", F_sub=\n" << subDef.F << std::endl;
-         */
-        /* std::cout << "  tau_sub=\n" << subResponse.tau << std::endl; */
-        /* std::cout << "  subTangents.dTau_dF=\n"; */
-        /* Map<Matrix<double, 9, 9>> C_alg_sub(subTangents.dTau_dF.data()); */
-        /* std::cout << C_alg_sub << std::endl; */
-
-        /* std::cout << "  subSensitivities.dState_dF=\n" << subSensitivities.dState_dF << std::endl; */
-        /* std::cout << "  subSensitivities.dState_dStateOld=\n" << subSensitivities.dState_dStateOld << std::endl; */
-
         if ( i < nSubsteps ) {
           // Update J_accum for the next step
           // J_new = dState/dF_sub * (xi*I) + dState/dStateOld * J_old
