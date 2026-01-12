@@ -110,20 +110,20 @@ public:
   /**
    * @struct StateSensitivities
    * @brief Sensitivity matrices required for analytical substepping.
-   * * All matrices represent derivatives of flattened arrays (Row-Major Fastor layout).
+   * All matrices represent derivatives of flattened arrays (Row-Major Fastor layout).
    */
   struct StateSensitivities {
-    /** * @brief Jacobian of State_new w.r.t Deformation Gradient F_new.
+    /** @brief Jacobian of State_new w.r.t Deformation Gradient F_new.
      * Size: nStateVars x 9
      */
     Eigen::MatrixXd dState_dF;
 
-    /** * @brief Jacobian of State_new w.r.t State_old.
+    /** @brief Jacobian of State_new w.r.t State_old.
      * Size: nStateVars x nStateVars
      */
     Eigen::MatrixXd dState_dStateOld;
 
-    /** * @brief Jacobian of Stress w.r.t State_old.
+    /** @brief Jacobian of Stress w.r.t State_old.
      * Size: 9 x nStateVars
      */
     Eigen::MatrixXd dStress_dStateOld;
