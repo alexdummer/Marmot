@@ -26,7 +26,6 @@
  */
 
 #pragma once
-#include "Fastor/Fastor.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 
 namespace Marmot::ContinuumMechanics {
@@ -245,6 +244,12 @@ namespace Marmot::ContinuumMechanics {
 
     } // namespace SecondOrderDerived
 
-  }   // namespace EnergyDensityFunctions
+    namespace ThirdOrderDerived {
+      std::tuple< double, FastorStandardTensors::Tensor33d, FastorStandardTensors::Tensor3333d, FastorStandardTensors::Tensor333333d > standardNeoHooke(
+        const FastorStandardTensors::Tensor33d& C,
+        const double&                           K,
+        const double&                           G );
+    }
+  } // namespace EnergyDensityFunctions
 
 } // namespace Marmot::ContinuumMechanics
