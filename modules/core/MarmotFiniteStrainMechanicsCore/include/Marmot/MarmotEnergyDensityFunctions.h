@@ -122,6 +122,39 @@ namespace Marmot::ContinuumMechanics {
       return res;
     }
 
+    /**
+     * @brief Mooney-Rivlin Hyperelastic Energy Density Function
+     * The energy density function \f$W_{MR}\f$ is given as
+     * \f[
+     *   W_{MR} = C_1 (\bar{I}_1 - 3) + C_2 (\bar{I}_2 - 3) + \frac{1}{D_1} (J - 1)^2
+     * \f]
+     * where \f$ \bar{I}_1 = I_1 J^{-\frac{2}{3}} \f$ and \f$ \bar{I}_2 = I_2 J^{-\frac{4}{3}} \f$ are the first
+     * and second invariant of the isochoric right Cauchy-Green tensor, respectively, \f$ I_1 =
+     * \text{tr}(\boldsymbol{C}) \f$ and \f$ I_2 = 0.5 (I_1^2 - \text{tr}(\boldsymbol{C}^2)) \f$ are the first and
+     * second invariant of the right Cauchy-Green tensor \f$ \boldsymbol{C} = \boldsymbol{F}^T \boldsymbol{F} \f$, \f$ J
+     * = \sqrt{\det(\boldsymbol{C})} = \det(\boldsymbol{F}) \f$ is the determinant of the deformation gradient, and \f$
+     * C_1, C_2, D_1 \f$ are material parameters.
+     *
+     * @tparam T Scalar type, e.g. double, float, etc.
+     * @param C Right Cauchy-Green tensor
+     * @param C1 Mooney-Rivlin material parameter C1
+     * @param C2 Mooney-Rivlin material parameter C2
+     * @param D1 Mooney-Rivlin material parameter D1
+     * @return Energy density
+     */
+    template < typename T >
+    T MooneyRivlinPotential( const Tensor33t< T >& C, const double C1, const double C2, const double D1 )
+    {
+
+      const T J   = sqrt( determinant( C ) );
+      const T I1  = trace( C );
+      const T I1_ = I1 * pow( J, -2. / 3. );
+      const T I2_ = 0.5 * ( I1 * I1 - trace( C % C ) ) * pow( J, -4. / 3. );
+      T       res = C1 * ( I1_ - 3. ) + C2 * ( I2_ - 3. ) + 1. / D1 * ( 0.5 * ( J * J - 1 ) - log( J ) );
+
+      return res;
+    }
+
     namespace FirstOrderDerived {
 
       /** @brief Hyperelastic Energy Density Function Wb acc. Pence & Gou (2015), Eq. (2.12) and its first derivative

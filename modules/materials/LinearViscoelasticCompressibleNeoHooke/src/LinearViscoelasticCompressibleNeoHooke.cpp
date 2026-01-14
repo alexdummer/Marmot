@@ -29,27 +29,19 @@ namespace Marmot::Materials {
                                                                                     &materialProperties[3] ) )
   {
 
-    // compute initial compliance
-
+    // compute initial deviatoric compliance tensor
+    // start from initial stiffness tensor
     Tensor3333d initialStiffness = 4. * std::get< 2 >( ContinuumMechanics::EnergyDensityFunctions::ThirdOrderDerived::
                                                          standardNeoHooke( Spatial3D::I, K, G ) );
-
-    // Fastor::Tensor< double, 3, 3, 3, 3 > initialStiffness = 2. *
-    //     std::get<2>( ContinuumMechanics::EnergyDensityFunctions::SecondOrderDerived::PenceGouPotentialB(Spatial3D::I,
-    //     K, G ) );
-
-    std::cout << "Initial Stiffness Tensor: \n" << initialStiffness << std::endl;
+    initialStiffness -= ( 4.0 / 3.0 ) * outer( Spatial3D::I, einsum< ijkl, kl >( initialStiffness, Spatial3D::I ) );
 
     Fastor::Tensor< double, 6, 6 > reducedStiffness;
     Fastor::Tensor< double, 9, 9 > initialStiffness99 = Fastor::reshape< 9, 9 >( initialStiffness );
-    std::cout << "Initial Stiffness 9x9: \n" << initialStiffness99 << std::endl;
-    size_t rowColMap[6] = { 0, 1, 2, 4, 5, 8 };
-    double scaling[6]   = { 1.0, 2.0, 2.0, 1.0, 2.0, 1.0 };
+    size_t                         rowColMap[6]       = { 0, 1, 2, 4, 5, 8 };
+    double                         scaling[6]         = { 1.0, 2.0, 2.0, 1.0, 2.0, 1.0 };
     for ( size_t i = 0; i < 6; ++i )
       for ( size_t j = 0; j < 6; ++j )
         reducedStiffness( i, j ) = initialStiffness99( rowColMap[i], rowColMap[j] ) * scaling[j];
-
-    std::cout << "Reduced Stiffness Tensor: \n" << reducedStiffness << std::endl;
 
     // invert reduced stiffness
     Fastor::Tensor< double, 6, 6 > reducedCompliance = inverse< InvCompType::BlockLU >( reducedStiffness );
@@ -65,12 +57,7 @@ namespace Marmot::Materials {
     // reshape back to 4th order
     initialCompliance = Fastor::reshape< 3, 3, 3, 3 >( fullCompliance );
 
-    // std::cout << "Initial Compliance Tensor: \n" << initialCompliance << std::endl;
-    // std::exit(0);
-
     initializeStateLayout();
-
-    // std::exit(0);
   }
 
   void LinearViscoelasticCompressibleNeoHooke::computeStress( ConstitutiveResponse< 3 >& response,
@@ -78,30 +65,40 @@ namespace Marmot::Materials {
                                                               const Deformation< 3 >&    deformation,
                                                               const TimeIncrement&       timeIncrement ) const
   {
-    const auto& F_ = deformation.F;
+    const auto& F = deformation.F;
 
     using namespace ContinuumMechanics;
     // compute Cauchy-Green deformation
-    const auto [C, dC_dF] = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( F_ );
+    const auto [C, dC_dF] = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( F );
 
-    // compute energy density, first and second partial derivatives wrt Cauchy Green deformation
+    // compute energy density, first, second and third partial derivatives wrt Cauchy Green deformation
     const auto [psi_,
                 dPsi_dC,
                 d2Psi_dCdC,
                 d3Psi_dCdCdC] = EnergyDensityFunctions::ThirdOrderDerived::standardNeoHooke( C, K, G );
 
-    // compute Kirchhoff stress
-    Tensor33d PK2  = 2. * dPsi_dC;
-    Tensor33d dPK2 = PK2 - stateLayout.getAs< Tensor33d& >( response.stateVars, "S0_old" );
-    memcpy( stateLayout.getPtr( response.stateVars, "S0_old" ), PK2.data(), 9 * sizeof( double ) );
+    // compute initial PK2 stress
+    const Tensor33d PK2zero = 2. * dPsi_dC;
 
-    Tensor3333d   dPK2_dE    = 4. * d2Psi_dCdC;
-    Tensor333333d d2PK2_dEdE = 8. * d3Psi_dCdCdC;
+    // split into volumetric and deviatoric parts
+    // we only use the deviatoric part for viscoelastic evolution
+    const Tensor33d PK2vol = ( 1.0 / 3.0 ) * trace( PK2zero ) * Spatial3D::I;
+    Tensor33d       PK2dev = PK2zero - PK2vol;
 
-    // add viscoelastic contribution to PK2 stress
-    ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel( PK2,
-                                                                                        dPK2_dE,
-                                                                                        d2PK2_dEdE,
+    // conpute increment in initial PK2dev
+    Tensor33d&      PK2dev_old = stateLayout.getAs< Tensor33d& >( response.stateVars, "S0_old" );
+    const Tensor33d dPK2       = PK2dev - PK2dev_old;
+    memcpy( PK2dev_old.data(), PK2dev.data(), 9 * sizeof( double ) );
+
+    const Tensor3333d   dPK2_dE       = 4. * d2Psi_dCdC;
+    const Tensor3333d   dPK2vol_dE    = 1. / 3.0 * outer( Spatial3D::I, einsum< ijkl, kl >( dPK2_dE, Spatial3D::I ) );
+    Tensor3333d         dPK2dev_dE    = 4. * d2Psi_dCdC - dPK2vol_dE;
+    const Tensor333333d d2PK2dev_dEdE = 8. * d3Psi_dCdCdC;
+
+    // add viscoelastic contribution to deviatoric PK2 stress
+    ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel( PK2dev,
+                                                                                        dPK2dev_dE,
+                                                                                        d2PK2dev_dEdE,
                                                                                         initialCompliance,
                                                                                         dPK2,
                                                                                         timeIncrement.dT,
@@ -109,13 +106,16 @@ namespace Marmot::Materials {
                                                                                         stateLayout
                                                                                           .getPtr( response.stateVars,
                                                                                                    "creepStateVars" ) );
-
-    const auto [tau, dTau_dPK2, dTau_dF] = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, F_ );
-    response.tau                         = tau;
-    response.rho                         = 1.0;
-    response.elasticEnergyDensity        = psi_;
+    // compute Kirchhoff stress
+    const auto [tau,
+                dTau_dPK2,
+                dTau_dF] = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( evaluate( PK2vol + PK2dev ), F );
+    response.tau         = tau;
+    response.rho         = 1.0;
+    response.elasticEnergyDensity = psi_;
 
     // compute tangent operator
-    tangents.dTau_dF = einsum< ijKL, KLMN >( einsum< ijKL, IJKL >( dTau_dPK2, dPK2_dE ), 0.5 * dC_dF ) + dTau_dF;
+    tangents.dTau_dF = einsum< ijKL, KLMN >( einsum< ijKL, IJKL >( dTau_dPK2, dPK2vol_dE + dPK2dev_dE ), 0.5 * dC_dF ) +
+                       dTau_dF;
   }
 } // namespace Marmot::Materials

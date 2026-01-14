@@ -52,15 +52,27 @@ namespace Marmot {
         const double dT_tau    = std::max( dT / tau, 1e-15 );
         const double expFactor = Math::exp( -dT_tau );
 
+        double alpha = expFactor;
+        double beta  = gamma / dT_tau * ( 1.0 - expFactor );
+
+        if ( dT_tau < 1e-6 ) {
+          // use taylor expansion for small dt/tau
+          alpha = 1.0 - dT_tau + 0.5 * dT_tau * dT_tau;
+          beta  = gamma * ( 1.0 - 0.5 * dT_tau + 1.0 / 6.0 * dT_tau * dT_tau );
+        }
+
         // compute new stress in maxwell element
-        const Tensor33d H_np = expFactor * H_n + gamma / dT_tau * ( 1.0 - expFactor ) * dStress;
+        const Tensor33d H_np = alpha * H_n + beta * dStress;
 
         // add contribution to stress
         const Tensor33d dStress_ = einsum< ijkl, ij >( initialTangent, einsum< ijkl, ij >( initialCompliance, H_np ) );
+
+        // const Tensor33d dStress_ =  H_np;
+
         stress += dStress_;
 
         // update tangent
-        tangent += gamma / dT_tau * ( 1.0 - expFactor ) *
+        tangent += beta *
                    einsum< ijkl, mnij >( initialTangent, einsum< ijkl, mnij >( initialTangent, initialCompliance ) );
         tangent += einsum< ijklmn, ij >( dTangent_dDeformation, einsum< ijkl, kl >( initialCompliance, H_np ) );
 

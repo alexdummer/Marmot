@@ -44,6 +44,9 @@ void MarmotMaterialPointSolverFiniteStrain::addStep( const Step& step )
 
 void MarmotMaterialPointSolverFiniteStrain::solve()
 {
+  // write initial state to history
+  history.push_back( HistoryEntry{ 0.0, stress, Spatial3D::I + gradU, dTau_dF, stateVars } );
+
   for ( const auto& step : steps ) {
     std::cout << "Solving step from " << step.timeStart << " to " << step.timeEnd << std::endl;
     solveStep( step );

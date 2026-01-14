@@ -6,13 +6,14 @@ int main( int argc, char** argv )
 
   // get applied strain from command line
   double appliedStrain = argv[1] ? atof( argv[1] ) : 0.5;
+  int    nMaxwell      = argv[2] ? atoi( argv[2] ) : 2;
 
   using namespace Marmot::Solvers;
   using namespace Marmot::FastorStandardTensors;
 
   // 1) Define the material model
   std::string materialName = "LINEARVISCOELASTICCOMPRESSIBLENEOHOOKE";
-  double      properties[] = { 3500, 1500, 2, 0.5, .1, 0.25, 1 };
+  double      properties[] = { 3500, 1500, double( nMaxwell ), 0.5, 1, 0.25, 10 };
   int         nProps       = 5;
 
   // 2) Configure solver options
@@ -27,10 +28,10 @@ int main( int argc, char** argv )
   // 5) Define a loading step (Uniaxial extension in 11-direction)
   MarmotMaterialPointSolverFiniteStrain::Step step;
   step.timeStart = 0.0;
-  step.timeEnd   = 1e-9;
+  step.timeEnd   = 1e-10;
   step.dTStart   = 1e-11;
   step.dTMin     = 1e-11;
-  step.dTMax     = 1e-9;
+  step.dTMax     = 1e-5;
 
   // Initialize targets and flags
   step.gradUIncrementTarget        = Tensor33d( 0.0 );
