@@ -51,6 +51,28 @@ namespace Marmot::Materials {
     int                                 nSubsteps;
 
   public:
+    /**
+     * @struct StateSensitivities
+     * @brief Sensitivity matrices required for analytical substepping.
+     * All matrices represent derivatives of flattened arrays and are stored in Eigen's column-major format.
+     */
+    struct StateSensitivities {
+      /** @brief Jacobian of State_new w.r.t Deformation Gradient F_new.
+       * Size: nStateVars x 9
+       */
+      Eigen::MatrixXd dState_dF;
+
+      /** @brief Jacobian of State_new w.r.t State_old.
+       * Size: nStateVars x nStateVars
+       */
+      Eigen::MatrixXd dState_dStateOld;
+
+      /** @brief Jacobian of Stress w.r.t State_old.
+       * Size: 9 x nStateVars
+       */
+      Eigen::MatrixXd dStress_dStateOld;
+    };
+
     MarmotMaterialFiniteStrainSubstepped( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
       : MarmotMaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
     {
@@ -62,12 +84,10 @@ namespace Marmot::Materials {
       if ( this->nSubsteps < 1 )
         this->nSubsteps = 1;
 
-      // 2. Instantiate Base Material (shift properties by 1)
       baseMaterial = std::make_unique< BaseMaterialType >( matProperties_ + 1,
                                                            nMaterialProperties_ - 1,
                                                            materialNumber_ );
 
-      // 3. Initialize Layout
       initializeStateLayout();
     }
 
@@ -92,12 +112,108 @@ namespace Marmot::Materials {
 
       baseMaterial->initializeYourself( stateLayout.getPtr( stateVars, "materialstate" ), baseVarsCount );
 
-      // 2. Initialize F_n to Identity
       FastorStandardTensors::Tensor33d&
         Fn = this->stateLayout.getAs< FastorStandardTensors::Tensor33d& >( stateVars, "Substepping_F_n" );
       Fn.eye();
     }
 
+    /**
+     * @brief Extended stress update computing sensitivities for substepping.
+     * * The default implementation uses Forward Finite Differences.
+     * @param response Constitutive response to be computed.
+     * @param tangents Algorithmic moduli to be computed.
+     * @param sensitivities Sensitivity matrices to be computed.
+     * @param deformation Current deformation state.
+     * @param timeIncrement Time increment information.
+     *
+     * @note This function can be overridden in derived classes to provide analytical sensitivities.
+     * @note The base material's computeStress function is called within this function.
+     */
+    virtual void computeStressWithSensitivities( ConstitutiveResponse< 3 >& response,
+                                                 AlgorithmicModuli< 3 >&    tangents,
+                                                 StateSensitivities&        sensitivities,
+                                                 const Deformation< 3 >&    deformation,
+                                                 const TimeIncrement&       timeIncrement ) const
+    {
+      using namespace Eigen;
+      using namespace Marmot::NumericalAlgorithms::Differentiation;
+
+      int nState = baseMaterial->getNumberOfRequiredStateVars();
+
+      std::vector< double > stateOld( nState );
+      std::memcpy( stateOld.data(), response.stateVars, nState * sizeof( double ) );
+
+      baseMaterial->computeStress( response, tangents, deformation, timeIncrement );
+
+      if ( nState == 0 )
+        return;
+
+      sensitivities.dState_dF.resize( nState, 9 );
+      sensitivities.dState_dStateOld.resize( nState, nState );
+      sensitivities.dStress_dStateOld.resize( 9, nState );
+
+      auto func_dState_dF = [&]( const VectorXd& F_vec ) -> VectorXd {
+        Deformation< 3 > defPerturbed;
+        std::memcpy( defPerturbed.F.data(), F_vec.data(), 9 * sizeof( double ) );
+
+        ConstitutiveResponse< 3 > respPert;
+        std::vector< double >     stateTemp = stateOld;
+        respPert.stateVars                  = stateTemp.data();
+
+        AlgorithmicModuli< 3 > tanPert;
+
+        baseMaterial->computeStress( respPert, tanPert, defPerturbed, timeIncrement );
+
+        Map< VectorXd > res( respPert.stateVars, nState );
+        return res;
+      };
+
+      auto func_dStressAndState_dStateOld = [&]( const VectorXd& StateOld_vec ) -> VectorXd {
+        ConstitutiveResponse< 3 > respPert;
+        std::vector< double >     stateTemp( nState );
+        std::memcpy( stateTemp.data(), StateOld_vec.data(), nState * sizeof( double ) );
+        respPert.stateVars = stateTemp.data();
+
+        AlgorithmicModuli< 3 > tanPert; // dummy
+
+        // Run update with perturbed old state
+        baseMaterial->computeStress( respPert, tanPert, deformation, timeIncrement );
+
+        // return [stress; state_new] as a single vector
+        VectorXd res( 9 + nState );
+        // Fill Stress part
+        std::memcpy( res.data(), respPert.tau.data(), 9 * sizeof( double ) );
+        // Fill State_new part
+        std::memcpy( res.data() + 9, respPert.stateVars, nState * sizeof( double ) );
+
+        return res;
+      };
+
+      // Compute dState/dF_new
+      sensitivities.dState_dF = forwardDifference( func_dState_dF, Map< const VectorXd >( deformation.F.data(), 9 ) );
+
+      // Compute [dStress/dStateOld; dState/dStateOld]
+      const MatrixXd dStressAndState_dStateOld = forwardDifference( func_dStressAndState_dStateOld,
+                                                                    Map< const VectorXd >( stateOld.data(), nState ) );
+
+      // Extract dState/dStateOld
+      sensitivities.dState_dStateOld = dStressAndState_dStateOld.block( 9, 0, nState, nState );
+
+      // Extract dStress/dStateOld
+      sensitivities.dStress_dStateOld = dStressAndState_dStateOld.block( 0, 0, 9, nState );
+    }
+
+    /**
+     * @brief Compute stress with time substepping and analytical tangent accumulation.
+     * @param response Constitutive response to be computed.
+     * @param tangents Algorithmic moduli to be computed.
+     * @param deformation Current deformation state.
+     * @param timeIncrement Time increment information.
+     *
+     * @details The deformation increment is divided into nSubsteps sub-increments.
+     * For each sub-increment, the base material's stress update is called,
+     * and the sensitivities are used to accumulate the overall tangent.
+     */
     void computeStress( ConstitutiveResponse< 3 >& response,
                         AlgorithmicModuli< 3 >&    tangents,
                         const Deformation< 3 >&    deformation,
@@ -106,91 +222,63 @@ namespace Marmot::Materials {
       using namespace Eigen;
       using namespace FastorStandardTensors;
 
-      // 1. Recover F_n (State at t_n)
       Tensor33d&      Fn_ref = this->stateLayout.getAs< Tensor33d& >( response.stateVars, "Substepping_F_n" );
       const Tensor33d Fn     = Fn_ref;
       const Tensor33d Fn1    = deformation.F;
 
-      // 2. Setup Analytical Accumulation
       int nBaseState = baseMaterial->getNumberOfRequiredStateVars();
 
       // J_accum = d(State_i)/d(F_global). Size: nState x 9
       MatrixXd J_accum = MatrixXd::Zero( nBaseState, 9 );
 
-      // Substep delta T
       double dt_sub = timeIncrement.dT / static_cast< double >( nSubsteps );
       double t_curr = timeIncrement.time;
 
-      // Temporary data structures
       ConstitutiveResponse< 3 > subResponse;
       subResponse.stateVars = this->stateLayout.getPtr( response.stateVars, "materialstate" );
 
-      AlgorithmicModuli< 3 >                         subTangents;
-      MarmotMaterialFiniteStrain::StateSensitivities subSensitivities;
-      Deformation< 3 >                               subDef;
+      AlgorithmicModuli< 3 > subTangents;
+      StateSensitivities     subSensitivities;
+      Deformation< 3 >       subDef;
 
-      // 3. Substepping Loop
       for ( int i = 1; i <= nSubsteps; ++i ) {
         double xi = static_cast< double >( i ) / static_cast< double >( nSubsteps );
 
         // Linear Interpolation: F(xi) = (1-xi)*F_n + xi*F_n1
-        subDef.F = ( 1.0 - xi ) * Fn + xi * Fn1;
+        subDef.F                    = ( 1.0 - xi ) * Fn + xi * Fn1;
+        const double dFsub_dFglobal = xi;
 
         TimeIncrement subTime = { t_curr, dt_sub };
 
-        // Call Base Material with Sensitivities
-        // This updates stateVars to step i and fills subTangents/subSensitivities
-        baseMaterial->computeStressWithSensitivities( subResponse, subTangents, subSensitivities, subDef, subTime );
+        computeStressWithSensitivities( subResponse, subTangents, subSensitivities, subDef, subTime );
 
-        // Derivative of interpolation w.r.t global F_{n+1}
-        // F_sub = F_n + xi * (F_{n+1} - F_n)
-        // d(F_sub)/d(F_{n+1}) = xi * I
-        // Matrix form (9x9) is xi * Identity
-        double dFsub_dFglobal = xi;
-
+        // Update accumulated Jacobian for history
         if ( i < nSubsteps ) {
-          // Update J_accum for the next step
-          // J_new = dState/dF_sub * (xi*I) + dState/dStateOld * J_old
           if ( nBaseState > 0 ) {
             J_accum = subSensitivities.dState_dF * dFsub_dFglobal + subSensitivities.dState_dStateOld * J_accum;
           }
         }
         else {
-          // Final Step: Compute Global Tangent
-          // C_global = C_sub * (xi*I) + dStress/dStateOld * J_old
-
-          // 1. Term 1: Local Tangent contribution
-          // Map Fastor 4th order tensor to Eigen 9x9 matrix
-          // Note: Fastor layout is Row-Major, Eigen Map treats it linearly.
-          // Since dTau_dF from numerical diff was generated using linear layout, this is consistent.
-          Map< Matrix< double, 9, 9 > > C_alg_sub( subTangents.dTau_dF.data() );
-
-          MatrixXd Term1 = C_alg_sub * dFsub_dFglobal;
-
-          // 2. Term 2: History contribution
-          MatrixXd Term2 = MatrixXd::Zero( 9, 9 );
+          // Final Step: Compute overall Tangent dTau/dF_global
+          MatrixXd C_hist = MatrixXd::Zero( 9, 9 );
           if ( nBaseState > 0 ) {
-            Term2 = subSensitivities.dStress_dStateOld * J_accum;
+            C_hist = subSensitivities.dStress_dStateOld * J_accum;
           }
 
-          // 3. Combine Terms to get C_global
-          // Note the transpose of Term2 due to index ordering differences
-          // between Fastor and Eigen conventions.
-          MatrixXd C_global = Term1 + Term2.transpose();
+          // build global tangent
+          // transpose because second term is from Eigen's world with column-major layout
+          Tensor99d C_global = subTangents.dTau_dF * dFsub_dFglobal + transpose( Tensor99d( C_hist.data() ) );
 
-          // Copy back to output tensor
           std::memcpy( tangents.dTau_dF.data(), C_global.data(), 81 * sizeof( double ) );
         }
-
         t_curr += dt_sub;
       }
 
-      // 4. Output results
+      // set final response
       response.tau                  = subResponse.tau;
       response.elasticEnergyDensity = subResponse.elasticEnergyDensity;
 
-      // 5. Update F_n in the state vector for the next convergence check or time step
-      // We update the stored "Substepping_F_n" to the current F
+      // Update stored F_n to F_n1
       Fn_ref = deformation.F;
     }
   };
