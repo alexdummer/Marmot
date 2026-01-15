@@ -29,6 +29,7 @@
 
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
+#include "Marmot/MarmotNumericalDifferentiation.h"
 #include <cmath>
 #include <cstring>
 #include <memory>
@@ -267,7 +268,8 @@ namespace Marmot::Materials {
 
           // build global tangent
           // transpose because second term is from Eigen's world with column-major layout
-          Tensor99d C_global = subTangents.dTau_dF * dFsub_dFglobal + transpose( Tensor99d( C_hist.data() ) );
+          Fastor::Tensor< double, 9, 9 > C_global = subTangents.dTau_dF * dFsub_dFglobal +
+                                                    transpose( Fastor::Tensor< double, 9, 9 >( C_hist.data() ) );
 
           std::memcpy( tangents.dTau_dF.data(), C_global.data(), 81 * sizeof( double ) );
         }

@@ -26,7 +26,6 @@
  * ---------------------------------------------------------------------
  */
 #pragma once
-#include "Marmot/MarmotNumericalDifferentiation.h"
 #include "Marmot/MarmotStateHelpers.h"
 #include <Fastor/tensor/Tensor.h>
 
