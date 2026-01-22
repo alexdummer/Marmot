@@ -13,8 +13,10 @@ int main( int argc, char** argv )
 
   // 1) Define the material model
   std::string materialName = "LINEARVISCOELASTICCOMPRESSIBLENEOHOOKE";
-  double      properties[] = { 3500, 1500, double( nMaxwell ), 0.5, 1, 0.25, 10 };
-  int         nProps       = 5;
+  // double      properties[] = { 2, 750, 75, 2./3500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
+  double properties[] = { 1, 750, 750, 0, 2. / 3500, double( nMaxwell ), 0.5, 1, 0.25, 10 };
+  // double      properties[] = { 0, 3500, 1500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
+  int nProps = 6;
 
   // 2) Configure solver options
   MarmotMaterialPointSolverFiniteStrain::SolverOptions options;

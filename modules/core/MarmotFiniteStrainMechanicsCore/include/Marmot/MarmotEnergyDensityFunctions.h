@@ -155,6 +155,42 @@ namespace Marmot::ContinuumMechanics {
       return res;
     }
 
+    template < typename T >
+    T YeohPotential( const Tensor33t< T >& C, const double C1, const double C2, const double C3, const double D1 )
+    {
+
+      const T J         = sqrt( determinant( C ) );
+      const T I1        = trace( C );
+      const T I1_minus3 = I1 * pow( J, -2. / 3. ) - 3.;
+      T       res       = C1 * I1_minus3 + C2 * I1_minus3 * I1_minus3 + C3 * I1_minus3 * I1_minus3 * I1_minus3 +
+              1. / D1 * ( 0.5 * ( J * J - 1 ) - log( J ) );
+      return res;
+    }
+
+    template < typename T >
+    T standardNeoHooke( const Tensor33t< T >& C, const double K, const double G )
+    {
+      const double lambda = K - 2.0 / 3.0 * G;
+
+      /*
+       * we use the potential in terms of C
+       * Psi = G/2 ( tr(C) - 3 - 2 ln(J) ) + lambda/2 ( 0.5 ( J^2 - 1 ) - ln(J) )
+       * where J = sqrt( det(C) ) and ln(J) = 0.5 ln( det(C) )
+       *
+       * we can the rewrite as
+       * Psi = G/2 ( tr(C) - 3 - ln(det(C)) ) + lambda/2 ( 0.5 ( det(C) - 1 ) - 0.5 ln(det(C)) )
+       *
+       */
+
+      const T trC    = trace( C );
+      const T detC   = determinant( C );
+      const T lnDetC = log( detC );
+      // energy density
+      const T psi = G / 2 * ( trC - 3.0 - lnDetC ) + lambda / 4 * ( detC - 1.0 - lnDetC );
+
+      return psi;
+    }
+
     namespace FirstOrderDerived {
 
       /** @brief Hyperelastic Energy Density Function Wb acc. Pence & Gou (2015), Eq. (2.12) and its first derivative

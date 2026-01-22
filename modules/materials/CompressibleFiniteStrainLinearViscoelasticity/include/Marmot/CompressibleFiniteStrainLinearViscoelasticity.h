@@ -28,27 +28,28 @@
 #pragma once
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
+#include <map>
 
 namespace Marmot::Materials {
 
   /**
-   * @class Marmot::Materials::LinearViscoelasticCompressibleNeoHooke
+   * @class Marmot::Materials::CompressibleFiniteStrainLinearViscoelasticity
    * @brief Linear Viscoelastic Compressible Neo-Hookean hyperelastic material model
    * using the Pence–Gou potential, variant B.
    */
-  class LinearViscoelasticCompressibleNeoHooke : public MarmotMaterialFiniteStrain {
+  class CompressibleFiniteStrainLinearViscoelasticity : public MarmotMaterialFiniteStrain {
   public:
     using MarmotMaterialFiniteStrain::MarmotMaterialFiniteStrain;
 
     /**
-     * @brief Construct a LinearViscoelasticCompressibleNeoHooke material.
+     * @brief Construct a CompressibleFiniteStrainLinearViscoelasticity material.
      * @param materialProperties Pointer to the material properties vector.
      * @param nMaterialProperties Length of @c materialProperties.
      * @param materialLabel Material label.
      */
-    LinearViscoelasticCompressibleNeoHooke( const double* materialProperties,
-                                            int           nMaterialProperties,
-                                            int           materialLabel );
+    CompressibleFiniteStrainLinearViscoelasticity( const double* materialProperties,
+                                                   int           nMaterialProperties,
+                                                   int           materialLabel );
 
     /**
      * @brief Compute the Kirchhoff stress and the algorithmic tangent for the current step.
@@ -73,12 +74,25 @@ namespace Marmot::Materials {
                         const TimeIncrement& ) const override;
 
   protected:
-    /// @brief Bulk modulus
-    const double& K;
-    /// @brief Shear modulus
-    const double& G;
+    /// @brief Enum for hyperelastic base
+    enum HyperelasticBase { NeoHooke = 0, Yeoh = 1, MooneyRivlin = 2 };
+
+    /// map for hyperelastic base to number of elastic properties
+    const std::map< HyperelasticBase, int > nElasticPropertiesMap = {
+      { NeoHooke, 2 },
+      { Yeoh, 4 },
+      { MooneyRivlin, 3 },
+    };
+
+    /// @brief Hyperelastic base model
+    const HyperelasticBase hyperelasticBase;
+
+    /// @brief Elastic properties vector
+    const Eigen::Map< const Eigen::VectorXd > elasticProperties;
+
     /// @brief Number of Maxwell elements
     const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
+
     /// @brief Initial compliance tensor
     FastorStandardTensors::Tensor3333d initialCompliance;
 
@@ -88,6 +102,12 @@ namespace Marmot::Materials {
       stateLayout.add( "creepStateVars", maxwellProperties.nMaxwell * 9 ); // plastic deformation gradient
       stateLayout.finalize();
     }
+
+    std::tuple< double,
+                FastorStandardTensors::Tensor33d,
+                FastorStandardTensors::Tensor3333d,
+                FastorStandardTensors::Tensor333333d >
+    computeEnergyDensityAndDerivatives( const FastorStandardTensors::Tensor33d& C ) const;
   };
 
 } // namespace Marmot::Materials
