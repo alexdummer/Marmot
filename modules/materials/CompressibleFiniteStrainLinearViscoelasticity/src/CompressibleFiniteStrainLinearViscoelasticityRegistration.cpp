@@ -8,7 +8,11 @@ namespace Marmot::Materials {
     using namespace MarmotLibrary;
 
     const static bool CompressibleFiniteStrainLinearViscoelasticityRegistered = MarmotMaterialFiniteStrainFactory::
-      registerMaterial< CompressibleFiniteStrainLinearViscoelasticity >( "LINEARVISCOELASTICCOMPRESSIBLENEOHOOKE" );
+      registerMaterial< CompressibleFiniteStrainLinearViscoelasticity >(
+        "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY" );
 
+    const static bool FiniteStrainJ2PlasticitySubsteppedRegistered = MarmotMaterialFiniteStrainFactory::
+      registerMaterial< MarmotMaterialFiniteStrainSubstepped< CompressibleFiniteStrainLinearViscoelasticity > >(
+        "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED" );
   } // namespace Registration
 } // namespace Marmot::Materials
