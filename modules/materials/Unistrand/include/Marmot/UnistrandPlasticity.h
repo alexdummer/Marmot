@@ -54,6 +54,31 @@ namespace Marmot::Materials {
       double s23;  // shear x2-x3
     };
 
+    struct hardening {
+      double Gf1;  // fracture energy 11 tension
+      double mu1c; // compressive hardeing parameter 11
+      double Gf2;  // fracture energy 22 tension
+      double mu2c; // compressive hardeing parameter 22
+      double Gf3;  // fracture energy 33 tension
+      double mu3c; // compressive hardeing parameter 33
+      double Gs12; // fracture energy shear 12
+      double Gs13; // fracture energy shear 13
+      double Gs23; // fracture energy shear 23
+    };
+
+    // converted hardening to exp parameters
+    struct mu {
+      double mu1t;
+      double mu1c;
+      double mu2t;
+      double mu2c;
+      double mu3t;
+      double mu3c;
+      double mu12;
+      double mu13;
+      double mu23;
+    };
+
     enum class failureMode {
       tension1,
       compression1,
@@ -82,7 +107,7 @@ namespace Marmot::Materials {
       AlgorithmicModuli algorithmicModuli;
     };
 
-    UnistrandPlasticity( const strength& );
+    UnistrandPlasticity( const strength&, const hardening&, const double lengthScale );
 
     ReturnMapResult performSmartReturnMapping( const MaterialState&    trialState,
                                                const MaterialState&    stateOld,
@@ -122,6 +147,8 @@ namespace Marmot::Materials {
 
     const strength& st;
 
+    mu mu_;
+
     Marmot::NumericalAlgorithms::YieldSurfaceCombinationManager< nYieldSurfaces > yieldSurfCombiManager;
 
     typedef Marmot::NumericalAlgorithms::YieldSurfaceCombinationManager< nYieldSurfaces >::YieldSurfFlagArr
@@ -160,20 +187,25 @@ namespace Marmot::Materials {
       int idxCurrentInternal = idxInternal;
 
       for ( int i = 0; i < nYieldSurfaces; i++ ) {
-        if ( activeSurfaces( i ) ) {
-          // yield surface is active
-          // get corresponding internal variable and consistency parameter
-          const T alpha   = X( idxCurrentInternal );
-          const T dLambda = X( idxCurrentSurface );
-          // get cooresponding failure mode
-          const auto          fm                   = failureMode( i );
-          const Vector6t< T > plasticFlowDirection = a[fm];
-          R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
-          R( idxCurrentInternal ) = alpha - dLambda - trialState.alpha( i );
-          R( idxCurrentSurface )  = yieldFunction( stress, fm, alpha );
-          idxCurrentInternal += 2;
-          idxCurrentSurface += 2;
-        }
+        /* if ( activeSurfaces( i ) ) { */
+        // yield surface is active
+        // get corresponding internal variable and consistency parameter
+        const T alpha   = X( idxCurrentInternal );
+        const T dLambda = X( idxCurrentSurface );
+        // get cooresponding failure mode
+        const auto          fm                   = failureMode( i );
+        const Vector6t< T > plasticFlowDirection = dYieldFunction_dStress( stress, fm );
+        R.head( nStress ) += Cel * dLambda * plasticFlowDirection;
+        R( idxCurrentInternal ) = alpha - dLambda - trialState.alpha( i );
+
+        const T f = yieldFunction( stress, fm, alpha );
+        /* R( idxCurrentSurface )  = yieldFunction( stress, fm, alpha ); */
+        // Fischer-Burmeister function for complementarity condition
+        R( idxCurrentSurface ) = sqrt( f * f + dLambda * dLambda ) - ( -f + dLambda );
+
+        idxCurrentInternal += 2;
+        idxCurrentSurface += 2;
+        /* } */
       }
 
       return R;
@@ -190,18 +222,40 @@ namespace Marmot::Materials {
                                          { failureMode::shear13, { 0.0, 0.0, 0.0, 0.0, 1 / st.s13, 0.0 } },
                                          { failureMode::shear23, { 0.0, 0.0, 0.0, 0.0, 0.0, 1 / st.s23 } } };
 
+    std::map< failureMode, double > muMap{ { failureMode::tension1, mu_.mu1t },
+                                           { failureMode::compression1, mu_.mu1c },
+                                           { failureMode::tension2, mu_.mu2t },
+                                           { failureMode::compression2, mu_.mu2c },
+                                           { failureMode::tension3, mu_.mu3t },
+                                           { failureMode::compression3, mu_.mu3c },
+                                           { failureMode::shear12, mu_.mu12 },
+                                           { failureMode::shear13, mu_.mu13 },
+                                           { failureMode::shear23, mu_.mu23 } };
     template < typename T >
     T yieldFunction( const Marmot::Vector6t< T >& stress, const failureMode fm, const T alpha )
     {
       // remove sign from shear components
-
       Marmot::Vector6t< T > stressMod = stress;
       stressMod( 3 )                  = abs( stressMod( 3 ) );
       stressMod( 4 )                  = abs( stressMod( 4 ) );
       stressMod( 5 )                  = abs( stressMod( 5 ) );
 
-      const T res = a[fm].dot( stressMod ) - 1.0;
+      const T res = a[fm].dot( stressMod ) - 1.0 * exp( alpha * muMap[fm] );
       return res;
+    }
+
+    template < typename T >
+    Vector6t< T > dYieldFunction_dStress( const Marmot::Vector6t< T >& stress, const failureMode fm )
+    {
+      Marmot::Vector6t< T > stressMod = stress;
+
+      Vector6t< T > returnValue = a[fm];
+      // modify sign for shear components
+      returnValue( 3 ) *= stressMod( 3 ) / abs( stressMod( 3 ) + 1e-20 );
+      returnValue( 4 ) *= stressMod( 4 ) / abs( stressMod( 4 ) + 1e-20 );
+      returnValue( 5 ) *= stressMod( 5 ) / abs( stressMod( 5 ) + 1e-20 );
+
+      return returnValue;
     }
 
     Marmot::Vector6d computePlasticStrainIncrement( const Marmot::Vector6d& stressNew,

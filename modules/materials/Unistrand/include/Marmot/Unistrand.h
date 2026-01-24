@@ -60,35 +60,22 @@ namespace Marmot::Materials {
     // material coordinate system
     const Vector3d nR, nT;
 
-    // plasticity
-    UnistrandPlasticity plasticity;
+    void computeStress( state3D&        state,
+                        double*         dStressDDStrain,
+                        const double*   dStrain,
+                        const timeInfo& timeInfo ) const override;
 
-    void computeStress( double* stress,
-                        double* dStressDDStrain,
+    /**
+     * @brief Get material density.
+     * @return Density value.
+     * @throw std::runtime_error if density is not defined.
+     */
+    double getDensity() override;
 
-                        const double* dStrain,
-                        const double* timeOld,
-                        const double  dT,
-                        double&       pNewDT ) override;
-
-    class UnistrandStateVarManager : public MarmotStateVarVectorManager {
-
-    public:
-      inline const static auto layout = makeLayout( {
-        { .name = "alpha", .length = 9 },
-      } );
-
-      Eigen::Map< Eigen::Vector< double, 9 > > alpha;
-
-      UnistrandStateVarManager( double* theStateVarVector )
-        : MarmotStateVarVectorManager( theStateVarVector, layout ), alpha( &find( "alpha" ) ){};
-    };
-    std::unique_ptr< UnistrandStateVarManager > managedStateVars;
-
-    StateView getStateView( const std::string& result ) override;
-
-    int getNumberOfRequiredStateVars() override { return UnistrandStateVarManager::layout.nRequiredStateVars; }
-
-    void assignStateVars( double* stateVars, int nStateVars ) override;
+    void initializeStateLayout() override
+    {
+      stateLayout.add( "kappa", 9 );
+      stateLayout.finalize();
+    }
   };
 } // namespace Marmot::Materials

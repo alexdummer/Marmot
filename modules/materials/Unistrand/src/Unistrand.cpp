@@ -25,16 +25,7 @@ namespace Marmot::Materials {
       GRL( materialProperties[7] ),
       GTL( materialProperties[8] ),
       nR( { materialProperties[9], materialProperties[10], materialProperties[11] } ),
-      nT( { materialProperties[12], materialProperties[13], materialProperties[14] } ),
-      plasticity( { { materialProperties[15],      // r11t
-                      materialProperties[16],      // r11c
-                      materialProperties[17],      // r22t
-                      materialProperties[18],      // r22c
-                      materialProperties[19],      // r33t
-                      materialProperties[20],      // r33c
-                      materialProperties[21],      // r12
-                      materialProperties[22],      // r13
-                      materialProperties[23] } } ) // r23
+      nT( { materialProperties[12], materialProperties[13], materialProperties[14] } )
   {
 
     localElasticStiffnessTensor  = Orthotropic::stiffnessTensor( ER, ET, EL, nuTR, nuLR, nuLT, GRT, GTL, GRL );
@@ -49,25 +40,32 @@ namespace Marmot::Materials {
 
     globalElasticStiffnessTensor = transformationMatrixStrainInv * localElasticStiffnessTensor *
                                    transformationMatrixStrain;
+
+    initializeStateLayout();
   }
 
-  void Unistrand::computeStress( double*       stress,
-                                 double*       dStressDDStrain,
-                                 const double* dStrain,
-                                 const double* timeOld,
-                                 const double  dT,
-                                 double&       pNewDT )
+  double Unistrand::getDensity()
   {
-    mVector6d             S( stress );
+    throw std::runtime_error( MakeString() << __PRETTY_FUNCTION__ << ": Density not implemented yet!" );
+  }
+
+  void Unistrand::computeStress( state3D&        state,
+                                 double*         dStress_dStrain,
+                                 const double*   dStrain,
+                                 const timeInfo& timeInfo ) const
+  {
+    mVector6d             S( state.stress.data() );
     Map< const Vector6d > dE( dStrain );
-    mMatrix6d             mC( dStressDDStrain );
-    auto&                 alpha = managedStateVars->alpha;
+    mMatrix6d             mC( dStress_dStrain );
+    Map< Vector9d >       alpha( stateLayout.getPtr( state.stateVars, "kappa" ) );
 
     // Zero strain  increment check
     if ( ( dE.array() == 0 ).all() ) {
       mC = globalElasticStiffnessTensor;
       return;
     }
+
+    const double& viscosity = materialProperties[33];
 
     // transform old stress and strain increment to local coordinate system
     const Vector6d dStrainLocal   = transformationMatrixStrain * dE;
@@ -78,6 +76,30 @@ namespace Marmot::Materials {
 
     // initialize trial state for plasticity with trial stress and old alpha
     UnistrandPlasticity::MaterialState trialState = { stressLocalTrial, alpha };
+
+    // plasticity
+    UnistrandPlasticity plasticity = UnistrandPlasticity(
+      // 9 strengths
+      { materialProperties[15],
+        materialProperties[16],
+        materialProperties[17],
+        materialProperties[18],
+        materialProperties[19],
+        materialProperties[20],
+        materialProperties[21],
+        materialProperties[22],
+        materialProperties[23] },
+      // 9 hardening moduli
+      { materialProperties[24],
+        materialProperties[25],
+        materialProperties[26],
+        materialProperties[27],
+        materialProperties[28],
+        materialProperties[29],
+        materialProperties[30],
+        materialProperties[31],
+        materialProperties[32] },
+      this->characteristicElementLength );
 
     if ( plasticity.checkIfYielding( trialState ) ) {
       // plastic step
@@ -92,16 +114,21 @@ namespace Marmot::Materials {
                                                                                     oldState,
                                                                                     localElasticStiffnessTensor,
                                                                                     localElasticComplianceTensor );
-        // update stress and alpha
-        S     = transformationMatrixStressInv * result.materialState.stress;
-        alpha = result.materialState.alpha;
+
+        auto& dT = timeInfo.dT;
+        // update stress and alpha with Duvaut-Lions viscoplasticity
+        S = transformationMatrixStressInv * ( trialState.stress + dT / viscosity * result.materialState.stress ) /
+            ( 1.0 + dT / viscosity );
+        alpha = ( trialState.alpha + dT / viscosity * result.materialState.alpha ) / ( 1.0 + dT / viscosity );
 
         // update algorithmic tangent
-        mC = transformationMatrixStressInv * result.algorithmicModuli.dStress_dStrain * transformationMatrixStrain;
+        mC = transformationMatrixStressInv *
+             ( localElasticStiffnessTensor + dT / viscosity * result.algorithmicModuli.dStress_dStrain ) /
+             ( 1. + dT / viscosity ) * transformationMatrixStrain;
       }
       catch ( UnistrandPlasticity::ReturnMappingFailedException& e ) {
-        pNewDT = 0.5;
-        return;
+        throw std::runtime_error( MakeString() << __PRETTY_FUNCTION__ << ": Return mapping failed for material number "
+                                               << materialNumber );
       }
     }
     else {
@@ -109,20 +136,5 @@ namespace Marmot::Materials {
       S  = transformationMatrixStressInv * stressLocalTrial;
       mC = globalElasticStiffnessTensor;
     }
-  }
-
-  StateView Unistrand::getStateView( const std::string& stateName )
-  {
-    return managedStateVars->getStateView( stateName );
-  }
-
-  void Unistrand::assignStateVars( double* stateVars, int nStateVars )
-  {
-    if ( nStateVars < getNumberOfRequiredStateVars() )
-      throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << ": Not sufficient stateVars!" );
-
-    this->managedStateVars = std::make_unique< UnistrandStateVarManager >( stateVars );
-
-    return MarmotMaterialHypoElastic::assignStateVars( stateVars, nStateVars );
   }
 } // namespace Marmot::Materials

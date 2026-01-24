@@ -11,7 +11,24 @@ namespace Marmot {
 namespace Marmot::Materials {
 
   using namespace Eigen;
-  UnistrandPlasticity::UnistrandPlasticity( const strength& st_ ) : st( st_ ) {}
+  UnistrandPlasticity::UnistrandPlasticity( const strength& st_, const hardening& hard, const double l ) : st( st_ )
+  {
+
+    // get compressive exp parameters direct from hardening law
+    mu_.mu1c = hard.mu1c;
+    mu_.mu2c = hard.mu2c;
+    mu_.mu3c = hard.mu3c;
+
+    // convert tensile fracture energies to exp parameters
+    mu_.mu1t = -l * st.r11t / hard.Gf1;
+    mu_.mu2t = -l * st.r22t / hard.Gf2;
+    mu_.mu3t = -l * st.r33t / hard.Gf3;
+
+    // convert shear fracture energies to exp parameters
+    mu_.mu12 = -l * st.s12 / hard.Gs12;
+    mu_.mu13 = -l * st.s13 / hard.Gs13;
+    mu_.mu23 = -l * st.s23 / hard.Gs23;
+  }
 
   UnistrandPlasticity::ReturnMapResult UnistrandPlasticity::performReturnMapping(
     const MaterialState& trialState,
@@ -48,7 +65,7 @@ namespace Marmot::Materials {
   {
 
     const auto nActiveYieldSurfaces = activeSurfaces.count();
-    const auto sizeEq               = nStress + nActiveYieldSurfaces * 2;
+    const auto sizeEq               = nStress + nYieldSurfaces * 2;
 
     yieldSurfCombiManager.markYieldFlagCombinationAsUsed( activeSurfaces );
 
@@ -58,10 +75,10 @@ namespace Marmot::Materials {
 
     int idxCurrentInternal = idxInternal;
     for ( int i = 0; i < nYieldSurfaces; i++ ) {
-      if ( activeSurfaces( i ) ) {
-        X( idxCurrentInternal ) = initialGuessState.alpha( i );
-        idxCurrentInternal += 2;
-      }
+      /* if ( activeSurfaces( i ) ) { */
+      X( idxCurrentInternal ) = initialGuessState.alpha( i );
+      idxCurrentInternal += 2;
+      /* } */
     }
 
     Eigen::VectorXd dX = VectorXd::Zero( sizeEq );
@@ -158,10 +175,10 @@ namespace Marmot::Materials {
 
     int idxInternal_ = idxInternal;
     for ( int i = 0; i < nYieldSurfaces; i++ ) {
-      if ( activeSurfaces( i ) ) {
-        newMaterialState.alpha( i ) = X( idxInternal_ );
-        idxInternal_ += 2;
-      }
+      /* if ( activeSurfaces( i ) ) { */
+      newMaterialState.alpha( i ) = X( idxInternal_ );
+      idxInternal_ += 2;
+      /* } */
     }
 
     return newMaterialState;

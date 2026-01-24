@@ -18,6 +18,9 @@ MarmotMaterialPointSolverHypoElastic::MarmotMaterialPointSolverHypoElastic( std:
 
   // get number of state variables
   nStateVars = material->getNumberOfRequiredStateVars();
+
+  material->setCharacteristicElementLength( 0.1 ); // dummy value for material point
+
   // initialize state variables
   stateVars         = Eigen::VectorXd::Zero( nStateVars );
   _initialStateVars = Eigen::VectorXd::Zero( nStateVars );

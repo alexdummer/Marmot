@@ -1,16 +1,14 @@
-#include "Marmot/MarmotMaterialRegistrationHelper.h"
+#include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include "Marmot/Unistrand.h"
 
 namespace Marmot::Materials {
 
   namespace Registration {
 
-    constexpr int UnistrandCode = 11930000 + 27;
-
     using namespace MarmotLibrary;
 
-    const static bool UnistrandIsRegistered = MarmotMaterialFactory::
-      registerMaterial( UnistrandCode, "UNISTRAND", makeDefaultMarmotMaterialFactoryFunction< class Unistrand >() );
+    const static bool UnistrandIsRegistered = MarmotMaterialHypoElasticFactory::registerMaterial< Unistrand >(
+      "UNISTRAND" );
 
   } // namespace Registration
 } // namespace Marmot::Materials
