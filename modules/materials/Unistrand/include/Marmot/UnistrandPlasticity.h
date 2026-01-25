@@ -140,8 +140,8 @@ namespace Marmot::Materials {
     constexpr static int    nMaxInnerNewtonCyclesAlt = 10;
     constexpr static double innerNewtonTol           = 1e-14;
     constexpr static double innerNewtonRTol          = 1e-10;
-    constexpr static double innerNewtonTolAlt        = 1e-8;
-    constexpr static double innerNewtonRTolAlt       = 1e-6;
+    constexpr static double innerNewtonTolAlt        = 1e-4;
+    constexpr static double innerNewtonRTolAlt       = 1e-3;
 
     constexpr static double yieldSurfaceTol = 1e-8;
 
@@ -187,7 +187,7 @@ namespace Marmot::Materials {
       int idxCurrentInternal = idxInternal;
 
       for ( int i = 0; i < nYieldSurfaces; i++ ) {
-        /* if ( activeSurfaces( i ) ) { */
+        // if ( activeSurfaces( i ) ) {
         // yield surface is active
         // get corresponding internal variable and consistency parameter
         const T alpha   = X( idxCurrentInternal );
@@ -199,13 +199,13 @@ namespace Marmot::Materials {
         R( idxCurrentInternal ) = alpha - dLambda - trialState.alpha( i );
 
         const T f = yieldFunction( stress, fm, alpha );
-        /* R( idxCurrentSurface )  = yieldFunction( stress, fm, alpha ); */
+        // R( idxCurrentSurface )  = yieldFunction( stress, fm, alpha );
         // Fischer-Burmeister function for complementarity condition
-        R( idxCurrentSurface ) = sqrt( f * f + dLambda * dLambda ) - ( -f + dLambda );
+        R( idxCurrentSurface ) = - sqrt( f * f + dLambda * dLambda + 1e-12 ) + ( -f + dLambda );
 
         idxCurrentInternal += 2;
         idxCurrentSurface += 2;
-        /* } */
+        // } 
       }
 
       return R;

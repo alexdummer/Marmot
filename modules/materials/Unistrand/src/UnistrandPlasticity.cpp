@@ -20,14 +20,14 @@ namespace Marmot::Materials {
     mu_.mu3c = hard.mu3c;
 
     // convert tensile fracture energies to exp parameters
-    mu_.mu1t = -l * st.r11t / hard.Gf1;
-    mu_.mu2t = -l * st.r22t / hard.Gf2;
-    mu_.mu3t = -l * st.r33t / hard.Gf3;
+    mu_.mu1t = -l * st.r11t / hard.Gf1 * 0;
+    mu_.mu2t = -l * st.r22t / hard.Gf2 * 0;
+    mu_.mu3t = -l * st.r33t / hard.Gf3 * 0;
 
     // convert shear fracture energies to exp parameters
-    mu_.mu12 = -l * st.s12 / hard.Gs12;
-    mu_.mu13 = -l * st.s13 / hard.Gs13;
-    mu_.mu23 = -l * st.s23 / hard.Gs23;
+    mu_.mu12 = -l * st.s12 / hard.Gs12 * 0;
+    mu_.mu13 = -l * st.s13 / hard.Gs13 * 0;
+    mu_.mu23 = -l * st.s23 / hard.Gs23 * 0;
   }
 
   UnistrandPlasticity::ReturnMapResult UnistrandPlasticity::performReturnMapping(
@@ -64,8 +64,8 @@ namespace Marmot::Materials {
     YieldSurfFlagArr&    activeSurfaces )
   {
 
-    const auto nActiveYieldSurfaces = activeSurfaces.count();
-    const auto sizeEq               = nStress + nYieldSurfaces * 2;
+    // const auto nActiveYieldSurfaces = activeSurfaces.count();
+    const auto sizeEq               = nStress + 9 * 2;
 
     yieldSurfCombiManager.markYieldFlagCombinationAsUsed( activeSurfaces );
 
@@ -75,10 +75,10 @@ namespace Marmot::Materials {
 
     int idxCurrentInternal = idxInternal;
     for ( int i = 0; i < nYieldSurfaces; i++ ) {
-      /* if ( activeSurfaces( i ) ) { */
+      // if ( activeSurfaces( i ) ) {
       X( idxCurrentInternal ) = initialGuessState.alpha( i );
       idxCurrentInternal += 2;
-      /* } */
+      // } 
     }
 
     Eigen::VectorXd dX = VectorXd::Zero( sizeEq );
@@ -101,16 +101,43 @@ namespace Marmot::Materials {
       int iterationCounter = 0;
       while ( newtonChecker.isConverged( R, X, dX, iterationCounter ) == false ) {
 
-        if ( iterationCounter > nMaxInnerNewtonCyclesAlt )
-          throw FailedToConverge();
+        if ( iterationCounter > nMaxInnerNewtonCyclesAlt ){
+          // std::cout << "UnistrandPlasticity::returnMappingAttempt: Failed to converge within "
+          //              << nMaxInnerNewtonCyclesAlt << " iterations." <<std::endl;
+          //   std::cout << "R: " << R.transpose() <<std::endl;
+          //   std::cout << "X: " << X.transpose() <<std::endl;
+          //   std::cout << "dX: " << dX.transpose() <<std::endl;
+          //   std::cout << "Iteration: " << iterationCounter <<std::endl;
+          //   std::cout << "dR_dX_: " << dR_dX_ <<std::endl;
+            throw FailedToConverge();
+        }
 
-        if ( Math::isNaN( R ) )
-          throw FailedToConverge();
-
-        if ( Math::isNaN( dR_dX_ ) )
-          throw FailedToConverge();
+        if ( Math::isNaN( R ) ){
+            // std::cout << "UnistrandPlasticity::returnMappingAttempt: Residual contains NaN." <<std::endl;
+            // std::cout << "R: " << R.transpose() <<std::endl;
+            // std::cout << "X: " << X.transpose() <<std::endl;
+            // std::cout << "dX: " << dX.transpose() <<std::endl;
+            // std::cout << "Iteration: " << iterationCounter <<std::endl;
+            // std::cout << "dR_dX_: " << dR_dX_ <<std::endl;
+            throw FailedToConverge();
+        }
+        if ( Math::isNaN( dR_dX_ ) ){
+            // std::cout << "UnistrandPlasticity::returnMappingAttempt: Jacobian contains NaN." <<std::endl;
+            // std::cout << "R: " << R.transpose() <<std::endl;
+            // std::cout << "X: " << X.transpose() <<std::endl;
+            // std::cout << "dX: " << dX.transpose() <<std::endl;
+            // std::cout << "Iteration: " << iterationCounter <<std::endl;
+            // std::cout << "dR_dX_: " << dR_dX_ <<std::endl;
+          throw FailedToConverge();}
 
         dX = -dR_dX_.colPivHouseholderQr().solve( R );
+
+        for ( int i = 0; i < nYieldSurfaces; i++ ) {
+            // if the yield surface is not active, do not update the corresponding internal variables
+            const int idxAlpha = idxInternal + i * 2;
+            dX( idxAlpha )     = std::max( 0.0, dX( idxAlpha ) );
+          }
+        
         X += dX;
         std::tie( R, dR_dX_ ) = dR_dX( X, trialState, elasticStiffness, activeSurfaces );
         iterationCounter++;
@@ -175,10 +202,10 @@ namespace Marmot::Materials {
 
     int idxInternal_ = idxInternal;
     for ( int i = 0; i < nYieldSurfaces; i++ ) {
-      /* if ( activeSurfaces( i ) ) { */
+      // if ( activeSurfaces( i ) ) { 
       newMaterialState.alpha( i ) = X( idxInternal_ );
       idxInternal_ += 2;
-      /* } */
+     // }
     }
 
     return newMaterialState;
