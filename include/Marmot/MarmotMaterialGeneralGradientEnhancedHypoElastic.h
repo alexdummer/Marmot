@@ -73,6 +73,7 @@ public:
     using mVectorNd      = Map< Vector< double, nNonlocalVariables > >;
     using constmVectorNd = const Map< const Vector< double, nNonlocalVariables > >;
     using mMatrixNd      = Map< Matrix< double, nNonlocalVariables, nNonlocalVariables > >;
+    using mMatrixN6d     = Map< Matrix< double, nNonlocalVariables, 6 > >;
     using mMatrix6Nd     = Map< Matrix< double, 6, nNonlocalVariables > >;
 
     Matrix6d CJaumann                = Matrix6d::Zero();
@@ -86,8 +87,8 @@ public:
 
     response        res = { stress, mVectorNd( KLocal_ ), mVectorNd( nonLocalRadius ) };
     tangents        tan = { mMatrix6d( dStress_dDeformationGradient ),
-                            mMatrix6Nd( dKLocal_dDeformationGradient ),
                             mMatrix6Nd( dStress_dK ),
+                            mMatrixN6d( dKLocal_dDeformationGradient ),
                             mMatrixNd( dKlocal_dK ) };
     const increment inc = { dEps, constmVectorNd( KOld ), constmVectorNd( dK ), dT, time };
 
