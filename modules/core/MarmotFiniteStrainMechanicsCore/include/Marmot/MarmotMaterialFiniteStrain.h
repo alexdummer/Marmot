@@ -123,8 +123,26 @@ public:
    * */
   virtual void computeStress( ConstitutiveResponse< 3 >& response,
                               AlgorithmicModuli< 3 >&    tangents,
-                              const Deformation< 3 >&,
-                              const TimeIncrement& ) const = 0;
+                              const Deformation< 3 >&    deformation,
+                              const TimeIncrement&       timeIncrement ) const = 0;
+
+  /**
+   * @brief Explicit version of computeStress for use in explicit time integration schemes.
+   * @param[inout] response ConstitutiveResponse instance
+   * @param[in] deformation Deformation instance
+   * @param[in] timeIncrement TimeIncrement instance
+   *
+   * @note The default implementation calls computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( ConstitutiveResponse< 3 >& response,
+                                      const Deformation< 3 >&    deformation,
+                                      const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > tangents;
+    computeStress( response, tangents, deformation, timeIncrement );
+  }
+
   /**
    * @brief Computes the Kirchhoff stress given the deformation, time increment, and eigen deformation.
    * @param[inout] response ConstitutiveResponse instance

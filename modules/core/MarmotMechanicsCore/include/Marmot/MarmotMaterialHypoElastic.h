@@ -129,6 +129,22 @@ public:
                               const timeInfo& timeInfo ) const = 0;
 
   /**
+   * Explicit version of @ref computeStress for use in explicit time integration schemes.
+   * The algorithmic tangent is not needed in explicit schemes and will therefore not be computed.
+   * @param[in,out] state  A state3D instance carrying stress, strain energy, and state variables
+   * @param[in]   dStrain linearized strain increment
+   * @param[in]   timeInfo Structure carrying time information
+   *
+   * @note The default implementation calls @ref computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( state3D& state, const double* dStrain, const timeInfo& timeInfo ) const
+  {
+    double dStress_dStrain[36];
+    computeStress( state, dStress_dStrain, dStrain, timeInfo );
+  }
+
+  /**
    * Plane stress implementation of @ref computeStress.
    */
   virtual void computePlaneStress( state2D&        stress2D,
