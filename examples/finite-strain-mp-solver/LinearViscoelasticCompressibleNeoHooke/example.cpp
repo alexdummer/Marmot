@@ -5,16 +5,20 @@ int main( int argc, char** argv )
 {
 
   // get applied strain from command line
-  double appliedStrain = argv[1] ? atof( argv[1] ) : 0.5;
-  int    nMaxwell      = argv[2] ? atoi( argv[2] ) : 2;
+  // double appliedStrain = argv[1] ? atof( argv[1] ) : 0.5;
+  // int    nMaxwell      = argv[2] ? atoi( argv[2] ) : 2;
+
+  double appliedStrain = 0.1;
 
   using namespace Marmot::Solvers;
   using namespace Marmot::FastorStandardTensors;
 
   // 1) Define the material model
-  std::string materialName = "LINEARVISCOELASTICCOMPRESSIBLENEOHOOKE";
+  // std::string materialName = "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED";
+  std::string materialName = "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY";
   // double      properties[] = { 2, 750, 75, 2./3500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
-  double properties[] = { 1, 750, 750, 0, 2. / 3500, double( nMaxwell ), 0.5, 1, 0.25, 10 };
+  // double properties[] = { 1, 0, 3500,1500, 1, 0.5, 1, 0.25, 10 };
+  double properties[] = { 0, 3500, 1500, 2, 0.5, 10000000, 0.25, 10 };
   // double      properties[] = { 0, 3500, 1500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
   int nProps = 6;
 
@@ -30,9 +34,9 @@ int main( int argc, char** argv )
   // 5) Define a loading step (Uniaxial extension in 11-direction)
   MarmotMaterialPointSolverFiniteStrain::Step step;
   step.timeStart = 0.0;
-  step.timeEnd   = 1e-10;
-  step.dTStart   = 1e-11;
-  step.dTMin     = 1e-11;
+  step.timeEnd   = 1e-4;
+  step.dTStart   = 1e-5;
+  step.dTMin     = 1e-5;
   step.dTMax     = 1e-5;
 
   // Initialize targets and flags
@@ -69,7 +73,7 @@ int main( int argc, char** argv )
   // - Unset control on tau_11
   relaxStep.isStressComponentControlled( 0, 0 ) = false;
 
-  solver.addStep( relaxStep );
+  // solver.addStep( relaxStep );
 
   solver.solve();
 

@@ -35,15 +35,15 @@ namespace Marmot {
       using namespace Marmot::FastorIndices;
 
       // copy of tangent to be incremented
-      Tensor3333d initialTangent = tangent;
+      const Tensor3333d initialTangent = tangent;
 
       // scale equilibrium stress contribution
-      stress *= ( 1.0 - maxwellProperties.sumGamma );
-      tangent *= ( 1.0 - maxwellProperties.sumGamma );
+      stress  = stress * ( 1.0 - maxwellProperties.sumGamma );
+      tangent = tangent * ( 1.0 - maxwellProperties.sumGamma );
 
       for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
-        const Tensor33d& H_n = Tensor33d( stateVars + i * 9 );
+        const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
         // get parameters of maxwell element
         const double& tau   = maxwellProperties.tau[i];
@@ -62,22 +62,20 @@ namespace Marmot {
         }
 
         // compute new stress in maxwell element
-        const Tensor33d H_np = alpha * H_n + beta * dStress;
+        const Tensor33d Q_np = alpha * Q_n + beta * dStress;
 
         // add contribution to stress
-        const Tensor33d dStress_ = einsum< ijkl, ij >( initialTangent, einsum< ijkl, ij >( initialCompliance, H_np ) );
+        const Tensor33d H_np = einsum< ijkl, kl >( initialCompliance, Q_np );
+        stress += einsum< ij, ijkl >( H_np, initialTangent );
 
-        // const Tensor33d dStress_ =  H_np;
+        const Tensor3333d dH_np_dDeformation = einsum< ijmn, mnKL >( initialCompliance,
+                                                                     evaluate( beta * initialTangent ) );
 
-        stress += dStress_;
-
-        // update tangent
-        tangent += beta *
-                   einsum< ijkl, mnij >( initialTangent, einsum< ijkl, mnij >( initialTangent, initialCompliance ) );
-        tangent += einsum< ijklmn, ij >( dTangent_dDeformation, einsum< ijkl, kl >( initialCompliance, H_np ) );
+        tangent += einsum< ijkl, ijmn >( initialTangent, dH_np_dDeformation );
+        tangent += einsum< ij, ijklmn >( H_np, dTangent_dDeformation );
 
         // update state variables
-        memcpy( stateVars + i * 9, &H_np, 9 * sizeof( double ) );
+        memcpy( stateVars + i * 9, &Q_np, 9 * sizeof( double ) );
       }
     }
 

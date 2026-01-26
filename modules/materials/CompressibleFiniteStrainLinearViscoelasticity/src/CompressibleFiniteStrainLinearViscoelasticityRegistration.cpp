@@ -1,5 +1,6 @@
 #include "Marmot/CompressibleFiniteStrainLinearViscoelasticity.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
+#include "Marmot/MarmotMaterialFiniteStrainSubstepped.h"
 
 namespace Marmot::Materials {
 
