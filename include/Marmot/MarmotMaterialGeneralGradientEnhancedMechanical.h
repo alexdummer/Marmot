@@ -55,8 +55,8 @@ public:
   struct tangents {
     Marmot::Matrix6d                               dStressddStrain = Marmot::Matrix6d::Zero();
     Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
-    Eigen::Matrix< double, 6, nNonlocalVariables >
-      dKLocalddStrain = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, 6 >
+      dKLocalddStrain = Eigen::Matrix< double, nNonlocalVariables, 6 >::Zero();
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
@@ -67,7 +67,7 @@ public:
 
   virtual void computeStress( response& res, tangents& tan, const increment& inc ) = 0;
 
-  virtual void computePlaneStress( response& res, tangents&, const increment& inc ){};
+  virtual void computePlaneStress( response& res, tangents&, const increment& inc ) {};
 
   virtual void computeUniaxialStress( double*       stress,
                                       double*       K_local,
