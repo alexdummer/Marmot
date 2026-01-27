@@ -486,7 +486,7 @@ namespace Marmot::Elements {
                                                  qp.J0xW;
             const auto dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddK.col( n ) );
             const auto dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt(
-              tan.dKLocalddStrain.col( n ) );
+              tan.dKLocalddStrain.row( n ) );
 
             kUK.block( 0, idx, sizeDoFU, nNonLocalNodes ) += B.transpose() * dSdK * N_K * qp.J0xW;
             kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() * -dK_Local_dDE.transpose() * B * qp.J0xW;
@@ -521,8 +521,9 @@ namespace Marmot::Elements {
                                                    qp.J0xW;
 
               kUK.block( 0, idx, sizeDoFU, nNonLocalNodes ) += B.transpose() * tan.dStressddK.col( n ) * N_K * qp.J0xW;
-              kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() *
-                                                               -tan.dKLocalddStrain.col( n ).transpose() * B * qp.J0xW;
+              kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() * -tan.dKLocalddStrain.row( n ) * B *
+                                                               qp.J0xW;
+
               kKK.block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += ( N_K.transpose() * N_K +
                                                                          res.c( n ) * dNdX_K.transpose() * dNdX_K +
                                                                          tan.dcddK( n ) * dNdX_K.transpose() * dNdX_K *
