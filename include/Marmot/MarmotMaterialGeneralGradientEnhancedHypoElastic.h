@@ -51,6 +51,7 @@ public:
       materialNumber( materialNumber_ )
   {
   }
+
   struct increment {
     Marmot::Vector6d                            dStrain;
     Eigen::Vector< double, nNonlocalVariables > K;
