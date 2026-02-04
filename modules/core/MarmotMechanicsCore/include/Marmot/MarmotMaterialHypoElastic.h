@@ -198,5 +198,10 @@ public:
     }
   }
 
-  virtual double getDensity() { return -1; }
+  virtual double getDensity() { throw std::runtime_error( "getDensity() not implemented for this material." ); }
+
+  virtual double getDampingCoefficient()
+  {
+    throw std::runtime_error( "getDampingCoefficient() not implemented for this material." );
+  }
 };

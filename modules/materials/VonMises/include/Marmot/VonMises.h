@@ -55,6 +55,8 @@ namespace Marmot::Materials {
      */
     double getDensity() override;
 
+    double getDampingCoefficient() override;
+
     void initializeStateLayout() override
     {
       stateLayout.add( "kappa", 1 );

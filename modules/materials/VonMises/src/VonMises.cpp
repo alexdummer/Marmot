@@ -17,6 +17,14 @@ namespace Marmot::Materials {
     return this->materialProperties[6];
   }
 
+  double VonMisesModel::getDampingCoefficient()
+  {
+    if ( this->nMaterialProperties < 8 )
+      throw std::runtime_error( MakeString()
+                                << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 8" );
+    return this->materialProperties[7];
+  }
+
   void VonMisesModel::computeStress( state3D&        state,
                                      double*         dStress_dStrain,
                                      const double*   dStrain,

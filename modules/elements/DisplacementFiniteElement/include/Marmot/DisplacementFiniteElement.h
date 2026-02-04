@@ -316,6 +316,12 @@ namespace Marmot::Elements {
     void computeLumpedInertia( double* M );
 
     /**
+     * @brief Compute lumped damping matrix using a damping coefficient.
+     * @details \f$\mathbf{C}_e = \sum_{qp} \eta\, \mathbf{N}^\mathsf{T}\mathbf{N}\, J_0 w\f$.
+     */
+    void computeLumpedDamping( double* C );
+
+    /**
      * @brief Access a named state view at a quadrature point.
      * @note Using "sdv" returns the raw material state vector and is deprecated.
      */
@@ -868,6 +874,24 @@ namespace Marmot::Elements {
     computeConsistentInertia( CMM.data() );
 
     Me = CMM.rowwise().sum();
+  }
+
+  template < int nDim, int nNodes >
+  void DisplacementFiniteElement< nDim, nNodes >::computeLumpedDamping( double* C )
+  {
+    Map< RhsSized > Ce( C );
+    Ce.setZero();
+
+    KeSizedMatrix CMM;
+    CMM.setZero();
+
+    for ( const auto& qp : qps ) {
+      const auto   N_  = this->NB( this->N( qp.xi ) );
+      const double eta = qp.material->getDampingCoefficient();
+      CMM += N_.transpose() * N_ * qp.detJ * qp.weight * eta;
+    }
+
+    Ce = CMM.rowwise().sum();
   }
 
   template < int nDim, int nNodes >
