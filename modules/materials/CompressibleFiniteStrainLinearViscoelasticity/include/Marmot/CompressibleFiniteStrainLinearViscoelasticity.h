@@ -87,6 +87,9 @@ namespace Marmot::Materials {
     /// @brief Hyperelastic base model
     const HyperelasticBase hyperelasticBase;
 
+    /// @brief shear only flag
+    const double onlyShearCreep;
+
     /// @brief Elastic properties vector
     const Eigen::Map< const Eigen::VectorXd > elasticProperties;
 
