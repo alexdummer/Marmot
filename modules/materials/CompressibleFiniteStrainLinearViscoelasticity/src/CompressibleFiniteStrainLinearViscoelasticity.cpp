@@ -155,20 +155,26 @@ namespace Marmot::Materials {
 
     // conpute increment in initial PK2dev
     Tensor33d&      PK2dev_old = stateLayout.getAs< Tensor33d& >( response.stateVars, "S0_old" );
-    const Tensor33d dPK2       = PK2dev - PK2dev_old;
+    const Tensor33d dPK2dev    = PK2dev - PK2dev_old;
+
+    memcpy( PK2dev_old.data(), PK2dev.data(), 9 * sizeof( double ) );
 
     const Tensor3333d dPK2_dE    = 4. * d2Psi_dCdC;
     const Tensor3333d dPK2vol_dE = onlyShearCreep / 3.0 *
                                    outer( Spatial3D::I, einsum< ijkl, kl >( dPK2_dE, Spatial3D::I ) );
-    Tensor3333d         dPK2dev_dE    = 4. * d2Psi_dCdC - dPK2vol_dE;
-    const Tensor333333d d2PK2dev_dEdE = 8. * d3Psi_dCdCdC;
+    Tensor3333d         dPK2dev_dE    = dPK2_dE - dPK2vol_dE;
+    const Tensor333333d d2PK2_dEdE    = 8. * d3Psi_dCdCdC;
+    const Tensor333333d d2PK2vol_dEdE = onlyShearCreep / 3 *
+                                        einsum< ij, mnKL >( Spatial3D::I,
+                                                            einsum< ijklmn, ij >( d2PK2_dEdE, Spatial3D::I ) );
+    const Tensor333333d d2PK2dev_dEdE = d2PK2_dEdE - d2PK2vol_dEdE;
 
     // add viscoelastic contribution to deviatoric PK2 stress
     ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel( PK2dev,
                                                                                         dPK2dev_dE,
                                                                                         d2PK2dev_dEdE,
                                                                                         initialCompliance,
-                                                                                        dPK2,
+                                                                                        dPK2dev,
                                                                                         timeIncrement.dT,
                                                                                         maxwellProperties,
                                                                                         stateLayout
@@ -187,7 +193,5 @@ namespace Marmot::Materials {
     tangents.dTau_dF = einsum< ijKL, KLMN >( einsum< ijKL, KLMN >( dTau_dPK2, evaluate( dPK2vol_dE + dPK2dev_dE ) ),
                                              0.5 * dC_dF ) +
                        dTau_dF;
-
-    memcpy( PK2dev_old.data(), PK2dev.data(), 9 * sizeof( double ) );
   }
 } // namespace Marmot::Materials
