@@ -75,13 +75,14 @@ namespace Marmot::Materials {
 
   protected:
     /// @brief Enum for hyperelastic base
-    enum HyperelasticBase { NeoHooke = 0, Yeoh = 1, MooneyRivlin = 2 };
+    enum HyperelasticBase { NeoHooke = 0, Yeoh = 1, MooneyRivlin = 2, PenceGouNeoHooke = 3 };
 
     /// map for hyperelastic base to number of elastic properties
     const std::map< HyperelasticBase, int > nElasticPropertiesMap = {
       { NeoHooke, 2 },
       { Yeoh, 4 },
       { MooneyRivlin, 3 },
+      { PenceGouNeoHooke, 2 },
     };
 
     /// @brief Hyperelastic base model

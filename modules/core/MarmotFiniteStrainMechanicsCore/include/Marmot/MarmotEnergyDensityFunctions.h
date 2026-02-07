@@ -85,10 +85,10 @@ namespace Marmot::ContinuumMechanics {
     T PenceGouPotentialB( const Tensor33t< T >& C, const double K, const double G )
     {
 
-      const T J  = sqrt( determinant( C ) );
-      const T I1 = trace( C );
+      const T detC = determinant( C );
+      const T I1   = trace( C );
 
-      T res = K / 8. * pow( J - 1. / J, 2. ) + G / 2. * ( I1 * pow( J, -2. / 3 ) - 3. );
+      T res = K / 8. * ( detC + 1. / detC - 2. ) + G / 2. * ( I1 * pow( detC, -1. / 3 ) - 3. );
 
       return res;
     }

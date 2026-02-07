@@ -40,6 +40,13 @@ namespace Marmot::Materials {
                                                                                               elasticProperties[0],
                                                                                               elasticProperties[1] );
       break;
+    case PenceGouNeoHooke:
+      energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
+        autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::PenceGouPotentialB<
+          autodiff::dual3rd >( C_ad, elasticProperties[0], elasticProperties[1] );
+        return res;
+      };
+      break;
     case Yeoh:
       energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
         autodiff::dual3rd
@@ -79,53 +86,68 @@ namespace Marmot::Materials {
                                    &materialProperties[3 + nElasticPropertiesMap.at( hyperelasticBase )] ) )
   {
 
-    // compute initial deviatoric compliance tensor
-    // start from initial stiffness tensor
-    Tensor3333d initialStiffness = 4. * std::get< 2 >( computeEnergyDensityAndDerivatives( evaluate( Spatial3D::I ) ) );
+    if ( onlyShearCreep == 1.0 ) {
+      double G = 0;
+      switch ( hyperelasticBase ) {
+      case NeoHooke:
+      case PenceGouNeoHooke: G = elasticProperties[1]; break;
+      case Yeoh:
+      case MooneyRivlin: G = 2 * elasticProperties[0]; break;
+      default:
+        throw std::runtime_error( "CompressibleFiniteStrainLinearViscoelasticity::"
+                                  "CompressibleFiniteStrainLinearViscoelasticity: Unknown hyperelastic base." );
+      }
 
-    // initialStiffness = initialStiffness - initialStiffness % Spatial3D::I;
-    // initialStiffness = initialStiffness - ( 1 / 3.0 ) * outer( Spatial3D::I, einsum< ijkl, kl >( initialStiffness,
-    // Spatial3D::I ) );
+      initialCompliance = .5 / G * Spatial3D::I4;
+    }
 
-    Fastor::Tensor< double, 6, 6 > reducedStiffness;
-    Fastor::Tensor< double, 9, 9 > initialStiffness99 = Fastor::reshape< 9, 9 >( initialStiffness );
-    initialStiffness99  = 0.5 * ( initialStiffness99 + transpose( initialStiffness99 ) ); // make sure it's symmetric
-    size_t rowColMap[6] = { 0, 1, 2, 4, 5, 8 };
-    // double                         scaling[6]         = { 1.0, 2.0, 2.0, 1.0, 2.0, 1.0 };
-    size_t rowColMapFull[9] = { 0, 1, 2, 1, 3, 4, 2, 4, 5 };
+    else {
 
-    // manually modify
-    initialStiffness99( 1, all ) += initialStiffness99( 3, all );
-    initialStiffness99( 3, all ) = initialStiffness99( 1, all );
-    initialStiffness99( 2, all ) += initialStiffness99( 6, all );
-    initialStiffness99( 6, all ) = initialStiffness99( 2, all );
-    initialStiffness99( 5, all ) += initialStiffness99( 7, all );
-    initialStiffness99( 7, all ) = initialStiffness99( 5, all );
+      // compute initial deviatoric compliance tensor
+      // start from initial stiffness tensor
+      Tensor3333d initialStiffness = 4. *
+                                     std::get< 2 >( computeEnergyDensityAndDerivatives( evaluate( Spatial3D::I ) ) );
 
-    for ( size_t i = 0; i < 6; ++i )
-      for ( size_t j = 0; j < 6; ++j )
-        reducedStiffness( i, j ) = initialStiffness99( rowColMap[i], rowColMap[j] );
+      Fastor::Tensor< double, 6, 6 > reducedStiffness;
+      Fastor::Tensor< double, 9, 9 > initialStiffness99 = Fastor::reshape< 9, 9 >( initialStiffness );
+      initialStiffness99  = 0.5 * ( initialStiffness99 + transpose( initialStiffness99 ) ); // make sure it's symmetric
+      size_t rowColMap[6] = { 0, 1, 2, 4, 5, 8 };
+      // double                         scaling[6]         = { 1.0, 2.0, 2.0, 1.0, 2.0, 1.0 };
+      size_t rowColMapFull[9] = { 0, 1, 2, 1, 3, 4, 2, 4, 5 };
 
-    // invert reduced stiffness
-    Fastor::Tensor< double, 6, 6 > reducedCompliance = inverse< InvCompType::BlockLU >( reducedStiffness );
+      // manually modify
+      initialStiffness99( 1, all ) += initialStiffness99( 3, all );
+      initialStiffness99( 3, all ) = initialStiffness99( 1, all );
+      initialStiffness99( 2, all ) += initialStiffness99( 6, all );
+      initialStiffness99( 6, all ) = initialStiffness99( 2, all );
+      initialStiffness99( 5, all ) += initialStiffness99( 7, all );
+      initialStiffness99( 7, all ) = initialStiffness99( 5, all );
 
-    Fastor::Tensor< double, 9, 9 > fullCompliance( 0.0 );
-    // size_t                         rowColMapFull[9] = { 0, 1, 2, 1, 3, 4, 2, 4, 5 };
-    double scalingFull[9] = { 1, 0.5, 0.5, .5, 1, .5, .5, .5, 1 };
+      for ( size_t i = 0; i < 6; ++i )
+        for ( size_t j = 0; j < 6; ++j )
+          reducedStiffness( i, j ) = initialStiffness99( rowColMap[i], rowColMap[j] );
 
-    for ( size_t i = 0; i < 9; ++i )
-      for ( size_t j = 0; j < 9; ++j )
-        fullCompliance( i, j ) = reducedCompliance( rowColMapFull[i], rowColMapFull[j] ) * scalingFull[j];
+      // invert reduced stiffness
+      Fastor::Tensor< double, 6, 6 > reducedCompliance = inverse< InvCompType::BlockLU >( reducedStiffness );
 
-    // reshape back to 4th order
-    initialCompliance = Fastor::reshape< 3, 3, 3, 3 >( fullCompliance );
+      Fastor::Tensor< double, 9, 9 > fullCompliance( 0.0 );
+      // size_t                         rowColMapFull[9] = { 0, 1, 2, 1, 3, 4, 2, 4, 5 };
+      double scalingFull[9] = { 1, 0.5, 0.5, .5, 1, .5, .5, .5, 1 };
 
-    if ( norm( initialCompliance ) != norm( initialCompliance ) ) {
-      std::cout << "Initial Compliance: \n" << initialCompliance << std::endl;
-      std::cout << "Initial Stiffness: \n" << initialStiffness99 << std::endl;
-      throw std::runtime_error(
-        "CompressibleFiniteStrainLinearViscoelasticity::CompressibleFiniteStrainLinearViscoelasticity: Initial "
-        "compliance has NaN values. Check material properties." );
+      for ( size_t i = 0; i < 9; ++i )
+        for ( size_t j = 0; j < 9; ++j )
+          fullCompliance( i, j ) = reducedCompliance( rowColMapFull[i], rowColMapFull[j] ) * scalingFull[j];
+
+      // reshape back to 4th order
+      initialCompliance = Fastor::reshape< 3, 3, 3, 3 >( fullCompliance );
+
+      if ( norm( initialCompliance ) != norm( initialCompliance ) ) {
+        std::cout << "Initial Compliance: \n" << initialCompliance << std::endl;
+        std::cout << "Initial Stiffness: \n" << initialStiffness99 << std::endl;
+        throw std::runtime_error(
+          "CompressibleFiniteStrainLinearViscoelasticity::CompressibleFiniteStrainLinearViscoelasticity: Initial "
+          "compliance has NaN values. Check material properties." );
+      }
     }
 
     initializeStateLayout();
