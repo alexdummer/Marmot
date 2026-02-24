@@ -66,5 +66,25 @@ namespace Marmot {
                                           const double                                dT,
                                           const MaxwellProperties&                    maxwellProperties,
                                           double*                                     stateVars );
+
+    /**
+     * @brief Evaluate generalized maxwell model contribution to stress and tangent without tangent update
+     * @param[in,out] stress             Stress tensor to be updated (input is the instantaneous hyperelastic stress)
+     * @param[in,out] tangent            Tangent tensor to be updated (input is the instantaneous hyperelasticelastic
+     * tangent)
+     * @param[in]  dStress               Increment of the initial stress tensor
+     * @param[in]  dT                    Time increment
+     * @param[in]  maxwellProperties     Properties of the generalized maxwell model
+     * @param[in,out] stateVars          State variables array (size: nMaxwell * 9)
+     *
+     * @details This update correspond to the approach by Simo (1987)
+     * and is used in the implementation of the generalized maxwell model in the finite element code
+     */
+    void evaluateGeneralizedMaxwellModel( FastorStandardTensors::Tensor33d&       stress,
+                                          FastorStandardTensors::Tensor3333d&     tangent,
+                                          const FastorStandardTensors::Tensor33d& dStress,
+                                          const double                            dT,
+                                          const MaxwellProperties&                maxwellProperties,
+                                          double*                                 stateVars );
   } // namespace ContinuumMechanics::FiniteStrain::Viscoelasticity
 } // namespace Marmot

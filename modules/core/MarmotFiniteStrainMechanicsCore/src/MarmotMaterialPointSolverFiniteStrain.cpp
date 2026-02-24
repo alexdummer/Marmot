@@ -44,9 +44,6 @@ void MarmotMaterialPointSolverFiniteStrain::addStep( const Step& step )
 
 void MarmotMaterialPointSolverFiniteStrain::solve()
 {
-  // write initial state to history
-  history.push_back( HistoryEntry{ 0.0, stress, Spatial3D::I + gradU, dTau_dF, stateVars } );
-
   for ( const auto& step : steps ) {
     std::cout << "Solving step from " << step.timeStart << " to " << step.timeEnd << std::endl;
     solveStep( step );
@@ -75,7 +72,7 @@ void MarmotMaterialPointSolverFiniteStrain::resetToInitialState()
 void MarmotMaterialPointSolverFiniteStrain::solveStep( const Step& step )
 {
   double time     = step.timeStart;
-  double dT       = step.dTStart;
+  double dT       = 0.0;
   double stepTime = step.timeEnd - step.timeStart;
 
   int counter = 0;
@@ -85,6 +82,8 @@ void MarmotMaterialPointSolverFiniteStrain::solveStep( const Step& step )
     // adjust time step if overshooting
     if ( time + dT > step.timeEnd )
       dT = step.timeEnd - time;
+    if ( counter == 1 )
+      dT = step.dTStart; // use initial time step for the first increment, then adjust based on convergence
 
     // setup increment
     Increment increment;

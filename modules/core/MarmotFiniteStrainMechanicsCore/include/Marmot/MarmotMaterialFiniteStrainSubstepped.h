@@ -204,8 +204,8 @@ namespace Marmot::Materials {
       MatrixXd dStress_dF_flat = dStressAndState_dF.block( 0, 0, 9, 9 );
 
       // possibiblity to take fd tangent directly
-      // tangents.dTau_dF = reshape<3,3,3,3>( Fastor::transpose(FastorStandardTensors::Tensor99d( dStress_dF_flat.data()
-      // )) );
+      tangents.dTau_dF = reshape< 3, 3, 3, 3 >(
+        Fastor::transpose( FastorStandardTensors::Tensor99d( dStress_dF_flat.data() ) ) );
 
       // Extract dState/dF_new
       sensitivities.dState_dF = dStressAndState_dF.block( 9, 0, nState, 9 );
