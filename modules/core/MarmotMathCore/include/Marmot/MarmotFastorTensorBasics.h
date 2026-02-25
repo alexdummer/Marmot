@@ -623,6 +623,26 @@ namespace Marmot {
   }
 
   /**
+   * @brief Construct a Fastor tensor of arbitrary type from a Fastor double tensor
+   * @tparam T target scalar type
+   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @param in a Fastor tensor of type double
+   * @return a Fastor tensor of type T
+   */
+  template < typename T, size_t... Rest >
+  Fastor::Tensor< T, Rest... > makeOtherScalarType( const Fastor::Tensor< double, Rest... >& in )
+  {
+    Fastor::Tensor< T, Rest... > out;
+    T*                           out_data = out.data();
+    double*                      in_data  = in.data();
+
+    for ( Fastor::FASTOR_INDEX i = 0; i < in.size(); ++i ) {
+      out_data[out.get_mem_index( i )] = static_cast< T >( in_data[in.get_mem_index( i )] );
+    }
+    return out;
+  }
+
+  /**
    * @brief Compute the symmetric part of a second order 3D Fastor tensor
    * @tparam T scalar type
    * @param t a second order Fastor tensor

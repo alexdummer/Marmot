@@ -133,5 +133,6 @@ namespace Marmot {
         memcpy( stateVars + i * 9, &Q_np, 9 * sizeof( double ) );
       }
     }
+
   } // namespace ContinuumMechanics::FiniteStrain::Viscoelasticity
 } // namespace Marmot
