@@ -34,10 +34,11 @@ namespace Marmot {
 
   namespace FastorStandardTensors {
 
-    using Tensor3d    = Fastor::Tensor< double, 3 >;
-    using Tensor33d   = Fastor::Tensor< double, 3, 3 >;
-    using Tensor333d  = Fastor::Tensor< double, 3, 3, 3 >;
-    using Tensor3333d = Fastor::Tensor< double, 3, 3, 3, 3 >;
+    using Tensor3d      = Fastor::Tensor< double, 3 >;
+    using Tensor33d     = Fastor::Tensor< double, 3, 3 >;
+    using Tensor333d    = Fastor::Tensor< double, 3, 3, 3 >;
+    using Tensor3333d   = Fastor::Tensor< double, 3, 3, 3, 3 >;
+    using Tensor333333d = Fastor::Tensor< double, 3, 3, 3, 3, 3, 3 >;
 
     template < typename T >
     using Tensor3t = Fastor::Tensor< T, 3 >;
@@ -52,6 +53,17 @@ namespace Marmot {
     using TensorMap33d   = Fastor::TensorMap< double, 3, 3 >;
     using TensorMap333d  = Fastor::TensorMap< double, 3, 3, 3 >;
     using TensorMap3333d = Fastor::TensorMap< double, 3, 3, 3, 3 >;
+
+    using Tensor9d  = Fastor::Tensor< double, 9 >;
+    using Tensor99d = Fastor::Tensor< double, 9, 9 >;
+
+    template < typename T >
+    using Tensor9t = Fastor::Tensor< T, 9 >;
+    template < typename T >
+    using Tensor99t = Fastor::Tensor< T, 9, 9 >;
+
+    using TensorMap9d  = Fastor::TensorMap< double, 9 >;
+    using TensorMap99d = Fastor::TensorMap< double, 9, 9 >;
 
     namespace Spatial3D {
       inline const Tensor33d I = Tensor33d( ( Eigen::Matrix3d() << Eigen::Matrix3d::Identity() ).finished().data(),
@@ -218,6 +230,8 @@ namespace Marmot {
     using mnkB = Fastor::Index< m_, n_, k_, B_ >;
     using mnkL = Fastor::Index< m_, n_, k_, L_ >;
     using nB   = Fastor::Index< n_, B_ >;
+
+    using ijklmn = Fastor::Index< i_, j_, k_, l_, m_, n_ >;
 
     using to_IJKL = Fastor::OIndex< I_, J_, K_, L_ >;
     using to_IJkK = Fastor::OIndex< I_, J_, k_, K_ >;
