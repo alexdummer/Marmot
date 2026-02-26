@@ -70,8 +70,8 @@ public:
   struct tangents {
     Marmot::Matrix6d                               dStressddStrain = Marmot::Matrix6d::Zero();
     Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
-    Eigen::Matrix< double, 6, nNonlocalVariables >
-      dKLocalddStrain = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    Eigen::Matrix< double, nNonlocalVariables, 6 >
+      dKLocalddStrain = Eigen::Matrix< double, nNonlocalVariables, 6 >::Zero();
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
