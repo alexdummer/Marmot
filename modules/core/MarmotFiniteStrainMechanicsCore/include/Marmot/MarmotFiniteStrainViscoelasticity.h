@@ -81,12 +81,12 @@ namespace Marmot {
      * @details This update correspond to the approach by Simo (1987)
      * and is used in the implementation of the generalized maxwell model in the finite element code
      */
-    void evaluateGeneralizedMaxwellModel( FastorStandardTensors::Tensor33d&         stress,
-                                          const FastorStandardTensors::Tensor3333d& tangent,
-                                          const FastorStandardTensors::Tensor33d&   dStress,
-                                          const double                              dT,
-                                          const MaxwellProperties&                  maxwellProperties,
-                                          double*                                   stateVars );
+    void evaluateGeneralizedMaxwellModel( FastorStandardTensors::Tensor33d&       stress,
+                                          FastorStandardTensors::Tensor3333d&     tangent,
+                                          const FastorStandardTensors::Tensor33d& dStress,
+                                          const double                            dT,
+                                          const MaxwellProperties&                maxwellProperties,
+                                          double*                                 stateVars );
 
     /**
      * @brief Evaluate generalized maxwell model contribution to stress without tangent update

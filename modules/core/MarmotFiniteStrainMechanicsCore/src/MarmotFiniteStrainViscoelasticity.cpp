@@ -87,7 +87,7 @@ namespace Marmot {
                                           double*                                 stateVars )
     {
 
-      if ( maxwellProperties.nMaxwell == 0 || dT <= 0.0 )
+      if ( maxwellProperties.nMaxwell == 0 )
         return;
 
       using namespace Fastor;
