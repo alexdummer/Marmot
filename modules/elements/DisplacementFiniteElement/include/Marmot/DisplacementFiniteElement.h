@@ -866,32 +866,51 @@ namespace Marmot::Elements {
   template < int nDim, int nNodes >
   void DisplacementFiniteElement< nDim, nNodes >::computeLumpedInertia( double* M )
   {
-    Map< RhsSized > Me( M );
-    Me.setZero();
+    Map< RhsSized > LMM( M );
+    LMM.setZero();
 
-    KeSizedMatrix CMM;
-    CMM.setZero();
-    computeConsistentInertia( CMM.data() );
+    constexpr int nNodesLinear  = pow( 2, nDim );
+    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
+    for ( const auto& qp : qps ) {
+      const auto N_    = this->N( qp.xi );
+      const auto N_lin = linGeometryEl.N( qp.xi );
 
-    Me = CMM.rowwise().sum();
+      VectorXd N_weighted = 0.5 * ( N_ );
+      // add the linear contribution to the first nNodesLinear nodes
+      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+
+      const double rho = qp.material->getDensity();
+      VectorXd     m_  = N_weighted * qp.detJ * qp.weight * rho;
+      for ( int i = 0; i < nNodes; i++ ) {
+        for ( int d = 0; d < nDim; d++ )
+          LMM( i * nDim + d ) += m_( i );
+      }
+    }
   }
 
   template < int nDim, int nNodes >
   void DisplacementFiniteElement< nDim, nNodes >::computeLumpedDamping( double* C )
   {
-    Map< RhsSized > Ce( C );
-    Ce.setZero();
+    Map< RhsSized > LCM( C );
+    LCM.setZero();
 
-    KeSizedMatrix CMM;
-    CMM.setZero();
-
+    constexpr int nNodesLinear  = pow( 2, nDim );
+    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
-      const auto   N_  = this->NB( this->N( qp.xi ) );
-      const double eta = qp.material->getDampingCoefficient();
-      CMM += N_.transpose() * N_ * qp.detJ * qp.weight * eta;
-    }
+      const auto N_    = this->N( qp.xi );
+      const auto N_lin = linGeometryEl.N( qp.xi );
 
-    Ce = CMM.rowwise().sum();
+      VectorXd N_weighted = 0.5 * ( N_ );
+      // add the linear contribution to the first nNodesLinear nodes
+      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+
+      const double rho = qp.material->getDensity();
+      VectorXd     m_  = N_weighted * qp.detJ * qp.weight * rho;
+      for ( int i = 0; i < nNodes; i++ ) {
+        for ( int d = 0; d < nDim; d++ )
+          LCM( i * nDim + d ) += m_( i );
+      }
+    }
   }
 
   template < int nDim, int nNodes >
