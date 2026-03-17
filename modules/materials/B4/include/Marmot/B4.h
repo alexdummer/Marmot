@@ -159,6 +159,9 @@ namespace Marmot::Materials {
 
     B4( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
+    double getDensity() override;
+    double getDampingCoefficient() override;
+
     void computeStress( state3D&        state,
                         double*         dStressDDStrain,
                         const double*   dStrain,

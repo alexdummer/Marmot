@@ -1,6 +1,5 @@
 #include "Marmot/LinearElastic.h"
 #include "Marmot/MarmotElasticity.h"
-#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotUtility.h"
@@ -15,7 +14,7 @@ namespace Marmot::Materials {
   LinearElastic::LinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber )
     : MarmotMaterialHypoElastic::MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialNumber ),
       // clang-format off
-          anisotropicType( nMaterialProperties == 2 || nMaterialProperties == 11 || nMaterialProperties == 15 ? static_cast< Type >( nMaterialProperties ) : static_cast< Type >( nMaterialProperties - 1 ) ),
+          anisotropicType( nMaterialProperties >= 15 ? Type::Orthotropic : (nMaterialProperties >= 11 ? Type::TransverseIsotropic : Type::Isotropic) ),
           E1(   materialProperties[0] ),
           E2(   anisotropicType == Type::Isotropic ? E1 : materialProperties[1] ),
           E3(   anisotropicType == Type::Orthotropic ? materialProperties[2] : E2 ),
@@ -90,9 +89,23 @@ namespace Marmot::Materials {
 
   double LinearElastic::getDensity()
   {
-    if ( nMaterialProperties == 3 || nMaterialProperties == 12 || nMaterialProperties == 16 )
-      return materialProperties[nMaterialProperties - 1];
-    else
-      throw std::runtime_error( "Density not specified for this material" );
+    int base_props = static_cast< int >( anisotropicType );
+    if ( nMaterialProperties >= base_props + 1 )
+      return materialProperties[base_props];
+    else {
+      throw std::runtime_error(
+        std::string( MakeString() << __PRETTY_FUNCTION__ << ": Density not specified for this material." ) );
+    }
+  }
+
+  double LinearElastic::getDampingCoefficient()
+  {
+    int base_props = static_cast< int >( anisotropicType );
+    if ( nMaterialProperties >= base_props + 2 )
+      return materialProperties[base_props + 1];
+    else {
+      throw std::runtime_error( std::string(
+        MakeString() << __PRETTY_FUNCTION__ << ": Damping coefficient not specified for this material." ) );
+    }
   }
 } // namespace Marmot::Materials

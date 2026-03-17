@@ -30,10 +30,12 @@
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotFiniteStrainPlasticity.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 
@@ -177,6 +179,32 @@ namespace Marmot::Materials {
                             AlgorithmicModuli< 3 >&    tangents,
                             const Deformation< 3 >&    deformation,
                             const TimeIncrement&       timeIncrement ) const;
+
+    /**
+     * @brief Get material density.
+     * @return Density value.
+     */
+    double getDensity() const override
+    {
+      if ( this->nMaterialProperties < 8 ) {
+        throw std::runtime_error(
+          std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 8." ) );
+      }
+      return this->density;
+    }
+
+    /**
+     * @brief Get damping coefficient.
+     * @return Damping coefficient.
+     */
+    double getDampingCoefficient() const override
+    {
+      if ( this->nMaterialProperties < 9 ) {
+        throw std::runtime_error( std::string(
+          MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 9." ) );
+      }
+      return this->materialProperties[8];
+    }
 
     void initializeStateLayout() override
     {

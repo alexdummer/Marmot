@@ -2,7 +2,6 @@
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/MarmotVoigt.h"
 #include "Marmot/VonMisesConstants.h"
 
 namespace Marmot::Materials {
@@ -12,16 +11,19 @@ namespace Marmot::Materials {
 
   double VonMisesModel::getDensity()
   {
-    if ( this->nMaterialProperties < 7 )
-      throw std::runtime_error( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 7" );
+    if ( this->nMaterialProperties < 7 ) {
+      throw std::runtime_error(
+        std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 7." ) );
+    }
     return this->materialProperties[6];
   }
 
   double VonMisesModel::getDampingCoefficient()
   {
-    if ( this->nMaterialProperties < 8 )
-      throw std::runtime_error( MakeString()
-                                << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 8" );
+    if ( this->nMaterialProperties < 8 ) {
+      throw std::runtime_error( std::string(
+        MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 8." ) );
+    }
     return this->materialProperties[7];
   }
 

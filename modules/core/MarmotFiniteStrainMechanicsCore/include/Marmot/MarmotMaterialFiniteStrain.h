@@ -172,6 +172,19 @@ public:
                                    AlgorithmicModuli< 3 >&    algorithmicModuli,
                                    const Deformation< 3 >&    deformation,
                                    const TimeIncrement&       timeIncrement ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >& response,
+                                           const Deformation< 3 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement );
+  }
+
   /**
    * @brief Compute stress under plane strain conditions with eigen deformation.
    * @param[inout] response ConstitutiveResponse instance
@@ -188,6 +201,20 @@ public:
                                    const Deformation< 3 >&                     deformation,
                                    const TimeIncrement&                        timeIncrement,
                                    const std::tuple< double, double, double >& eigenDeformation ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain with eigen deformation for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >&                  response,
+                                           const Deformation< 3 >&                     deformation,
+                                           const TimeIncrement&                        timeIncrement,
+                                           const std::tuple< double, double, double >& eigenDeformation ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement, eigenDeformation );
+  }
+
   /**
    * @brief Compute stress under plane stress conditions.
    * @param[inout] response ConstitutiveResponse instance
@@ -202,6 +229,18 @@ public:
                                    AlgorithmicModuli< 2 >&    algorithmicModuli,
                                    const Deformation< 2 >&    deformation,
                                    const TimeIncrement&       timeIncrement ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStress for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStress and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStressExplicit( ConstitutiveResponse< 2 >& response,
+                                           const Deformation< 2 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 2 > algorithmicModuli;
+    computePlaneStress( response, algorithmicModuli, deformation, timeIncrement );
+  }
 
   /**
    * @brief Find the eigen deformation that corresponds to a given eigen stress.
@@ -253,5 +292,24 @@ public:
     for ( int i = 0; i < nStateVars; ++i ) {
       stateVars[i] = 0.0;
     }
+  }
+
+  /**
+   * @brief Get the mass density of the material.
+   * @return Mass density
+   *
+   * @note The default implementation throws a std::runtime_error.
+   */
+  virtual double getDensity() const { throw std::runtime_error( "getDensity() not implemented for this material" ); }
+
+  /**
+   * @brief Get the damping coefficient of the material.
+   * @return Damping coefficient
+   *
+   * @note The default implementation throws a std::runtime_error.
+   */
+  virtual double getDampingCoefficient() const
+  {
+    throw std::runtime_error( "getDampingCoefficient() not implemented for this material" );
   }
 };

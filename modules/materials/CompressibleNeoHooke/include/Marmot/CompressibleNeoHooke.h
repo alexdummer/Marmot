@@ -28,7 +28,6 @@
 #pragma once
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
-#include <string>
 
 namespace Marmot::Materials {
 
@@ -79,6 +78,32 @@ namespace Marmot::Materials {
                         AlgorithmicModuli< 3 >&,
                         const Deformation< 3 >&,
                         const TimeIncrement& ) const override;
+
+    /**
+     * @brief Get material density.
+     * @return Density value.
+     */
+    double getDensity() const override
+    {
+      if ( this->nMaterialProperties < 3 ) {
+        throw std::runtime_error(
+          std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 3." ) );
+      }
+      return this->materialProperties[2];
+    }
+
+    /**
+     * @brief Get damping coefficient.
+     * @return Damping coefficient.
+     */
+    double getDampingCoefficient() const override
+    {
+      if ( this->nMaterialProperties < 4 ) {
+        throw std::runtime_error( std::string(
+          MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 4." ) );
+      }
+      return this->materialProperties[3];
+    }
 
     /**
      * @brief Initialize the state layout (no state variables here).

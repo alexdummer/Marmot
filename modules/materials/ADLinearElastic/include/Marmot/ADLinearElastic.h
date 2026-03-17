@@ -50,6 +50,9 @@ namespace Marmot::Materials {
 
     ADLinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
+    double getDensity() override;
+    double getDampingCoefficient() override;
+
   protected:
     void computeStressAD( state3DAD& state, const autodiff::dual* dStrain, const timeInfo& timeInfo ) const;
 

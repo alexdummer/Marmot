@@ -310,14 +310,16 @@ namespace Marmot::Elements {
     void computeConsistentInertia( double* M );
 
     /**
-     * @brief Compute lumped mass vector via row-sum of consistent mass.
-     * @details \f$\mathbf{m}_e = \mathrm{rowsum}(\mathbf{M}_e)\f$.
+     * @brief Compute the lumped (diagonal) mass matrix.
+     * @details Uses the manifold-based approach according to
+     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
      */
     void computeLumpedInertia( double* M );
 
     /**
      * @brief Compute lumped damping matrix using a damping coefficient.
-     * @details \f$\mathbf{C}_e = \sum_{qp} \eta\, \mathbf{N}^\mathsf{T}\mathbf{N}\, J_0 w\f$.
+     * @details Uses the manifold-based approach according to
+     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
      */
     void computeLumpedDamping( double* C );
 
@@ -876,7 +878,6 @@ namespace Marmot::Elements {
       const auto N_lin = linGeometryEl.N( qp.xi );
 
       VectorXd N_weighted = 0.5 * ( N_ );
-      // add the linear contribution to the first nNodesLinear nodes
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
 
       const double rho = qp.material->getDensity();
@@ -901,11 +902,10 @@ namespace Marmot::Elements {
       const auto N_lin = linGeometryEl.N( qp.xi );
 
       VectorXd N_weighted = 0.5 * ( N_ );
-      // add the linear contribution to the first nNodesLinear nodes
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
 
-      const double rho = qp.material->getDensity();
-      VectorXd     m_  = N_weighted * qp.detJ * qp.weight * rho;
+      const double eta = qp.material->getDampingCoefficient();
+      VectorXd     m_  = N_weighted * qp.detJ * qp.weight * eta;
       for ( int i = 0; i < nNodes; i++ ) {
         for ( int d = 0; d < nDim; d++ )
           LCM( i * nDim + d ) += m_( i );
