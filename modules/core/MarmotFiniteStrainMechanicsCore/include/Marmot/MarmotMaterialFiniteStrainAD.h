@@ -29,6 +29,14 @@
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 
+/**
+ * @brief Base class for finite strain materials using automatic differentiation.
+ *
+ * This class extends MarmotMaterialFiniteStrain by providing an interface for
+ * computing stresses and algorithmic tangent moduli using automatic
+ * differentiation. Derived material models implement computeStressAD() to
+ * supply the AD-based constitutive response.
+ */
 class MarmotMaterialFiniteStrainAD : public MarmotMaterialFiniteStrain {
 
 public:
