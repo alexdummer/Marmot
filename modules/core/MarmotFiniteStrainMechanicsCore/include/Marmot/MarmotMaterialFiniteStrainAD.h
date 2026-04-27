@@ -26,6 +26,7 @@
  * ---------------------------------------------------------------------
  */
 #pragma once
+#include <Eigen/Core>
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 
@@ -45,7 +46,7 @@ public:
   {
   }
   /**
-   * @struct ConstitutiveResponse
+   * @struct ConstitutiveResponseAD
    * @brief Constitutive response of a material at given state.
    * @tparam nDim Number of spatial dimensions (2 or 3).
    *
@@ -60,7 +61,7 @@ public:
   };
 
   /**
-   * @struct Deformation
+   * @struct DeformationAD
    * @brief Represents the deformation state of a material.
    *
    * This struct holds the deformation gradient \f$\boldsymbol{F}\f$ which describes the local deformation of a
@@ -90,7 +91,7 @@ public:
         // Reset stateVars to old state
         stateVars = stateVarsOld;
 
-        // Promote old stress to dual (Fastor usually handles this implicit cast natively)
+        // Explicitly convert old (double-valued) stress to a dual-valued tensor for AD
         Tensor33t< scalar > tauAD = makeDual( tauOld );
 
         // Construct AD state
@@ -116,6 +117,22 @@ public:
     std::tie( response.tau, tangents.dTau_dF ) = Marmot::AutomaticDifferentiation::dF_dT( computeTauAD, deformation.F );
   }
 
+  /**
+   * @brief AD-based constitutive update for finite strain materials.
+   *
+   * This method is called repeatedly from computeStress() during seeded
+   * automatic-differentiation evaluations performed by
+   * Marmot::AutomaticDifferentiation::dF_dT. For each seeded evaluation,
+   * the state variables in response.stateVars are reset to the same
+   * "old" state before computeStressAD() is invoked.
+   *
+   * Implementations MUST update response.stateVars based only on the
+   * primal values of the dual numbers passed in (e.g. deformation.F,
+   * response.tau, etc.), and MUST NOT depend on or modify state based
+   * on AD gradient components. After dF_dT completes, response.stateVars
+   * will contain the state corresponding to the last seeded evaluation,
+   * which is correct only under this assumption.
+   */
   virtual void computeStressAD( ConstitutiveResponseAD< 3 >& response,
                                 const DeformationAD< 3 >&    deformation,
                                 const TimeIncrement&         timeIncrement ) const = 0;
