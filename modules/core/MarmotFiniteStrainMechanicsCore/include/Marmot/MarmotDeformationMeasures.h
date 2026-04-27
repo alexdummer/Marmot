@@ -104,13 +104,8 @@ namespace Marmot::ContinuumMechanics {
       {
         const Tensor33t< T > C = Marmot::ContinuumMechanics::DeformationMeasures::rightCauchyGreen( F );
 
-        // workaround for types other than double
-        Tensor33t< T > I( 0.0 );
-        I( 0, 0 ) = 1.0;
-        I( 1, 1 ) = 1.0;
-        I( 2, 2 ) = 1.0;
-
-        const Tensor3333t< T > dC_dF = einsum< IK, kJ, to_IJkK >( I, F ) + einsum< kI, JK, to_IJkK >( F, I );
+        const Tensor3333t< T > dC_dF = einsum< IK, kJ, to_IJkK >( Spatial3D::I, F ) +
+                                       einsum< kI, JK, to_IJkK >( F, Spatial3D::I );
 
         return { C, dC_dF };
       }

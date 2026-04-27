@@ -35,7 +35,7 @@ namespace Marmot::Materials {
 
     using namespace ContinuumMechanics;
     // compute Cauchy-Green deformation
-    const auto [C, dC_dF] = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( F_ );
+    const auto C = DeformationMeasures::rightCauchyGreen( F_ );
 
     // compute energy density, first and second partial derivatives wrt Cauchy Green deformation
     const auto [psi_, dPsi_dC] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( C, K, G );
