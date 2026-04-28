@@ -22,7 +22,7 @@ namespace Marmot::PhaseField {
         const double s      = 1. - pf;
         const double ds_dpf = -1.;
 
-        return { 3 * s * s - 2 * s * s * s, ds_dpf * 6 * s - ds_dpf * 6 * s * s, 6 + 12 * s };
+        return { 3 * s * s - 2 * s * s * s, ds_dpf * 6 * s - ds_dpf * 6 * s * s, 6 - 12 * s };
       }
       std::tuple< double, double, double > quartic( const double pf )
       {
