@@ -1,7 +1,7 @@
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
-#include <vector>
 #include <algorithm>
 #include <cstring>
+#include <vector>
 
 namespace Marmot {
   namespace ContinuumMechanics::FiniteStrain::Viscoelasticity {
