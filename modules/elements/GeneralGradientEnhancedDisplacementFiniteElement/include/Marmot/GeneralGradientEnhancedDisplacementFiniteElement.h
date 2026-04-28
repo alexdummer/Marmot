@@ -446,9 +446,9 @@ namespace Marmot::Elements {
       Vector< double, nNonlocalVariables > dK;
 
       for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
-        double idx = n * nNonLocalNodes;
-        K( n )     = N_K * qK.segment( idx, nNonLocalNodes );
-        dK( n )    = N_K * dQK.segment( idx, nNonLocalNodes );
+        Eigen::Index idx = static_cast< Eigen::Index >( n ) * static_cast< Eigen::Index >( nNonLocalNodes );
+        K( n )           = N_K * qK.segment( idx, nNonLocalNodes );
+        dK( n )          = N_K * dQK.segment( idx, nNonLocalNodes );
       }
 
       response  res;

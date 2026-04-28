@@ -25,6 +25,9 @@
  * ---------------------------------------------------------------------
  */
 
+#pragma once
+
+#include <cmath>
 #include <tuple>
 
 namespace Marmot::PhaseField {
@@ -41,14 +44,14 @@ namespace Marmot::PhaseField {
     T cubic( const T pf )
     {
       const T s = 1. - pf;
-      return 3. * pow( s, 2 ) + 2. * pow( s, 3 );
+      return 3. * pow( s, 2 ) - 2. * pow( s, 3 );
     }
 
     template < typename T >
     T quartic( const T pf )
     {
       const T s = 1. - pf;
-      return 4 * pow( s, 3 ) + 3 * pow( s, 4 );
+      return 4 * pow( s, 3 ) - 3 * pow( s, 4 );
     }
 
     // generic degradation function acc. Wu, JMPS (2017)

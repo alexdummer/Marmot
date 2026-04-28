@@ -121,7 +121,7 @@ namespace Marmot::Elements::Registration {
                        FullIntegration,
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid >() );
 
-  // const static bool G2GC3D8R_isRegistered = MarmotLibrary::MarmotElementFactory::^
+  // const static bool G2GC3D8R_isRegistered = MarmotLibrary::MarmotElementFactory::
   //   registerElement( "G2GC3D8R",
   //                    GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D8R,
   //                    []( int elementID ) -> MarmotElement* {
