@@ -21,18 +21,18 @@ void testSetup( const std::string& testName,
 
   // idx 0 - Bulk modulus K, idx 1 - Shear modulus G
   std::array< double, 2 > materialProperties_ = { 3500, 1500 };
-  const double            nMaterialProperties = 2;
+  const int               nMaterialProperties = 2;
   const int               elLabel             = 1;
 
   // Create material instance
   const ADCompressibleNeoHooke mat = ADCompressibleNeoHooke( &materialProperties_[0], nMaterialProperties, elLabel );
 
   // Create deformation, time increment, response and tangent objects required for stress computation
-  ADCompressibleNeoHooke::Deformation< 3 > def;
+  ADCompressibleNeoHooke::Deformation< 3 > def     = { Tensor33d( 0.0 ) };
   ADCompressibleNeoHooke::TimeIncrement    timeInc = { 0, 0.1 };
 
-  ADCompressibleNeoHooke::ConstitutiveResponse< 3 > response;
-  ADCompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent;
+  ADCompressibleNeoHooke::ConstitutiveResponse< 3 > response = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
+  ADCompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent  = { Tensor3333d( 0.0 ) };
 
   // Prescribe a deformation gradient tensor F for the considered load case
   def.F = inputF;
@@ -293,7 +293,7 @@ void testWithMPSolver()
   using namespace Marmot::Solvers;
   auto        materialProperties = std::vector< double >{ 3500, 1500 };
   auto        solveropts         = MarmotMaterialPointSolverFiniteStrain::SolverOptions();
-  std::string matName            = "COMPRESSIBLENEOHOOKE";
+  std::string matName            = "ADCOMPRESSIBLENEOHOOKE";
   auto        solver             = MarmotMaterialPointSolverFiniteStrain( matName,
                                                        materialProperties.data(),
                                                        materialProperties.size(),

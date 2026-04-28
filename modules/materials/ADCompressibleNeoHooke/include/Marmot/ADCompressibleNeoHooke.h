@@ -31,7 +31,7 @@
 namespace Marmot::Materials {
 
   /**
-   * @class Marmot::Materials::CompressibleNeoHooke
+   * @class Marmot::Materials::ADCompressibleNeoHooke
    * @brief Compressible Neo-Hookean hyperelastic material model (Pence–Gou potential, variant B).
    *
    * @par Material parameters
@@ -49,7 +49,7 @@ namespace Marmot::Materials {
     using MarmotMaterialFiniteStrainAD::MarmotMaterialFiniteStrainAD;
 
     /**
-     * @brief Construct a CompressibleNeoHooke material.
+     * @brief Construct a ADCompressibleNeoHooke material.
      * @param materialProperties Expects @c K at index 0 and @c G at index 1.
      * @param nMaterialProperties Length of @c materialProperties.
      * @param materialLabel Material label.
@@ -57,14 +57,12 @@ namespace Marmot::Materials {
     ADCompressibleNeoHooke( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
     /**
-     * @brief Compute the Kirchhoff stress and the algorithmic tangent for the current step.
+     * @brief Compute the Kirchhoff stress with dual numbers.
      *
      * @param[in,out] response
      *   - @c tau - Kirchhoff stress tensor @f$\boldsymbol{\tau}@f$.
      *   - @c elasticEnergyDensity - elastic energy density  @f$\psi@f$.
      *   - @c rho - density (unused here).
-     * @param[in,out] tangents
-     *   - @c dTau_dF - algorithmic tangent @f$\partial\boldsymbol{\tau}/\partial\boldsymbol{F}@f$.
      * @param[in]  deformation
      *   - @c F - deformation gradient @f$\boldsymbol{F}@f$.
      * @param[in]  timeIncrement
