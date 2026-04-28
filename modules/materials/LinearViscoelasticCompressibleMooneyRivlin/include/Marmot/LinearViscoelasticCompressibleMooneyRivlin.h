@@ -33,8 +33,8 @@ namespace Marmot::Materials {
 
   /**
    * @class Marmot::Materials::LinearViscoelasticCompressibleMooneyRivlin
-   * @brief Linear Viscoelastic Compressible Neo-Hookean hyperelastic material model
-   * using the Pence–Gou potential, variant B.
+   * @brief Linear viscoelastic compressible Mooney–Rivlin hyperelastic material model
+   * using a Mooney–Rivlin type strain-energy potential.
    */
   class LinearViscoelasticCompressibleMooneyRivlin : public MarmotMaterialFiniteStrain {
   public:

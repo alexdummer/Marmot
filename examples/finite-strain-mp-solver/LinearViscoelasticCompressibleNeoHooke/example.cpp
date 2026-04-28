@@ -20,7 +20,7 @@ int main( int argc, char** argv )
   // double properties[] = { 1, 0, 3500,1500, 1, 0.5, 1, 0.25, 10 };
   double properties[] = { 0, 3500, 1500, 2, 0.5, 10000000, 0.25, 10 };
   // double      properties[] = { 0, 3500, 1500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
-  int nProps = 6;
+  int nProps = 8;
 
   // 2) Configure solver options
   MarmotMaterialPointSolverFiniteStrain::SolverOptions options;

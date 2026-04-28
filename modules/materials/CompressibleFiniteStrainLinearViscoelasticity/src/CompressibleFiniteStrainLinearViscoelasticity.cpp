@@ -39,7 +39,6 @@ namespace Marmot::Materials {
       return ContinuumMechanics::EnergyDensityFunctions::ThirdOrderDerived::standardNeoHooke( C,
                                                                                               elasticProperties[0],
                                                                                               elasticProperties[1] );
-      break;
     case PenceGouNeoHooke:
       energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
         autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::PenceGouPotentialB<

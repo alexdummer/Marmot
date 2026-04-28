@@ -1,4 +1,7 @@
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
+#include <vector>
+#include <algorithm>
+#include <cstring>
 
 namespace Marmot {
   namespace ContinuumMechanics::FiniteStrain::Viscoelasticity {
@@ -75,7 +78,7 @@ namespace Marmot {
         tangent += einsum< ij, ijklmn >( H_np, dTangent_dDeformation );
 
         // update state variables
-        memcpy( stateVars + i * 9, &Q_np, 9 * sizeof( double ) );
+        memcpy( stateVars + i * 9, Q_np.data(), 9 * sizeof( double ) );
       }
     }
 
