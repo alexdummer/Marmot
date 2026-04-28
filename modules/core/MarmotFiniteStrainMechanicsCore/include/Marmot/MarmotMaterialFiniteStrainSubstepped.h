@@ -279,6 +279,7 @@ namespace Marmot::Materials {
       // set final response
       response.tau                  = subResponse.tau;
       response.elasticEnergyDensity = subResponse.elasticEnergyDensity;
+      response.rho                  = subResponse.rho;
 
       // Update stored F_n to F_n1
       Fn_ref = deformation.F;
