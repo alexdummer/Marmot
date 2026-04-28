@@ -191,10 +191,10 @@ namespace Marmot::Materials {
       };
 
       // Compute dState/dF_new
-      sensitivities.dState_dF = centralDifference( func_dState_dF, Map< const VectorXd >( deformation.F.data(), 9 ) );
+      sensitivities.dState_dF = forwardDifference( func_dState_dF, Map< const VectorXd >( deformation.F.data(), 9 ) );
 
       // Compute [dStress/dStateOld; dState/dStateOld]
-      const MatrixXd dStressAndState_dStateOld = centralDifference( func_dStressAndState_dStateOld,
+      const MatrixXd dStressAndState_dStateOld = forwardDifference( func_dStressAndState_dStateOld,
                                                                     Map< const VectorXd >( stateOld.data(), nState ) );
 
       // Extract dState/dStateOld
