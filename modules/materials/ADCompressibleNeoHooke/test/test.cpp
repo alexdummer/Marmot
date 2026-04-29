@@ -1,4 +1,4 @@
-#include "Marmot/CompressibleNeoHooke.h"
+#include "Marmot/ADCompressibleNeoHooke.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMaterialPointSolverFiniteStrain.h"
@@ -25,14 +25,14 @@ void testSetup( const std::string& testName,
   const int               elLabel             = 1;
 
   // Create material instance
-  const CompressibleNeoHooke mat = CompressibleNeoHooke( &materialProperties_[0], nMaterialProperties, elLabel );
+  const ADCompressibleNeoHooke mat = ADCompressibleNeoHooke( &materialProperties_[0], nMaterialProperties, elLabel );
 
   // Create deformation, time increment, response and tangent objects required for stress computation
-  CompressibleNeoHooke::Deformation< 3 > def     = { Tensor33d( 0.0 ) };
-  CompressibleNeoHooke::TimeIncrement    timeInc = { 0, 0.1 };
+  ADCompressibleNeoHooke::Deformation< 3 > def     = { Tensor33d( 0.0 ) };
+  ADCompressibleNeoHooke::TimeIncrement    timeInc = { 0, 0.1 };
 
-  CompressibleNeoHooke::ConstitutiveResponse< 3 > response = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
-  CompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent  = { Tensor3333d( 0.0 ) };
+  ADCompressibleNeoHooke::ConstitutiveResponse< 3 > response = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
+  ADCompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent  = { Tensor3333d( 0.0 ) };
 
   // Prescribe a deformation gradient tensor F for the considered load case
   def.F = inputF;
@@ -45,20 +45,20 @@ void testSetup( const std::string& testName,
     // Compare computed stress to target stress values
     throwExceptionOnFailure( checkIfEqual( response.tau, targetStress, 1e-10 ),
                              testName + " - Kirchhoff stress tensor (tau) computation failed" +
-                               " for CompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
+                               " for ADCompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
 
     for ( int i = 0; i < 3; i++ )
       for ( int j = 0; j < 3; j++ )
 
         throwExceptionOnFailure( checkIfEqual( response.tau( i, j ), response.tau( j, i ), 1e-10 ),
                                  testName + " - Kirchhoff stress tensor symmetry check failed" +
-                                   " for CompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
+                                   " for ADCompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
 
     if ( checkTangent ) {
       // Compare algorithmic tangent to target tangent values
       throwExceptionOnFailure( checkIfEqual( tangent.dTau_dF, targetTangent, 1e-10 ),
                                testName + " - Algorithmic tangent tensor computation failed" +
-                                 " for CompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
+                                 " for ADCompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
     }
   }
 
@@ -92,7 +92,7 @@ void testSetup( const std::string& testName,
 
       throwExceptionOnFailure( checkIfEqual( stressNew, stressRotated, 1e-10 ),
                                testName + " - Objectivity test failed (phi_deg=" + std::to_string( phi_deg ) +
-                                 ") for CompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
+                                 ") for ADCompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
     }
   }
 
@@ -121,7 +121,7 @@ void testSetup( const std::string& testName,
 
       throwExceptionOnFailure( checkIfEqual( stressNew, stressUnrotated, 1e-10 ),
                                testName + " - Isotropy test failed (phi_deg=" + std::to_string( phi_deg ) +
-                                 ") for CompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
+                                 ") for ADCompressibleNeoHooke material in " + std::string( __PRETTY_FUNCTION__ ) );
     }
   }
 }
@@ -293,7 +293,7 @@ void testWithMPSolver()
   using namespace Marmot::Solvers;
   auto        materialProperties = std::vector< double >{ 3500, 1500 };
   auto        solveropts         = MarmotMaterialPointSolverFiniteStrain::SolverOptions();
-  std::string matName            = "COMPRESSIBLENEOHOOKE";
+  std::string matName            = "ADCOMPRESSIBLENEOHOOKE";
   auto        solver             = MarmotMaterialPointSolverFiniteStrain( matName,
                                                        materialProperties.data(),
                                                        materialProperties.size(),
@@ -337,7 +337,8 @@ void testWithMPSolver()
   stressTarget( 1, 0 ) = .15;
 
   throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-8 ),
-                           "I-5: Material Point Solver simple shear test failed for CompressibleNeoHooke material in " +
+                           "I-5: Material Point Solver simple shear test failed for ADCompressibleNeoHooke material "
+                           "in " +
                              std::string( __PRETTY_FUNCTION__ ) );
 }
 int main()
