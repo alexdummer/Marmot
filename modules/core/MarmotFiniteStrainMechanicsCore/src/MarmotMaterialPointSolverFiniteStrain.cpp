@@ -20,10 +20,8 @@ MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( st
   using namespace MarmotLibrary;
 
   // create material instance
-  material = MarmotMaterialFiniteStrainFactory::createMaterial( materialName,
-                                                                materialProperties,
-                                                                nMaterialProperties,
-                                                                1 );
+  material = std::unique_ptr< MarmotMaterialFiniteStrain >( dynamic_cast< MarmotMaterialFiniteStrain* >(
+    MarmotMaterialFiniteStrainFactory::createMaterial( materialName, materialProperties, nMaterialProperties, 1 ) ) );
 
   // get number of state variables
   nStateVars = material->getNumberOfRequiredStateVars();
@@ -177,7 +175,7 @@ void MarmotMaterialPointSolverFiniteStrain::solveIncrement( const Increment& inc
       for ( size_t i = 0; i < 9; ++i ) {
         Tensor9d diff = abs( identicalRowCheck - identicalRowCheck[i] );
         for ( size_t j = i + 1; j < 9; ++j ) {
-          if ( diff( j ) < 1e-14 ) {
+          if ( diff( j ) < 1e-10 ) {
             identicalRows.push_back( std::make_pair( i, j ) );
           }
         }
