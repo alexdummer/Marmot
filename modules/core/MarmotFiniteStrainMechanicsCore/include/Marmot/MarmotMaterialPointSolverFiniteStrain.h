@@ -278,7 +278,7 @@ namespace Marmot {
       void modifyTangent( FastorStandardTensors::Tensor99d& tangent, const Increment& increment );
 
       /// @brief The finite strain material model
-      MarmotMaterialFiniteStrain* material;
+      std::unique_ptr< MarmotMaterialFiniteStrain > material;
 
       /// @brief Number of state variables in the material model
       int nStateVars;
