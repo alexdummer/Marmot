@@ -79,7 +79,7 @@ static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&     
                                                            matProps.data(),
                                                            static_cast< int >( matProps.size() ),
                                                            solveropts );
-  if ( initialStateVars.size() > 0 ) {
+  if ( !initialStateVars.empty() ) {
     solver.setInitialState( initialStress, initialStateVars );
   }
   return solver;
