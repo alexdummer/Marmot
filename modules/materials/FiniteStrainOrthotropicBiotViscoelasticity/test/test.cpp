@@ -69,16 +69,16 @@ static std::vector< double > getIsotropicViscoelasticProperties()
 }
 
 // Helper to create a solver with the given material name and properties
-static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&         matName,
-                                                          std::vector< double >&     matProps,
-                                                          const Tensor33d&           initialStress = Tensor33d( 0.0 ),
-                                                          const Eigen::VectorXd&     initialStateVars = Eigen::VectorXd() )
+static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&     matName,
+                                                         std::vector< double >& matProps,
+                                                         const Tensor33d&       initialStress    = Tensor33d( 0.0 ),
+                                                         const Eigen::VectorXd& initialStateVars = Eigen::VectorXd() )
 {
   auto solveropts = MarmotMaterialPointSolverFiniteStrain::SolverOptions();
   auto solver     = MarmotMaterialPointSolverFiniteStrain( matName,
-                                                           matProps.data(),
-                                                           static_cast< int >( matProps.size() ),
-                                                           solveropts );
+                                                       matProps.data(),
+                                                       static_cast< int >( matProps.size() ),
+                                                       solveropts );
   if ( !initialStateVars.empty() ) {
     solver.setInitialState( initialStress, initialStateVars );
   }
@@ -88,20 +88,20 @@ static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&     
 // Test I-1: Undeformed configuration F=I should yield zero Kirchhoff stress
 void testUndeformedResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
 
   MarmotMaterialPointSolverFiniteStrain::Step step;
-  step.gradUIncrementTarget    = Tensor33d( 0.0 );
-  step.stressIncrementTarget   = Tensor33d( 0.0 );
+  step.gradUIncrementTarget        = Tensor33d( 0.0 );
+  step.stressIncrementTarget       = Tensor33d( 0.0 );
   step.isGradUComponentControlled  = Tensor33t< bool >( true );
   step.isStressComponentControlled = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                   = 0.0;
+  step.timeEnd                     = 1.0;
+  step.dTStart                     = 1.0;
+  step.dTMax                       = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -124,7 +124,7 @@ void testUndeformedResponse()
 //         C_12 = E*nu/((1+nu)*(1-2*nu))     = 8000
 void testSmallStrainUniaxialResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
@@ -137,10 +137,10 @@ void testSmallStrainUniaxialResponse()
   step.stressIncrementTarget        = Tensor33d( 0.0 );
   step.isGradUComponentControlled   = Tensor33t< bool >( true );
   step.isStressComponentControlled  = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                    = 0.0;
+  step.timeEnd                      = 1.0;
+  step.dTStart                      = 1.0;
+  step.dTMax                        = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -156,8 +156,7 @@ void testSmallStrainUniaxialResponse()
   stressTarget( 2, 2 ) = 8000.0 * eps;
 
   throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-8 ),
-                           "I-2: Small strain uniaxial response failed in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
+                           "I-2: Small strain uniaxial response failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-3: Finite strain uniaxial stretch (isotropic, purely elastic)
@@ -165,7 +164,7 @@ void testSmallStrainUniaxialResponse()
 //   tau_11 = 2640, tau_22 = tau_33 = 800
 void testFiniteStrainUniaxialResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
@@ -176,10 +175,10 @@ void testFiniteStrainUniaxialResponse()
   step.stressIncrementTarget        = Tensor33d( 0.0 );
   step.isGradUComponentControlled   = Tensor33t< bool >( true );
   step.isStressComponentControlled  = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                    = 0.0;
+  step.timeEnd                      = 1.0;
+  step.dTStart                      = 1.0;
+  step.dTMax                        = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -199,14 +198,13 @@ void testFiniteStrainUniaxialResponse()
   stressTarget( 2, 2 ) = 800.0;
 
   throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-8 ),
-                           "I-3: Finite strain uniaxial response failed in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
+                           "I-3: Finite strain uniaxial response failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-4: Stress tensor symmetry for an arbitrary deformation (isotropic)
 void testStressTensorSymmetry()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
@@ -226,10 +224,10 @@ void testStressTensorSymmetry()
   step.stressIncrementTarget        = Tensor33d( 0.0 );
   step.isGradUComponentControlled   = Tensor33t< bool >( true );
   step.isStressComponentControlled  = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                    = 0.0;
+  step.timeEnd                      = 1.0;
+  step.dTStart                      = 1.0;
+  step.dTMax                        = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -251,7 +249,7 @@ void testStressTensorSymmetry()
 // transform the Kirchhoff stress accordingly.
 void testObjectivity()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   // First compute stress for original deformation
@@ -269,14 +267,14 @@ void testObjectivity()
   auto solver = makeSolver( matName, matProps );
 
   MarmotMaterialPointSolverFiniteStrain::Step step;
-  step.gradUIncrementTarget    = F - Marmot::FastorStandardTensors::Spatial3D::I;
-  step.stressIncrementTarget   = Tensor33d( 0.0 );
+  step.gradUIncrementTarget        = F - Marmot::FastorStandardTensors::Spatial3D::I;
+  step.stressIncrementTarget       = Tensor33d( 0.0 );
   step.isGradUComponentControlled  = Tensor33t< bool >( true );
   step.isStressComponentControlled = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                   = 0.0;
+  step.timeEnd                     = 1.0;
+  step.dTStart                     = 1.0;
+  step.dTMax                       = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -300,14 +298,14 @@ void testObjectivity()
     auto solver_rot = makeSolver( matName, matProps );
 
     MarmotMaterialPointSolverFiniteStrain::Step step_rot;
-    step_rot.gradUIncrementTarget    = F_rotated - Marmot::FastorStandardTensors::Spatial3D::I;
-    step_rot.stressIncrementTarget   = Tensor33d( 0.0 );
+    step_rot.gradUIncrementTarget        = F_rotated - Marmot::FastorStandardTensors::Spatial3D::I;
+    step_rot.stressIncrementTarget       = Tensor33d( 0.0 );
     step_rot.isGradUComponentControlled  = Tensor33t< bool >( true );
     step_rot.isStressComponentControlled = Tensor33t< bool >( false );
-    step_rot.timeStart = 0.0;
-    step_rot.timeEnd   = 1.0;
-    step_rot.dTStart   = 1.0;
-    step_rot.dTMax     = 1.0;
+    step_rot.timeStart                   = 0.0;
+    step_rot.timeEnd                     = 1.0;
+    step_rot.dTStart                     = 1.0;
+    step_rot.dTMax                       = 1.0;
 
     solver_rot.addStep( step_rot );
     solver_rot.solve();
@@ -329,7 +327,7 @@ void testObjectivity()
 // For F = diag(1.1, 1, 1): tau_11 ≈ 3555.30, tau_22 ≈ 1100.29, tau_33 ≈ 1461.32
 void testOrthotropicUniaxialResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getOrthotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
@@ -340,10 +338,10 @@ void testOrthotropicUniaxialResponse()
   step.stressIncrementTarget        = Tensor33d( 0.0 );
   step.isGradUComponentControlled   = Tensor33t< bool >( true );
   step.isStressComponentControlled  = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                    = 0.0;
+  step.timeEnd                      = 1.0;
+  step.dTStart                      = 1.0;
+  step.dTMax                        = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -360,15 +358,14 @@ void testOrthotropicUniaxialResponse()
   stressTarget( 2, 2 ) = 1.461318051575932e+03;
 
   throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-6 ),
-                           "I-6: Orthotropic uniaxial response failed in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
+                           "I-6: Orthotropic uniaxial response failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-7: Orthotropic material - simple shear deformation
 // For F = I + 0.1 * e1 ⊗ e2 with the orthotropic material
 void testOrthotropicSimpleShearResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getOrthotropicProperties();
 
   auto solver = makeSolver( matName, matProps );
@@ -379,10 +376,10 @@ void testOrthotropicSimpleShearResponse()
   step.stressIncrementTarget        = Tensor33d( 0.0 );
   step.isGradUComponentControlled   = Tensor33t< bool >( true );
   step.isStressComponentControlled  = Tensor33t< bool >( false );
-  step.timeStart = 0.0;
-  step.timeEnd   = 1.0;
-  step.dTStart   = 1.0;
-  step.dTMax     = 1.0;
+  step.timeStart                    = 0.0;
+  step.timeEnd                      = 1.0;
+  step.dTStart                      = 1.0;
+  step.dTMax                        = 1.0;
 
   solver.addStep( step );
   solver.solve();
@@ -399,15 +396,14 @@ void testOrthotropicSimpleShearResponse()
   stressTarget( 2, 2 ) = 1.235906850394132e+01;
 
   throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-6 ),
-                           "I-7: Orthotropic simple shear response failed in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
+                           "I-7: Orthotropic simple shear response failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-8: Pure rigid body rotation should yield zero stress (isotropic)
 // For F = Q (pure rotation), the Biot strain U - I = 0 since U = I for pure rotation.
 void testPureRotationResponse()
 {
-  const std::string matName = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
+  const std::string matName  = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY";
   auto              matProps = getIsotropicProperties();
 
   for ( int phi_deg = 0; phi_deg <= 180; phi_deg += 30 ) {
@@ -423,14 +419,14 @@ void testPureRotationResponse()
     auto solver = makeSolver( matName, matProps );
 
     MarmotMaterialPointSolverFiniteStrain::Step step;
-    step.gradUIncrementTarget    = Q - Marmot::FastorStandardTensors::Spatial3D::I;
-    step.stressIncrementTarget   = Tensor33d( 0.0 );
+    step.gradUIncrementTarget        = Q - Marmot::FastorStandardTensors::Spatial3D::I;
+    step.stressIncrementTarget       = Tensor33d( 0.0 );
     step.isGradUComponentControlled  = Tensor33t< bool >( true );
     step.isStressComponentControlled = Tensor33t< bool >( false );
-    step.timeStart = 0.0;
-    step.timeEnd   = 1.0;
-    step.dTStart   = 1.0;
-    step.dTMax     = 1.0;
+    step.timeStart                   = 0.0;
+    step.timeEnd                     = 1.0;
+    step.dTStart                     = 1.0;
+    step.dTMax                       = 1.0;
 
     solver.addStep( step );
     solver.solve();
@@ -461,10 +457,10 @@ void testViscoelasticRelaxation()
   stepLoad.stressIncrementTarget        = Tensor33d( 0.0 );
   stepLoad.isGradUComponentControlled   = Tensor33t< bool >( true );
   stepLoad.isStressComponentControlled  = Tensor33t< bool >( false );
-  stepLoad.timeStart = 0.0;
-  stepLoad.timeEnd   = 1e-4;
-  stepLoad.dTStart   = 1e-4;
-  stepLoad.dTMax     = 1e-4;
+  stepLoad.timeStart                    = 0.0;
+  stepLoad.timeEnd                      = 1e-4;
+  stepLoad.dTStart                      = 1e-4;
+  stepLoad.dTMax                        = 1e-4;
 
   solver.addStep( stepLoad );
 
@@ -475,16 +471,16 @@ void testViscoelasticRelaxation()
   stepHold.stressIncrementTarget       = Tensor33d( 0.0 );
   stepHold.isGradUComponentControlled  = Tensor33t< bool >( true );
   stepHold.isStressComponentControlled = Tensor33t< bool >( false );
-  stepHold.timeStart = 1e-4;
-  stepHold.timeEnd   = 1000.0; // 100 * tau, so fully relaxed
-  stepHold.dTStart   = 10.0;
-  stepHold.dTMax     = 100.0;
+  stepHold.timeStart                   = 1e-4;
+  stepHold.timeEnd                     = 1000.0; // 100 * tau, so fully relaxed
+  stepHold.dTStart                     = 10.0;
+  stepHold.dTMax                       = 100.0;
 
   solver.addStep( stepHold );
   solver.solve();
 
-  auto history         = solver.getHistory();
-  auto stressRelaxed   = history.back().stress;
+  auto history       = solver.getHistory();
+  auto stressRelaxed = history.back().stress;
 
   // Compute the instantaneous (elastic) stress for F = diag(1.1, 1, 1)
   // isotropic E=20000, nu=0.25: tau_11 = 2640, tau_22 = tau_33 = 800
@@ -518,14 +514,14 @@ void testSubsteppedVariantConsistency()
 
   auto createStep = [&]() {
     MarmotMaterialPointSolverFiniteStrain::Step step;
-    step.gradUIncrementTarget    = gradUIncrement;
-    step.stressIncrementTarget   = Tensor33d( 0.0 );
+    step.gradUIncrementTarget        = gradUIncrement;
+    step.stressIncrementTarget       = Tensor33d( 0.0 );
     step.isGradUComponentControlled  = Tensor33t< bool >( true );
     step.isStressComponentControlled = Tensor33t< bool >( false );
-    step.timeStart = 0.0;
-    step.timeEnd   = 1.0;
-    step.dTStart   = 1.0;
-    step.dTMax     = 1.0;
+    step.timeStart                   = 0.0;
+    step.timeEnd                     = 1.0;
+    step.dTStart                     = 1.0;
+    step.dTMax                       = 1.0;
     return step;
   };
 

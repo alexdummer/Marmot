@@ -47,12 +47,10 @@ void testCreateMaxwellPropertiesEmpty()
 {
   MaxwellProperties props = createMaxwellProperties( 0, nullptr );
 
-  throwExceptionOnFailure( props.nMaxwell == 0,
-                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 0" );
+  throwExceptionOnFailure( props.nMaxwell == 0, MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 0" );
   throwExceptionOnFailure( props.gamma.empty(),
                            MakeString() << __PRETTY_FUNCTION__ << ": gamma vector should be empty" );
-  throwExceptionOnFailure( props.tau.empty(),
-                           MakeString() << __PRETTY_FUNCTION__ << ": tau vector should be empty" );
+  throwExceptionOnFailure( props.tau.empty(), MakeString() << __PRETTY_FUNCTION__ << ": tau vector should be empty" );
   throwExceptionOnFailure( checkIfEqual( props.sumGamma, 0.0 ),
                            MakeString() << __PRETTY_FUNCTION__ << ": sumGamma should be 0" );
 }
@@ -60,11 +58,10 @@ void testCreateMaxwellPropertiesEmpty()
 // Test single Maxwell element
 void testCreateMaxwellPropertiesSingle()
 {
-  const double pairs[2] = { 0.3, 10.0 }; // { gamma1, tau1 }
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 }; // { gamma1, tau1 }
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
-  throwExceptionOnFailure( props.nMaxwell == 1,
-                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 1" );
+  throwExceptionOnFailure( props.nMaxwell == 1, MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 1" );
   throwExceptionOnFailure( checkIfEqual( props.gamma[0], 0.3 ),
                            MakeString() << __PRETTY_FUNCTION__ << ": gamma[0] should be 0.3" );
   throwExceptionOnFailure( checkIfEqual( props.tau[0], 10.0 ),
@@ -76,11 +73,10 @@ void testCreateMaxwellPropertiesSingle()
 // Test two Maxwell elements: correct parsing, correct sumGamma
 void testCreateMaxwellPropertiesTwo()
 {
-  const double pairs[4] = { 0.3, 10.0, 0.2, 5.0 }; // { gamma1, tau1, gamma2, tau2 }
-  MaxwellProperties props = createMaxwellProperties( 2, pairs );
+  const double      pairs[4] = { 0.3, 10.0, 0.2, 5.0 }; // { gamma1, tau1, gamma2, tau2 }
+  MaxwellProperties props    = createMaxwellProperties( 2, pairs );
 
-  throwExceptionOnFailure( props.nMaxwell == 2,
-                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 2" );
+  throwExceptionOnFailure( props.nMaxwell == 2, MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell should be 2" );
   throwExceptionOnFailure( checkIfEqual( props.gamma[0], 0.3 ),
                            MakeString() << __PRETTY_FUNCTION__ << ": gamma[0] should be 0.3" );
   throwExceptionOnFailure( checkIfEqual( props.tau[0], 10.0 ),
@@ -133,22 +129,21 @@ void testTemplateOverloadNoOp()
   evaluateGeneralizedMaxwellModel( stress, dStress, 1.0, props, nullptr );
 
   throwExceptionOnFailure( checkIfEqual( stress, stressOriginal ),
-                           MakeString() << __PRETTY_FUNCTION__
-                                        << ": nMaxwell=0 should leave stress unchanged" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell=0 should leave stress unchanged" );
 }
 
 // Single Maxwell element, Q_n=0: verify stress update and state var storage
 void testTemplateOverloadSingleElementFromZero()
 {
-  const double pairs[2]    = { 0.3, 10.0 };
-  MaxwellProperties props  = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
-  const double dT    = 1.0;
+  const double dT = 1.0;
   double       alpha, beta;
   computeAlphaBeta( 0.3, 10.0, dT, alpha, beta );
 
   // stress_in = I, dStress = I
-  Tensor33d stress = Spatial3D::I;
+  Tensor33d stress  = Spatial3D::I;
   Tensor33d dStress = Spatial3D::I;
 
   // Q_n = 0 (all state vars zero)
@@ -159,7 +154,7 @@ void testTemplateOverloadSingleElementFromZero()
   // Expected: stress = (1 - gamma)*I + Q_np, where Q_np = beta*I (since Q_n=0)
   //         = (1 - gamma + beta)*I = 0.985487... * I
   const double expectedFactor = ( 1.0 - 0.3 ) + beta;
-  Tensor33d    stressExpected  = expectedFactor * Spatial3D::I;
+  Tensor33d    stressExpected = expectedFactor * Spatial3D::I;
 
   throwExceptionOnFailure( checkIfEqual( stress, stressExpected, 1e-12 ),
                            MakeString() << __PRETTY_FUNCTION__ << ": stress update failed" );
@@ -168,17 +163,16 @@ void testTemplateOverloadSingleElementFromZero()
   for ( int i = 0; i < 3; ++i )
     for ( int j = 0; j < 3; ++j ) {
       const double expectedQnp = beta * ( i == j ? 1.0 : 0.0 );
-      throwExceptionOnFailure(
-        checkIfEqual( stateVars[3 * i + j], expectedQnp, 1e-12 ),
-        MakeString() << __PRETTY_FUNCTION__ << ": Q_np[" << i << "," << j << "] failed" );
+      throwExceptionOnFailure( checkIfEqual( stateVars[3 * i + j], expectedQnp, 1e-12 ),
+                               MakeString() << __PRETTY_FUNCTION__ << ": Q_np[" << i << "," << j << "] failed" );
     }
 }
 
 // Single Maxwell element, Q_n≠0: verify recursion Q_np = alpha*Q_n + beta*dStress
 void testTemplateOverloadSingleElementFromNonZeroState()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 1.0;
   double       alpha, beta;
@@ -203,9 +197,8 @@ void testTemplateOverloadSingleElementFromNonZeroState()
   const double stressOutDiag = ( 1.0 - 0.3 ) + Q_np_diag;
 
   for ( int i = 0; i < 3; ++i ) {
-    throwExceptionOnFailure(
-      checkIfEqual( stress( i, i ), stressOutDiag, 1e-12 ),
-      MakeString() << __PRETTY_FUNCTION__ << ": stress diagonal[" << i << "] failed" );
+    throwExceptionOnFailure( checkIfEqual( stress( i, i ), stressOutDiag, 1e-12 ),
+                             MakeString() << __PRETTY_FUNCTION__ << ": stress diagonal[" << i << "] failed" );
   }
   // Off-diagonal should be zero
   throwExceptionOnFailure( checkIfEqual( stress( 0, 1 ), 0.0, 1e-12 ),
@@ -215,15 +208,15 @@ void testTemplateOverloadSingleElementFromNonZeroState()
 // Test that Taylor approximation branch (small dT/tau) gives consistent results
 void testTemplateOverloadTaylorApproximation()
 {
-  const double pairs[2]   = { 0.3, 1.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 1.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   // dT/tau = 1e-8 << 1e-6  -> Taylor branch
   const double dT_small = 1e-8;
 
   // Evaluate with Taylor branch
-  Tensor33d stressTaylor = Spatial3D::I;
-  Tensor33d dStress      = Spatial3D::I;
+  Tensor33d               stressTaylor = Spatial3D::I;
+  Tensor33d               dStress      = Spatial3D::I;
   std::array< double, 9 > stateVarsTaylor{};
 
   evaluateGeneralizedMaxwellModel( stressTaylor, dStress, dT_small, props, stateVarsTaylor.data() );
@@ -236,16 +229,15 @@ void testTemplateOverloadTaylorApproximation()
   // Expected: stress = (1-0.3 + beta_ref) * I
   const double expectedFactor = ( 1.0 - 0.3 ) + beta_ref;
 
-  throwExceptionOnFailure(
-    checkIfEqual( stressTaylor( 0, 0 ), expectedFactor, 1e-10 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": Taylor branch stress(0,0) failed" );
+  throwExceptionOnFailure( checkIfEqual( stressTaylor( 0, 0 ), expectedFactor, 1e-10 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": Taylor branch stress(0,0) failed" );
 }
 
 // Two Maxwell elements: stress is sum of both contributions
 void testTemplateOverloadTwoElements()
 {
-  const double pairs[4]   = { 0.3, 10.0, 0.2, 5.0 };
-  MaxwellProperties props = createMaxwellProperties( 2, pairs );
+  const double      pairs[4] = { 0.3, 10.0, 0.2, 5.0 };
+  MaxwellProperties props    = createMaxwellProperties( 2, pairs );
 
   const double dT = 1.0;
   double       alpha1, beta1, alpha2, beta2;
@@ -253,8 +245,8 @@ void testTemplateOverloadTwoElements()
   computeAlphaBeta( 0.2, 5.0, dT, alpha2, beta2 );
 
   // stress_in = I, dStress = I, Q1_n = Q2_n = 0
-  Tensor33d               stress  = Spatial3D::I;
-  Tensor33d               dStress = Spatial3D::I;
+  Tensor33d                stress  = Spatial3D::I;
+  Tensor33d                dStress = Spatial3D::I;
   std::array< double, 18 > stateVars{};
 
   evaluateGeneralizedMaxwellModel( stress, dStress, dT, props, stateVars.data() );
@@ -262,22 +254,19 @@ void testTemplateOverloadTwoElements()
   // Expected: stress = (1-sumGamma)*I + beta1*I + beta2*I = (0.5 + beta1 + beta2)*I
   const double expectedFactor = ( 1.0 - 0.5 ) + beta1 + beta2;
 
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 0 ), expectedFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with two Maxwell elements failed" );
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 1, 1 ), expectedFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(1,1) with two Maxwell elements failed" );
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 2, 2 ), expectedFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(2,2) with two Maxwell elements failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 0 ), expectedFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with two Maxwell elements failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 1, 1 ), expectedFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(1,1) with two Maxwell elements failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 2, 2 ), expectedFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(2,2) with two Maxwell elements failed" );
 }
 
 // Relaxation: stress decreases to (1-sumGamma)*sigma after many steps with no new load increment
 void testTemplateOverloadRelaxation()
 {
-  const double pairs[2]   = { 0.3, 1.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 1.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   // Step 1: Apply instantaneous deformation - set Q to some value via one increment
   // Use a large dT so we go through the large-dT branch and alpha is small
@@ -290,9 +279,9 @@ void testTemplateOverloadRelaxation()
 
   // The Maxwell stress Q was set to ~gamma*dStress = ~0.3*I after this tiny increment
   // Now apply N steps of zero increment (relaxation) with dT=tau=1
-  Tensor33d elasticStress = Spatial3D::I; // hypothetical instantaneous stress
-  const int N             = 50;
-  const double dT         = 1.0;
+  Tensor33d    elasticStress = Spatial3D::I; // hypothetical instantaneous stress
+  const int    N             = 50;
+  const double dT            = 1.0;
 
   for ( int k = 0; k < N; ++k ) {
     Tensor33d dStressZero( 0.0 );
@@ -309,12 +298,10 @@ void testTemplateOverloadRelaxation()
 
   // After sufficient relaxation, Q ≈ 0, so stress ≈ (1-gamma)*I = 0.7*I
   const double longTermFactor = 1.0 - 0.3;
-  throwExceptionOnFailure(
-    checkIfEqual( stressRelaxed( 0, 0 ), longTermFactor, 1e-6 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": long-term stress(0,0) after relaxation failed" );
-  throwExceptionOnFailure(
-    checkIfEqual( stressRelaxed( 1, 1 ), longTermFactor, 1e-6 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": long-term stress(1,1) after relaxation failed" );
+  throwExceptionOnFailure( checkIfEqual( stressRelaxed( 0, 0 ), longTermFactor, 1e-6 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": long-term stress(0,0) after relaxation failed" );
+  throwExceptionOnFailure( checkIfEqual( stressRelaxed( 1, 1 ), longTermFactor, 1e-6 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": long-term stress(1,1) after relaxation failed" );
 }
 
 // ---------------------------------------------------------------------------
@@ -339,18 +326,16 @@ void testSimoOverloadNoOp()
   evaluateGeneralizedMaxwellModel( stress, tangent, dStress, 1.0, props, nullptr );
 
   throwExceptionOnFailure( checkIfEqual( stress, stressOrig ),
-                           MakeString() << __PRETTY_FUNCTION__
-                                        << ": nMaxwell=0 should leave stress unchanged" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell=0 should leave stress unchanged" );
   throwExceptionOnFailure( checkIfEqual( tangent, tangentOrig ),
-                           MakeString() << __PRETTY_FUNCTION__
-                                        << ": nMaxwell=0 should leave tangent unchanged" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": nMaxwell=0 should leave tangent unchanged" );
 }
 
 // Single Maxwell element, Q_n=0: verify stress and tangent update
 void testSimoOverloadSingleElementFromZero()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 1.0;
   double       alpha, beta;
@@ -367,12 +352,10 @@ void testSimoOverloadSingleElementFromZero()
 
   // Expected stress: (1-gamma)*I + beta*I = (0.7 + beta)*I
   const double stressFactor = ( 1.0 - 0.3 ) + beta;
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 0 ), stressFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) failed" );
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 1 ), 0.0, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": off-diagonal stress should be zero" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 0 ), stressFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 1 ), 0.0, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": off-diagonal stress should be zero" );
 
   // Expected tangent: (1-gamma+beta) * tangent_in = (0.7+beta) * 2.0 for all entries
   const double tangentFactor = ( 1.0 - 0.3 + beta ) * 2.0;
@@ -380,23 +363,22 @@ void testSimoOverloadSingleElementFromZero()
     for ( int j = 0; j < 3; ++j )
       for ( int k = 0; k < 3; ++k )
         for ( int l = 0; l < 3; ++l )
-          throwExceptionOnFailure(
-            checkIfEqual( tangent( i, j, k, l ), tangentFactor, 1e-12 ),
-            MakeString() << __PRETTY_FUNCTION__ << ": tangent(" << i << "," << j << "," << k << "," << l
-                         << ") failed" );
+          throwExceptionOnFailure( checkIfEqual( tangent( i, j, k, l ), tangentFactor, 1e-12 ),
+                                   MakeString() << __PRETTY_FUNCTION__ << ": tangent(" << i << "," << j << "," << k
+                                                << "," << l << ") failed" );
 }
 
 // Single Maxwell element, Q_n≠0: verify recursion in both stress and tangent
 void testSimoOverloadSingleElementFromNonZeroState()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 1.0;
   double       alpha, beta;
   computeAlphaBeta( 0.3, 10.0, dT, alpha, beta );
 
-  Tensor33d   stress  = Spatial3D::I;
+  Tensor33d   stress = Spatial3D::I;
   Tensor3333d tangent( 1.0 );
   Tensor33d   dStress = Spatial3D::I;
 
@@ -410,58 +392,54 @@ void testSimoOverloadSingleElementFromNonZeroState()
   evaluateGeneralizedMaxwellModel( stress, tangent, dStress, dT, props, stateVars.data() );
 
   // Q_np diagonal = alpha * q0 + beta
-  const double Q_np_diag  = alpha * q0 + beta;
+  const double Q_np_diag = alpha * q0 + beta;
   // stress diagonal = (1-gamma) + Q_np_diag
   const double stressDiag = ( 1.0 - 0.3 ) + Q_np_diag;
 
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 0 ), stressDiag, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress diagonal failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 0 ), stressDiag, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress diagonal failed" );
 
   // Tangent update does not depend on Q_n:
   // tangent = (1-gamma+beta) * tangent_in = (0.7+beta) * 1.0
   const double tangentFactor = 1.0 - 0.3 + beta;
-  throwExceptionOnFailure(
-    checkIfEqual( tangent( 0, 0, 0, 0 ), tangentFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) failed" );
+  throwExceptionOnFailure( checkIfEqual( tangent( 0, 0, 0, 0 ), tangentFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) failed" );
 }
 
 // Two Maxwell elements: verify that contributions are summed correctly
 void testSimoOverloadTwoElements()
 {
-  const double pairs[4]    = { 0.3, 10.0, 0.2, 5.0 };
-  MaxwellProperties props  = createMaxwellProperties( 2, pairs );
+  const double      pairs[4] = { 0.3, 10.0, 0.2, 5.0 };
+  MaxwellProperties props    = createMaxwellProperties( 2, pairs );
 
   const double dT = 1.0;
   double       alpha1, beta1, alpha2, beta2;
   computeAlphaBeta( 0.3, 10.0, dT, alpha1, beta1 );
   computeAlphaBeta( 0.2, 5.0, dT, alpha2, beta2 );
 
-  Tensor33d               stress  = Spatial3D::I;
-  Tensor3333d             tangent( 1.0 );
-  Tensor33d               dStress = Spatial3D::I;
+  Tensor33d                stress = Spatial3D::I;
+  Tensor3333d              tangent( 1.0 );
+  Tensor33d                dStress = Spatial3D::I;
   std::array< double, 18 > stateVars{};
 
   evaluateGeneralizedMaxwellModel( stress, tangent, dStress, dT, props, stateVars.data() );
 
   // Expected stress: (1-sumGamma) + beta1 + beta2 = (0.5 + beta1 + beta2) on diagonal
   const double stressFactor = 0.5 + beta1 + beta2;
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 0 ), stressFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with two elements failed" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 0 ), stressFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with two elements failed" );
 
   // Expected tangent: (1-sumGamma + beta1 + beta2) * tangent_in
   const double tangentFactor = stressFactor; // same factor here since tangent_in=1
-  throwExceptionOnFailure(
-    checkIfEqual( tangent( 0, 0, 0, 0 ), tangentFactor, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) with two elements failed" );
+  throwExceptionOnFailure( checkIfEqual( tangent( 0, 0, 0, 0 ), tangentFactor, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) with two elements failed" );
 }
 
 // Verify that the Simo overload and template overload give the same stress result
 void testSimoAndTemplateOverloadConsistency()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 2.5;
 
@@ -487,15 +465,15 @@ void testSimoAndTemplateOverloadConsistency()
   evaluateGeneralizedMaxwellModel( stress_simo, tangent, dStress, dT, props, stateVarsSimo.data() );
   evaluateGeneralizedMaxwellModel( stress_tmpl, dStress, dT, props, stateVarsTmpl.data() );
 
-  throwExceptionOnFailure(
-    checkIfEqual( stress_simo, stress_tmpl, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": Simo and template overloads should give same stress" );
+  throwExceptionOnFailure( checkIfEqual( stress_simo, stress_tmpl, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__
+                                        << ": Simo and template overloads should give same stress" );
 
   // State variables should also be identical
   for ( int i = 0; i < 9; ++i )
-    throwExceptionOnFailure(
-      checkIfEqual( stateVarsSimo[i], stateVarsTmpl[i], 1e-12 ),
-      MakeString() << __PRETTY_FUNCTION__ << ": state var[" << i << "] differs between overloads" );
+    throwExceptionOnFailure( checkIfEqual( stateVarsSimo[i], stateVarsTmpl[i], 1e-12 ),
+                             MakeString()
+                               << __PRETTY_FUNCTION__ << ": state var[" << i << "] differs between overloads" );
 }
 
 // ---------------------------------------------------------------------------
@@ -507,7 +485,8 @@ void testSimoAndTemplateOverloadConsistency()
 // In this case, the Liu formulation reduces to the same result as the Simo formulation.
 // ---------------------------------------------------------------------------
 
-// Build an isotropic 4th-order stiffness tensor: C_ijkl = lambda*delta_ij*delta_kl + mu*(delta_ik*delta_jl + delta_il*delta_jk)
+// Build an isotropic 4th-order stiffness tensor: C_ijkl = lambda*delta_ij*delta_kl + mu*(delta_ik*delta_jl +
+// delta_il*delta_jk)
 static Tensor3333d makeIsotropicTangent( double K, double G )
 {
   const double lambda = K - 2.0 / 3.0 * G;
@@ -518,12 +497,12 @@ static Tensor3333d makeIsotropicTangent( double K, double G )
     for ( int j = 0; j < 3; ++j )
       for ( int k = 0; k < 3; ++k )
         for ( int l = 0; l < 3; ++l ) {
-          const int d_ij = ( i == j ) ? 1 : 0;
-          const int d_kl = ( k == l ) ? 1 : 0;
-          const int d_ik = ( i == k ) ? 1 : 0;
-          const int d_jl = ( j == l ) ? 1 : 0;
-          const int d_il = ( i == l ) ? 1 : 0;
-          const int d_jk = ( j == k ) ? 1 : 0;
+          const int d_ij  = ( i == j ) ? 1 : 0;
+          const int d_kl  = ( k == l ) ? 1 : 0;
+          const int d_ik  = ( i == k ) ? 1 : 0;
+          const int d_jl  = ( j == l ) ? 1 : 0;
+          const int d_il  = ( i == l ) ? 1 : 0;
+          const int d_jk  = ( j == k ) ? 1 : 0;
           C( i, j, k, l ) = lambda * d_ij * d_kl + mu * ( d_ik * d_jl + d_il * d_jk );
         }
   return C;
@@ -542,15 +521,14 @@ static Tensor3333d makeIsotropicCompliance( double K, double G )
     for ( int j = 0; j < 3; ++j )
       for ( int k = 0; k < 3; ++k )
         for ( int l = 0; l < 3; ++l ) {
-          const int d_ij = ( i == j ) ? 1 : 0;
-          const int d_kl = ( k == l ) ? 1 : 0;
-          const int d_ik = ( i == k ) ? 1 : 0;
-          const int d_jl = ( j == l ) ? 1 : 0;
-          const int d_il = ( i == l ) ? 1 : 0;
-          const int d_jk = ( j == k ) ? 1 : 0;
-          Cinv( i, j, k, l ) =
-            1.0 / ( 2.0 * mu ) * ( d_ik * d_jl + d_il * d_jk ) -
-            lambda / ( 2.0 * mu * ( 3.0 * lambda + 2.0 * mu ) ) * d_ij * d_kl;
+          const int d_ij     = ( i == j ) ? 1 : 0;
+          const int d_kl     = ( k == l ) ? 1 : 0;
+          const int d_ik     = ( i == k ) ? 1 : 0;
+          const int d_jl     = ( j == l ) ? 1 : 0;
+          const int d_il     = ( i == l ) ? 1 : 0;
+          const int d_jk     = ( j == k ) ? 1 : 0;
+          Cinv( i, j, k, l ) = 1.0 / ( 2.0 * mu ) * ( d_ik * d_jl + d_il * d_jk ) -
+                               lambda / ( 2.0 * mu * ( 3.0 * lambda + 2.0 * mu ) ) * d_ij * d_kl;
         }
   return Cinv;
 }
@@ -574,10 +552,9 @@ void testIsotropicInverseConsistency()
       for ( int k = 0; k < 3; ++k )
         for ( int l = 0; l < 3; ++l ) {
           const double expected = 0.5 * ( ( i == k && j == l ? 1.0 : 0.0 ) + ( i == l && j == k ? 1.0 : 0.0 ) );
-          throwExceptionOnFailure(
-            checkIfEqual( product( i, j, k, l ), expected, 1e-10 ),
-            MakeString() << __PRETTY_FUNCTION__ << ": C:Cinv != I4sym at (" << i << "," << j << "," << k << "," << l
-                         << ")" );
+          throwExceptionOnFailure( checkIfEqual( product( i, j, k, l ), expected, 1e-10 ),
+                                   MakeString() << __PRETTY_FUNCTION__ << ": C:Cinv != I4sym at (" << i << "," << j
+                                                << "," << k << "," << l << ")" );
         }
 }
 
@@ -585,8 +562,8 @@ void testIsotropicInverseConsistency()
 // result should match the Simo overload
 void testLiuOverloadMatchesSimo()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 1.0;
 
@@ -610,8 +587,8 @@ void testLiuOverloadMatchesSimo()
   dStress( 1, 0 ) = 5.0;
 
   // Make copies
-  Tensor33d   stressSimo = stress0;
-  Tensor33d   stressLiu  = stress0;
+  Tensor33d   stressSimo  = stress0;
+  Tensor33d   stressLiu   = stress0;
   Tensor3333d tangentSimo = C;
   Tensor3333d tangentLiu  = C;
 
@@ -633,27 +610,25 @@ void testLiuOverloadMatchesSimo()
                                    stateVarsLiu.data() );
 
   // Stress should be identical
-  throwExceptionOnFailure(
-    checkIfEqual( stressLiu, stressSimo, 1e-8 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": Liu stress should match Simo stress" );
+  throwExceptionOnFailure( checkIfEqual( stressLiu, stressSimo, 1e-8 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": Liu stress should match Simo stress" );
 
   // Tangent should also be identical (since C:Cinv:beta*C = beta*C when dTangentdDef=0)
-  throwExceptionOnFailure(
-    checkIfEqual( tangentLiu, tangentSimo, 1e-8 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": Liu tangent should match Simo tangent" );
+  throwExceptionOnFailure( checkIfEqual( tangentLiu, tangentSimo, 1e-8 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": Liu tangent should match Simo tangent" );
 
   // State variables should be identical
   for ( int i = 0; i < 9; ++i )
-    throwExceptionOnFailure(
-      checkIfEqual( stateVarsLiu[i], stateVarsSimo[i], 1e-8 ),
-      MakeString() << __PRETTY_FUNCTION__ << ": state var[" << i << "] differs between Liu and Simo" );
+    throwExceptionOnFailure( checkIfEqual( stateVarsLiu[i], stateVarsSimo[i], 1e-8 ),
+                             MakeString()
+                               << __PRETTY_FUNCTION__ << ": state var[" << i << "] differs between Liu and Simo" );
 }
 
 // Liu et al. overload: when dTangent_dDeformation is non-zero, the tangent gets an extra contribution
 void testLiuOverloadNonZeroDTangentDDeformation()
 {
-  const double pairs[2]   = { 0.3, 10.0 };
-  MaxwellProperties props = createMaxwellProperties( 1, pairs );
+  const double      pairs[2] = { 0.3, 10.0 };
+  MaxwellProperties props    = createMaxwellProperties( 1, pairs );
 
   const double dT = 1.0;
   double       alpha, beta;
@@ -666,7 +641,7 @@ void testLiuOverloadNonZeroDTangentDDeformation()
   // Simple case: dStress = 0 and Q_n = 0
   // Then Q_np = 0, H_np = 0, and the last tangent term (H_np . dTangent_dDeformation) = 0.
   // So tangent should equal Simo result regardless of dTangent_dDeformation.
-  Tensor33d   stress  = Spatial3D::I;
+  Tensor33d   stress = Spatial3D::I;
   Tensor33d   dStress( 0.0 );
   Tensor3333d tangent( 0.0 );
   tangent = C;
@@ -688,15 +663,13 @@ void testLiuOverloadNonZeroDTangentDDeformation()
 
   // Verify stress
   const double stressExpected = ( 1.0 - 0.3 );
-  throwExceptionOnFailure(
-    checkIfEqual( stress( 0, 0 ), stressExpected, 1e-12 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with dStress=0 should be (1-gamma)" );
+  throwExceptionOnFailure( checkIfEqual( stress( 0, 0 ), stressExpected, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": stress(0,0) with dStress=0 should be (1-gamma)" );
 
   // Verify tangent is (1-gamma+beta)*C
   const double factor = ( 1.0 - 0.3 + beta );
-  throwExceptionOnFailure(
-    checkIfEqual( tangent( 0, 0, 0, 0 ), factor * C( 0, 0, 0, 0 ), 1e-8 ),
-    MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) with dStress=0 failed" );
+  throwExceptionOnFailure( checkIfEqual( tangent( 0, 0, 0, 0 ), factor * C( 0, 0, 0, 0 ), 1e-8 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": tangent(0,0,0,0) with dStress=0 failed" );
 }
 
 // ---------------------------------------------------------------------------
