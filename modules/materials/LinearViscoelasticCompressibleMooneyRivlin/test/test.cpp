@@ -215,8 +215,8 @@ void testObjectivity()
     Q( 1, 1 ) = cos( phi );
     Q( 2, 2 ) = 1.0;
 
-    Tensor33d F_rot  = einsum< ik, kj, to_ij >( Q, F );
-    auto      solver = makeSolver( matName, matProps );
+    Tensor33d F_rot      = einsum< ik, kj, to_ij >( Q, F );
+    auto      solver     = makeSolver( matName, matProps );
     solver.addStep( makeStep( F_rot - Spatial3D::I, 0.0, 1.0, 1.0 ) );
     solver.solve();
     Tensor33d tauRot = solver.getHistory().back().stress;

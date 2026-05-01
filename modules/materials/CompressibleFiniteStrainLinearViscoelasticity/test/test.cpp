@@ -176,7 +176,7 @@ void testPureRotationZeroStress()
     F( 1, 1 ) = cos( phi );
     F( 2, 2 ) = 1.0;
 
-    auto   solver = makeSolver( matName, matProps );
+    auto solver = makeSolver( matName, matProps );
     solver.addStep( makeStep( F - Spatial3D::I, 0.0, 1.0, 1.0 ) );
     solver.solve();
 
@@ -219,9 +219,8 @@ void testObjectivity()
     Q( 1, 1 ) = cos( phi );
     Q( 2, 2 ) = 1.0;
 
-    // Rotated deformation: F_rot = Q * F
-    Tensor33d F_rot   = einsum< ik, kj, to_ij >( Q, F );
-    auto      solver  = makeSolver( matName, matProps );
+    Tensor33d F_rot      = einsum< ik, kj, to_ij >( Q, F );
+    auto      solver     = makeSolver( matName, matProps );
     solver.addStep( makeStep( F_rot - Spatial3D::I, 0.0, 1.0, 1.0 ) );
     solver.solve();
     Tensor33d tauRot = solver.getHistory().back().stress;
