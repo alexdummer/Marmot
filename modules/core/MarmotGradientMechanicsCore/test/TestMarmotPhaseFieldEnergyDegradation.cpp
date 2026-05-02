@@ -1,3 +1,4 @@
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotPhaseFieldEnergyDegradation.h"
 #include "Marmot/MarmotTesting.h"
 

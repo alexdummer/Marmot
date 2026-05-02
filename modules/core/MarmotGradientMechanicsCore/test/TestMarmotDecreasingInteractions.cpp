@@ -1,4 +1,5 @@
 #include "Marmot/MarmotDecreasingInteractions.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTesting.h"
 #include <cmath>
 
