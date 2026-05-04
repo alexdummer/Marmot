@@ -13,10 +13,8 @@ MarmotMaterialPointSolverHypoElastic::MarmotMaterialPointSolverHypoElastic( std:
   using namespace MarmotLibrary;
 
   // create material instance
-  material = MarmotMaterialHypoElasticFactory::createMaterial( materialName,
-                                                               materialProperties,
-                                                               nMaterialProperties,
-                                                               1 );
+  material = std::unique_ptr< MarmotMaterialHypoElastic >( dynamic_cast< MarmotMaterialHypoElastic* >(
+    MarmotMaterialHypoElasticFactory::createMaterial( materialName, materialProperties, nMaterialProperties, 1 ) ) );
 
   // get number of state variables
   nStateVars = material->getNumberOfRequiredStateVars();

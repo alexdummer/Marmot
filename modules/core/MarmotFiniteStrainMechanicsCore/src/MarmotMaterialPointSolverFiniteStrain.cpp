@@ -20,10 +20,8 @@ MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( st
   using namespace MarmotLibrary;
 
   // create material instance
-  material = MarmotMaterialFiniteStrainFactory::createMaterial( materialName,
-                                                                materialProperties,
-                                                                nMaterialProperties,
-                                                                1 );
+  material = std::unique_ptr< MarmotMaterialFiniteStrain >( dynamic_cast< MarmotMaterialFiniteStrain* >(
+    MarmotMaterialFiniteStrainFactory::createMaterial( materialName, materialProperties, nMaterialProperties, 1 ) ) );
 
   // get number of state variables
   nStateVars = material->getNumberOfRequiredStateVars();
