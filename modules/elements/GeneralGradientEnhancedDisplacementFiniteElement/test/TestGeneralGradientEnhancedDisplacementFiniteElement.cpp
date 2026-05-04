@@ -20,20 +20,20 @@ void testBasicPropertiesQuad4PlaneStress()
   auto element = std::make_unique< ElemType >( elId, intType, ElemType::SectionType::PlaneStress );
 
   throwExceptionOnFailure( element->getNNodes() == nNodes,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
   throwExceptionOnFailure( element->getNSpatialDimensions() == nDim,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
 
   // sizeLoadVector = nNodes*nDim + nNodes*nNonlocalVars = 4*2 + 4*1 = 12
   throwExceptionOnFailure( element->getNDofPerElement() == 12,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
 
   throwExceptionOnFailure( element->getElementShape() == "quad4",
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
 
   // Full integration of Quad4 uses 2x2 = 4 Gauss points
   throwExceptionOnFailure( element->getNumberOfQuadraturePoints() == 4,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
 }
 
 void testBasicPropertiesQuad8PlaneStrain()
@@ -50,20 +50,20 @@ void testBasicPropertiesQuad8PlaneStrain()
   auto element = std::make_unique< ElemType >( elId, intType, ElemType::SectionType::PlaneStrain );
 
   throwExceptionOnFailure( element->getNNodes() == nNodes,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
   throwExceptionOnFailure( element->getNSpatialDimensions() == nDim,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
 
   // sizeLoadVector = 8*2 + 8*1 = 24
   throwExceptionOnFailure( element->getNDofPerElement() == 24,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
 
   throwExceptionOnFailure( element->getElementShape() == "quad8",
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
 
   // Full integration of Quad8 uses 3x3 = 9 Gauss points
   throwExceptionOnFailure( element->getNumberOfQuadraturePoints() == 9,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
 }
 
 void testBasicPropertiesHex8Solid()
@@ -80,20 +80,20 @@ void testBasicPropertiesHex8Solid()
   auto element = std::make_unique< ElemType >( elId, intType, ElemType::SectionType::Solid );
 
   throwExceptionOnFailure( element->getNNodes() == nNodes,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nNodes" );
   throwExceptionOnFailure( element->getNSpatialDimensions() == nDim,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDim" );
 
   // sizeLoadVector = 8*3 + 8*1 = 32
   throwExceptionOnFailure( element->getNDofPerElement() == 32,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect nDof" );
 
   throwExceptionOnFailure( element->getElementShape() == "hexa8",
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect element shape" );
 
   // Full integration of Hex8 uses 2x2x2 = 8 Gauss points
   throwExceptionOnFailure( element->getNumberOfQuadraturePoints() == 8,
-                            MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": incorrect number of QPs" );
 }
 
 void testDofIndicesPermutationPatternQuad4()
@@ -116,10 +116,10 @@ void testDofIndicesPermutationPatternQuad4()
   const std::vector< int > expected = { 0, 1, 3, 4, 6, 7, 9, 10, 2, 5, 8, 11 };
 
   throwExceptionOnFailure( pattern.size() == expected.size(),
-                            MakeString() << __PRETTY_FUNCTION__ << ": pattern size mismatch" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": pattern size mismatch" );
   for ( std::size_t i = 0; i < expected.size(); ++i ) {
     throwExceptionOnFailure( pattern[i] == expected[i],
-                              MakeString() << __PRETTY_FUNCTION__ << ": pattern[" << i << "] mismatch" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": pattern[" << i << "] mismatch" );
   }
 }
 
@@ -141,10 +141,10 @@ void testDofIndicesPermutationPatternQuad4TwoNonlocalVars()
   const std::vector< int > expected = { 0, 1, 4, 5, 8, 9, 12, 13, 2, 6, 10, 14, 3, 7, 11, 15 };
 
   throwExceptionOnFailure( pattern.size() == expected.size(),
-                            MakeString() << __PRETTY_FUNCTION__ << ": pattern size mismatch" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": pattern size mismatch" );
   for ( std::size_t i = 0; i < expected.size(); ++i ) {
     throwExceptionOnFailure( pattern[i] == expected[i],
-                              MakeString() << __PRETTY_FUNCTION__ << ": pattern[" << i << "] mismatch" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": pattern[" << i << "] mismatch" );
   }
 }
 
@@ -163,15 +163,15 @@ void testNodeFieldsOneNonlocalVar()
 
   const auto nodeFields = element->getNodeFields();
   throwExceptionOnFailure( static_cast< int >( nodeFields.size() ) == nNodes,
-                            MakeString() << __PRETTY_FUNCTION__ << ": nodeFields size mismatch" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": nodeFields size mismatch" );
   for ( int i = 0; i < nNodes; ++i ) {
     throwExceptionOnFailure( nodeFields[i].size() == 2,
-                              MakeString() << __PRETTY_FUNCTION__ << ": node " << i << " should have 2 fields" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": node " << i << " should have 2 fields" );
     throwExceptionOnFailure( nodeFields[i][0] == "displacement",
-                              MakeString() << __PRETTY_FUNCTION__ << ": node " << i << " first field != displacement" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": node " << i << " first field != displacement" );
     throwExceptionOnFailure( nodeFields[i][1] == "nonlocal damage",
-                              MakeString() << __PRETTY_FUNCTION__
-                                           << ": node " << i << " second field != nonlocal damage" );
+                             MakeString()
+                               << __PRETTY_FUNCTION__ << ": node " << i << " second field != nonlocal damage" );
   }
 }
 
@@ -192,11 +192,11 @@ void testCoordinatesAtCenter()
 
   const auto centerCoords = element->getCoordinatesAtCenter();
   throwExceptionOnFailure( static_cast< int >( centerCoords.size() ) == nDim,
-                            MakeString() << __PRETTY_FUNCTION__ << ": wrong dimension of center coordinates" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": wrong dimension of center coordinates" );
   throwExceptionOnFailure( checkIfEqual( centerCoords[0], 0.5 ),
-                            MakeString() << __PRETTY_FUNCTION__ << ": wrong x-coordinate at center" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": wrong x-coordinate at center" );
   throwExceptionOnFailure( checkIfEqual( centerCoords[1], 0.5 ),
-                            MakeString() << __PRETTY_FUNCTION__ << ": wrong y-coordinate at center" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": wrong y-coordinate at center" );
 }
 
 void testCoordinatesAtQuadraturePoints()
@@ -216,15 +216,15 @@ void testCoordinatesAtQuadraturePoints()
 
   const auto qpCoords = element->getCoordinatesAtQuadraturePoints();
   throwExceptionOnFailure( static_cast< int >( qpCoords.size() ) == element->getNumberOfQuadraturePoints(),
-                            MakeString() << __PRETTY_FUNCTION__ << ": wrong number of QP coordinate sets" );
+                           MakeString() << __PRETTY_FUNCTION__ << ": wrong number of QP coordinate sets" );
 
   for ( const auto& coords : qpCoords ) {
     throwExceptionOnFailure( static_cast< int >( coords.size() ) == nDim,
-                              MakeString() << __PRETTY_FUNCTION__ << ": wrong QP coordinate dimension" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": wrong QP coordinate dimension" );
     throwExceptionOnFailure( coords[0] > 0.0 && coords[0] < 1.0,
-                              MakeString() << __PRETTY_FUNCTION__ << ": QP x-coordinate out of element bounds" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": QP x-coordinate out of element bounds" );
     throwExceptionOnFailure( coords[1] > 0.0 && coords[1] < 1.0,
-                              MakeString() << __PRETTY_FUNCTION__ << ": QP y-coordinate out of element bounds" );
+                             MakeString() << __PRETTY_FUNCTION__ << ": QP y-coordinate out of element bounds" );
   }
 }
 
