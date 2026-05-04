@@ -147,7 +147,7 @@ void MarmotMaterialPointSolverHypoElastic::solveIncrement( const Increment& incr
     timeInfo.dT   = increment.dT;
 
     // compute stress and tangent
-    material->computeStress( state, dStressDStrain.data(), dStrain.data(), timeInfo );
+    material->computeStress( state, dStressDStrain, dStrain, timeInfo );
 
     // get updated stress
     stressTemp = state.stress;

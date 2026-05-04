@@ -42,14 +42,14 @@ namespace Marmot::Materials {
   }
 
   void LinearViscoelasticPowerLaw::computeStress( state3D&        state,
-                                                  double*         dStressDDStrain,
-                                                  const double*   dStrain,
+                                                  Matrix6d&       dStressDDStrain,
+                                                  const Vector6d& dStrain,
                                                   const timeInfo& timeInfo ) const
 
   {
-    mVector6d nomStress( state.stress.data() );
-    Vector6d  dE( dStrain );
-    mMatrix6d C( dStressDDStrain );
+    mVector6d             nomStress( state.stress.data() );
+    Map< const Vector6d > dE( dStrain.data() );
+    mMatrix6d             C( dStressDDStrain.data() );
 
     const double& dT = timeInfo.dT;
 
