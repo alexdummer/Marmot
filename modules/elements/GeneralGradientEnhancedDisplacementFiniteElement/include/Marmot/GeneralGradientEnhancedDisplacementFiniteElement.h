@@ -253,8 +253,7 @@ namespace Marmot::Elements {
   {
     for ( const auto& qpInfo :
           FiniteElement::Quadrature::getGaussPointInfo( localGeometryElement.shape, integrationType ) ) {
-      QuadraturePoint qp( qpInfo.xi, qpInfo.weight );
-      qps.push_back( std::move( qp ) );
+      qps.emplace_back( qpInfo.xi, qpInfo.weight );
     }
   }
 
@@ -425,8 +424,6 @@ namespace Marmot::Elements {
     using namespace Marmot;
     using namespace ContinuumMechanics::VoigtNotation;
 
-    Voigt  S, dE, dSdK, dK_Local_dDE;
-    CSized C;
     using response  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
     using tangents  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::tangents;
     using increment = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::increment;
@@ -439,7 +436,7 @@ namespace Marmot::Elements {
       const NSizedK&     N_K    = qp.N_K;
       const dNdXiSizedK& dNdX_K = qp.dNdX_K;
 
-      dE = B * dQU;
+      Voigt dE = B * dQU;
 
       // delta of _K at Gausspoint
       Vector< double, nNonlocalVariables > K;
@@ -460,8 +457,8 @@ namespace Marmot::Elements {
           res.stress    = qp.managedStateVars->stress;
           res.stateVars = qp.managedStateVars->materialStateVars.data();
           inc           = { dE6, K, dK, time[1], dT };
-          Matrix3d C;
-          Vector3d S;
+          CSized C      = CSized::Zero();
+          Voigt  S      = Voigt::Zero();
 
           if ( sectionType == SectionType::PlaneStress ) {
             qp.material->computePlaneStress( res, tan, inc );
@@ -473,11 +470,14 @@ namespace Marmot::Elements {
             S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
             C = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
           }
+          else {
+            throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
+          }
 
           fU -= B.transpose() * S * qp.J0xW;
           kUU += B.transpose() * C * B * qp.J0xW;
 
-          for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+          for ( int n = 0; n < nNonlocalVariables; n++ ) {
             double idx = n * nNonLocalNodes;
             fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
                                                    res.c( n ) * dNdX_K.transpose() * dNdX_K *
@@ -503,8 +503,7 @@ namespace Marmot::Elements {
         else if ( nDim == 3 ) {
           if ( sectionType == Solid ) {
 
-            S             = qp.managedStateVars->stress;
-            res.stress    = S;
+            res.stress    = qp.managedStateVars->stress;
             res.stateVars = qp.managedStateVars->materialStateVars.data();
             inc           = { dE, K, dK, time[1], dT };
             qp.material->computeStress( res, tan, inc );
@@ -512,7 +511,7 @@ namespace Marmot::Elements {
             fU -= B.transpose() * res.stress * qp.J0xW;
             kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
 
-            for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+            for ( int n = 0; n < nNonlocalVariables; n++ ) {
               double idx = n * nNonLocalNodes;
               fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
                                                      res.c( n ) * dNdX_K.transpose() * dNdX_K *
@@ -533,6 +532,8 @@ namespace Marmot::Elements {
                                                                        qp.J0xW;
             }
           }
+          else
+            throw std::invalid_argument( "Invalid section type for 3D element! Must be Solid" );
         }
       }
       catch ( std::exception& e ) {
