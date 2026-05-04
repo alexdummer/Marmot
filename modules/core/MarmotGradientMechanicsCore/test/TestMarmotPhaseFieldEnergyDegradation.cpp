@@ -188,14 +188,15 @@ void testSecondOrderDerivedGeneric()
   }
 
   // Numerical derivative verification using central differences
-  const double pf          = 0.4;
-  const double p           = 2.0;
-  const double a1          = 2.0;
-  const double a2          = 0.5;
-  const double a3          = 0.0;
-  auto [g, dg, d2g]        = SecondOrderDerived::generic( pf, p, a1, a2, a3 );
-  const double dg_numdiff  = centralDifference( [p, a1, a2, a3]( const double x ) { return generic( x, p, a1, a2, a3 ); },
-                                                pf );
+  const double pf         = 0.4;
+  const double p          = 2.0;
+  const double a1         = 2.0;
+  const double a2         = 0.5;
+  const double a3         = 0.0;
+  auto [g, dg, d2g]       = SecondOrderDerived::generic( pf, p, a1, a2, a3 );
+  const double dg_numdiff = centralDifference( [p, a1, a2, a3](
+                                                 const double x ) { return generic( x, p, a1, a2, a3 ); },
+                                               pf );
   throwExceptionOnFailure( checkIfEqual( dg, dg_numdiff, 1e-6 ),
                            MakeString() << __PRETTY_FUNCTION__ << ": first derivative mismatch (autodiff vs numdiff)" );
 }

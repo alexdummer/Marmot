@@ -124,12 +124,14 @@ void testSecondOrderDerivedPoh()
 
   // Numerical second derivative verification using central differences
   {
-    const double omega       = 0.5;
-    const double eta         = 1.0;
-    const double R           = 0.0;
-    auto [g, dg, d2g]        = SecondOrderDerived::poh( omega, eta, R );
-    const double d2g_numdiff = centralDifference(
-      [eta, R]( const double w ) { return std::get< 1 >( FirstOrderDerived::poh( w, eta, R ) ); }, omega );
+    const double omega = 0.5;
+    const double eta   = 1.0;
+    const double R     = 0.0;
+    auto [g, dg, d2g]  = SecondOrderDerived::poh( omega, eta, R );
+    const double
+      d2g_numdiff = centralDifference( [eta, R]( const double
+                                                   w ) { return std::get< 1 >( FirstOrderDerived::poh( w, eta, R ) ); },
+                                       omega );
     throwExceptionOnFailure( checkIfEqual( d2g, d2g_numdiff, 1e-6 ),
                              MakeString() << __PRETTY_FUNCTION__ << ": second derivative numdiff check failed" );
   }
