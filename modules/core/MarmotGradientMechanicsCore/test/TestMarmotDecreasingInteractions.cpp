@@ -1,9 +1,11 @@
 #include "Marmot/MarmotDecreasingInteractions.h"
 #include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotNumericalDifferentiation.h"
 #include "Marmot/MarmotTesting.h"
 #include <cmath>
 
 using namespace Marmot::Testing;
+using namespace Marmot::NumericalAlgorithms::Differentiation;
 using namespace Marmot::GradientDamage::DecreasingInteractions;
 
 void testPohTemplate()
@@ -62,16 +64,15 @@ void testFirstOrderDerivedPoh()
                              MakeString() << __PRETTY_FUNCTION__ << ": derivative mismatch at omega=0.5" );
   }
 
-  // Numerical derivative verification: dg ≈ (g(omega+h) - g(omega-h)) / (2h)
+  // Numerical derivative verification using central differences
   {
-    const double h     = 1e-6;
-    const double omega = 0.5;
-    const double eta   = 1.0;
-    const double R     = 0.0;
-    auto [g, dg]       = FirstOrderDerived::poh( omega, eta, R );
-    const double dg_fd = ( poh( omega + h, eta, R ) - poh( omega - h, eta, R ) ) / ( 2.0 * h );
-    throwExceptionOnFailure( checkIfEqual( dg, dg_fd, 1e-6 ),
-                             MakeString() << __PRETTY_FUNCTION__ << ": derivative FD check failed at omega=0.5" );
+    const double omega      = 0.5;
+    const double eta        = 1.0;
+    const double R          = 0.0;
+    auto [g, dg]            = FirstOrderDerived::poh( omega, eta, R );
+    const double dg_numdiff = centralDifference( [eta, R]( const double w ) { return poh( w, eta, R ); }, omega );
+    throwExceptionOnFailure( checkIfEqual( dg, dg_numdiff, 1e-6 ),
+                             MakeString() << __PRETTY_FUNCTION__ << ": derivative numdiff check failed at omega=0.5" );
   }
 }
 
@@ -121,18 +122,16 @@ void testSecondOrderDerivedPoh()
                                << __PRETTY_FUNCTION__ << ": second derivative mismatch at omega=0.5, eta=2, R=0.2" );
   }
 
-  // Numerical second derivative verification: d2g ≈ (dg(omega+h) - dg(omega-h)) / (2h)
+  // Numerical second derivative verification using central differences
   {
-    const double h          = 1e-5;
-    const double omega      = 0.5;
-    const double eta        = 1.0;
-    const double R          = 0.0;
-    auto [g, dg, d2g]       = SecondOrderDerived::poh( omega, eta, R );
-    auto [g_p, dg_p, d2g_p] = SecondOrderDerived::poh( omega + h, eta, R );
-    auto [g_m, dg_m, d2g_m] = SecondOrderDerived::poh( omega - h, eta, R );
-    const double d2g_fd     = ( dg_p - dg_m ) / ( 2.0 * h );
-    throwExceptionOnFailure( checkIfEqual( d2g, d2g_fd, 1e-6 ),
-                             MakeString() << __PRETTY_FUNCTION__ << ": second derivative FD check failed" );
+    const double omega       = 0.5;
+    const double eta         = 1.0;
+    const double R           = 0.0;
+    auto [g, dg, d2g]        = SecondOrderDerived::poh( omega, eta, R );
+    const double d2g_numdiff = centralDifference(
+      [eta, R]( const double w ) { return std::get< 1 >( FirstOrderDerived::poh( w, eta, R ) ); }, omega );
+    throwExceptionOnFailure( checkIfEqual( d2g, d2g_numdiff, 1e-6 ),
+                             MakeString() << __PRETTY_FUNCTION__ << ": second derivative numdiff check failed" );
   }
 }
 

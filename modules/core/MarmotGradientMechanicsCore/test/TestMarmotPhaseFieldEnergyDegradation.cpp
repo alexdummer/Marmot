@@ -1,8 +1,10 @@
 #include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotNumericalDifferentiation.h"
 #include "Marmot/MarmotPhaseFieldEnergyDegradation.h"
 #include "Marmot/MarmotTesting.h"
 
 using namespace Marmot::Testing;
+using namespace Marmot::NumericalAlgorithms::Differentiation;
 using namespace Marmot::PhaseField::EnergyDegradationFunctions;
 
 void testQuadratic()
@@ -185,17 +187,17 @@ void testSecondOrderDerivedGeneric()
                              MakeString() << __PRETTY_FUNCTION__ << ": value inconsistency at pf=" << pf );
   }
 
-  // Numerical derivative verification: dg ≈ (g(pf+h) - g(pf-h)) / (2h)
-  const double h     = 1e-6;
-  const double pf    = 0.4;
-  const double p     = 2.0;
-  const double a1    = 2.0;
-  const double a2    = 0.5;
-  const double a3    = 0.0;
-  auto [g, dg, d2g]  = SecondOrderDerived::generic( pf, p, a1, a2, a3 );
-  const double dg_fd = ( generic( pf + h, p, a1, a2, a3 ) - generic( pf - h, p, a1, a2, a3 ) ) / ( 2.0 * h );
-  throwExceptionOnFailure( checkIfEqual( dg, dg_fd, 1e-6 ),
-                           MakeString() << __PRETTY_FUNCTION__ << ": first derivative mismatch (autodiff vs FD)" );
+  // Numerical derivative verification using central differences
+  const double pf          = 0.4;
+  const double p           = 2.0;
+  const double a1          = 2.0;
+  const double a2          = 0.5;
+  const double a3          = 0.0;
+  auto [g, dg, d2g]        = SecondOrderDerived::generic( pf, p, a1, a2, a3 );
+  const double dg_numdiff  = centralDifference( [p, a1, a2, a3]( const double x ) { return generic( x, p, a1, a2, a3 ); },
+                                                pf );
+  throwExceptionOnFailure( checkIfEqual( dg, dg_numdiff, 1e-6 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": first derivative mismatch (autodiff vs numdiff)" );
 }
 
 int main()
