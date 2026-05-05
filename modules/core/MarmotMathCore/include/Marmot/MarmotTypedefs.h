@@ -32,6 +32,15 @@
 #include "autodiff/forward/dual/eigen.hpp"
 #include "unsupported/Eigen/CXX11/Tensor"
 
+/**
+ * @file MarmotTypedefs.h
+ * @brief Common Eigen matrix/vector type aliases used throughout Marmot.
+ *
+ * This header collects all fixed-size and map-based Eigen types that are shared
+ * across the Marmot library, so that downstream code can rely on a single,
+ * consistent set of names (e.g. @c Marmot::Vector6d, @c Marmot::Matrix6d).
+ */
+
 namespace Marmot {
   typedef Eigen::Matrix< double, 6, 6 > Matrix6d;
   typedef Eigen::Matrix< double, 6, 9 > Matrix69d;

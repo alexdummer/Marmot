@@ -8,3 +8,4 @@ Code documentation
   codedocumentation/finitestrainmechanicscore
   codedocumentation/mathcore
   codedocumentation/mechanicscore
+  codedocumentation/utilitiescore

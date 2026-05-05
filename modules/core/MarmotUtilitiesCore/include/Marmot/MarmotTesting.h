@@ -35,6 +35,16 @@
 #include <Fastor/Fastor.h>
 #include <iostream>
 
+/**
+ * @file MarmotTesting.h
+ * @brief Lightweight unit-test helpers for Marmot material and numerical routines.
+ *
+ * Provides templated equality checks (@c checkIfEqual) for scalars, Eigen
+ * matrices, Eigen tensors and Fastor tensors, as well as higher-level utilities
+ * such as @c throwExceptionOnFailure, the Fibonacci hemisphere sampler
+ * @c fibonacciLatticeHemisphere, and the @c spinTurbokreisel material-point test.
+ */
+
 namespace Marmot::Testing {
 
   bool checkIfEqual( const double a, const double b, const double tol = 1e-15 );

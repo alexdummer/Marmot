@@ -30,6 +30,12 @@
 #include "Marmot/MarmotTypedefs.h"
 #include <vector>
 
+/**
+ * @file MarmotFiniteElement.h
+ * @brief Core finite element utilities: element shapes, shape functions, Jacobian,
+ *        and B-operator for 1-D, 2-D and 3-D isoparametric elements.
+ */
+
 namespace Marmot {
 
   namespace FiniteElement {

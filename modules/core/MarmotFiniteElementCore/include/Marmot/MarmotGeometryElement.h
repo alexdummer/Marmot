@@ -32,17 +32,22 @@
 #include <iostream>
 #include <map>
 
+/**
+ * @class MarmotGeometryElement
+ * @brief Statically-sized geometry base class for all isoparametric Marmot elements.
+ *
+ * @tparam nDim   Number of spatial dimensions (1, 2 or 3).
+ * @tparam nNodes Number of element nodes.
+ *
+ * Provides shape functions @c N, their natural-coordinate derivatives @c dNdXi,
+ * the B-operator @c B, and the element Jacobian.  The element shape is determined
+ * automatically from the template parameters.
+ *
+ * Concrete MarmotElement classes inherit from this class to access the geometric
+ * infrastructure without code duplication.
+ */
 template < int nDim, int nNodes >
 class MarmotGeometryElement {
-  /* This is the Geometry Base element, which serves as a base for all MarmotElements.
-   * It corresponds to the GeometryElement in mpFEM,
-   * although this as a static templated version.
-   *
-   * MarmotElements (corresponding do DofElements in mpFEM) can inherit from this element,
-   * and access shape functions, derivatives and B Operator
-   *
-   * The element automatically determines its shape by the given  nDimension and number of nodes
-   * */
 
 public:
   /*Typedefs*/

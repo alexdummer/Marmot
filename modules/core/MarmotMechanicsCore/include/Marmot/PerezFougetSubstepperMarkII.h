@@ -30,11 +30,21 @@
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 
+/**
+ * @file PerezFougetSubstepperMarkII.h
+ * @brief Sub-stepper for implicit return-mapping algorithms (Pérez–Fouget algorithm, Mark II).
+ */
+
 namespace Marmot::NumericalAlgorithms {
 
-  /** Substepper for (linear elastic) elastoplastic materials, implicit return mapping version
+  /**
+   * @brief Sub-stepper for linear-elastic/elastoplastic materials using an implicit return-mapping.
    *
-   * */
+   * Implements the Pérez–Fouget (CPPM) sub-stepping strategy.  The consistent
+   * algorithmic tangent is assembled incrementally via sub-step contributions.
+   *
+   * @tparam nSizeMatTangent Size of the square material tangent matrix.
+   */
   template < int nSizeMatTangent >
   class PerezFougetSubstepper {
 
@@ -53,7 +63,7 @@ namespace Marmot::NumericalAlgorithms {
     /// get the next subincrement size
     double getNextSubstep();
 
-    /// decreas the subincrement size
+    /// decrease the subincrement size
     bool decreaseSubstepSize();
 
     /// finish an elastic only subincrement
@@ -134,7 +144,7 @@ namespace Marmot::NumericalAlgorithms {
     currentSubstepSize *= scaleDownFactor;
 
     if ( currentSubstepSize < minimumStepSize )
-      return MarmotJournal::warningToMSG( "UMAT: Substepper: Minimal stepzsize reached" );
+      return MarmotJournal::warningToMSG( "UMAT: Substepper: Minimal step size reached" );
     else
       return MarmotJournal::notificationToMSG( "UMAT: Substepper: Decreasing stepsize" );
   }

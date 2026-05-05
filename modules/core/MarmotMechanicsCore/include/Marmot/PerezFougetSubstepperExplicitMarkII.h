@@ -29,10 +29,21 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTypedefs.h"
 
+/**
+ * @file PerezFougetSubstepperExplicitMarkII.h
+ * @brief Sub-stepper for semi-explicit return-mapping algorithms (Pérez–Fouget algorithm, Mark II).
+ */
+
 namespace Marmot::NumericalAlgorithms {
 
-  /** Substepper for (linear elastic) elastoplastic materials, semi-explicit return mapping version
-   * */
+  /**
+   * @brief Sub-stepper for linear-elastic/elastoplastic materials using a semi-explicit return-mapping.
+   *
+   * Implements the Pérez–Fouget (CPPM) sub-stepping strategy for semi-explicit
+   * (forward-Euler-based) integration schemes.
+   *
+   * @tparam nSizeMatTangent Size of the square material tangent matrix.
+   */
   template < int nSizeMatTangent >
   class PerezFougetSubstepper {
 

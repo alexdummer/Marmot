@@ -31,12 +31,16 @@
 #include <functional>
 #include <memory>
 
+/**
+ * @class MarmotElementSpatialWrapper
+ * @brief Wrapper that embeds a lower-dimensional child element (e.g.\ a truss) into a
+ *        higher-dimensional ambient space (2-D or 3-D).
+ *
+ * The projection transformation is constructed automatically from the supplied
+ * nodal coordinates.  The child element is created via a user-provided factory
+ * functor so that the wrapper remains independent of the concrete child type.
+ */
 class MarmotElementSpatialWrapper : public MarmotElement {
-  /* Wrapper for Reduced Dimension Elements (e.g. Truss elements) to be used in higher order
-   * dimensions (2D, 3D). The Projected is computed automatically based on the provided node
-   * coordinates, and the actual (child) element is created through a provided generator functor
-   * (e.g, function pointer)
-   * */
 
 public:
   const int                                 nDim;

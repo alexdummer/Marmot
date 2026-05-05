@@ -32,6 +32,15 @@
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
 
+/**
+ * @file HaighWestergaard.h
+ * @brief Haigh–Westergaard stress and strain invariant coordinates.
+ *
+ * Provides the @c HaighWestergaardCoordinates aggregate and functions for
+ * computing the hydrostatic component \f$\xi\f$, deviatoric radius \f$\rho\f$,
+ * and Lode angle \f$\theta\f$ from stress or strain tensors in Voigt notation.
+ */
+
 namespace Marmot {
   namespace ContinuumMechanics::HaighWestergaard {
 
@@ -95,7 +104,7 @@ namespace Marmot {
      * \note The computation is equal to @ref haighWestergaard by replacing the stress invariants with the strain
      * invariants.
      *
-     * @param strain Strain tensor \f$\eps\f$ given in \ref voignotation "Voigt notation".
+     * @param strain Strain tensor \f$\eps\f$ given in \ref voigtnotation "Voigt notation".
      */
     HaighWestergaardCoordinates< double > haighWestergaardFromStrain( const Marmot::Vector6d& strain );
 

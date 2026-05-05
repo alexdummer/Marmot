@@ -30,7 +30,7 @@ Additionally, the Poisson's ratios :math:`\nu_{12}`, :math:`\nu_{23}`, and :math
    Only the absolute values of the initial elastic moduli are scaled.
 
 .. warning::
-   The defnition of Poisson's ratio in Marmot differs from the standard definition.
+   The definition of Poisson's ratio in Marmot differs from the standard definition.
    In Marmot, Poisson's ratio :math:`\nu_{ij}` is defined as the ratio of the lateral strain in direction :math:`x_j`
    to the axial strain in direction :math:`x_i` when a uniaxial stress is applied in direction :math:`x_i`.
    See namespace :ref:`Marmot::ContinuumMechanics::Elasticity` for more details.

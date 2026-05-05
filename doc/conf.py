@@ -88,6 +88,10 @@ breathe_projects_source = {
         "../modules/core/MarmotMechanicsCore/include/Marmot",
         getAllHeadersInFolder("../modules/core/MarmotMechanicsCore/include/Marmot/"),
     ),
+    "MarmotUtilitiesCore": (
+        "../modules/core/MarmotUtilitiesCore/include/Marmot",
+        getAllHeadersInFolder("../modules/core/MarmotUtilitiesCore/include/Marmot/"),
+    ),
 }
 
 breathe_default_members = ("members", "private-members", "protected-members", "undoc-members")

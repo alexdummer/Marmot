@@ -29,15 +29,27 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTypedefs.h"
 
+/**
+ * @file AdaptiveSubstepperExplicit.h
+ * @brief Adaptive sub-stepping with Richardson extrapolation for semi-explicit return-mapping.
+ */
+
 namespace Marmot::NumericalAlgorithms {
 
+  /**
+   * @brief Adaptive sub-stepper for semi-explicit (forward-Euler-based) return-mapping algorithms.
+   *
+   * Analogous to @ref AdaptiveSubstepper but adapted for explicit integration schemes.
+   * Error estimation is performed by Richardson extrapolation between a full-step and
+   * two half-steps.
+   *
+   * @tparam materialTangentSize        Size of the material tangent matrix.
+   * @tparam nIntegrationDependentStateVars  Number of integration-dependent state variables.
+   *
+   * Reference: Matthias Neuner (2016), developed within the DK-CIM collaboration.
+   */
   template < size_t materialTangentSize, size_t nIntegrationDependentStateVars >
   class AdaptiveSubstepperExplicit {
-    /* Adaptive Substepper, employing an error estimation and
-     * Richardson Extrapolation for an (semi)-Explicit Return  Mapping algorithm
-     *
-     * Matthias Neuner (2016), developed within the DK-CIM collaboration
-     * */
   public:
     /// Matrix for describing the nonlinear equation system of the return mapping algorithm
     typedef Eigen::Matrix< double, materialTangentSize, materialTangentSize > TangentSizedMatrix;

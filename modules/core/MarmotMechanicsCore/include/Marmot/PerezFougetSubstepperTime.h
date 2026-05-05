@@ -28,17 +28,26 @@
 #pragma once
 #include "Marmot/MarmotTypedefs.h"
 
+/**
+ * @file PerezFougetSubstepperTime.h
+ * @brief Time-variant variant of the Pérez–Fouget sub-stepper.
+ *
+ * A modified version of the Pérez–Fouget sub-stepper that accounts for a
+ * time-variant elastic stiffness tensor @f$ \mathbb{C}^\mathrm{el}(t_{n+1}) @f$.
+ * The algorithmic formulation is unchanged; the only difference is that the
+ * current elastic tangent must be supplied when extending the consistent tangent.
+ */
+
 namespace Marmot::NumericalAlgorithms {
   /**
-  * Modified Version of the Perez-Fouget Substepper,
-  * to account for time-variant elastic Stiffness Tensor Cel(t_n+1)
-  * NO changes in algorithmic formulation!
-
-  * modifications:
-  * - elastic substep consistent tangent matrix update needs current Cel(t) for update
-  * - No need for Cel for object construction anymore
-  */
-
+   * @brief Pérez–Fouget sub-stepper with time-dependent elastic stiffness.
+   *
+   * Compared to @ref PerezFougetSubstepper, this variant does not require the
+   * elastic stiffness @c Cel at construction time; instead it is passed
+   * explicitly to @c extendConsistentTangent at each sub-step.
+   *
+   * @tparam sizeMaterialState  Total size of the material state vector.
+   */
   template < int sizeMaterialState >
   class PerezFougetSubstepperTime {
 
