@@ -12,7 +12,7 @@ extensions = [
 ]
 
 project = "Marmot"
-copyright = "2025, University of Innsbruck, BOKU Vienna and other authors"
+copyright = "2026, University of Innsbruck, BOKU Vienna and other authors"
 
 # set sphinx "read the docs" theme
 html_theme = "sphinx_rtd_theme"
