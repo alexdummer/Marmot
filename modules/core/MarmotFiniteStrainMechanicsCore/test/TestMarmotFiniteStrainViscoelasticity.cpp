@@ -1,30 +1,3 @@
-/* ---------------------------------------------------------------------
- *                                       _
- *  _ __ ___   __ _ _ __ _ __ ___   ___ | |_
- * | '_ ` _ \ / _` | '__| '_ ` _ \ / _ \| __|
- * | | | | | | (_| | |  | | | | | | (_) | |_
- * |_| |_| |_|\__,_|_|  |_| |_| |_|\___/ \__|
- *
- * Unit of Strength of Materials and Structural Analysis
- * University of Innsbruck,
- * 2020 - today
- *
- * festigkeitslehre@uibk.ac.at
- *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
- * This file is part of the MAteRialMOdellingToolbox (marmot).
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * The full text of the license can be found in the file LICENSE.md at
- * the top level directory of marmot.
- * ---------------------------------------------------------------------
- */
-
 #include "Fastor/Fastor.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
@@ -485,55 +458,27 @@ void testSimoAndTemplateOverloadConsistency()
 // In this case, the Liu formulation reduces to the same result as the Simo formulation.
 // ---------------------------------------------------------------------------
 
-// Build an isotropic 4th-order stiffness tensor: C_ijkl = lambda*delta_ij*delta_kl + mu*(delta_ik*delta_jl +
-// delta_il*delta_jk)
+// Build an isotropic 4th-order stiffness tensor using Marmot's IHyd and ISymm:
+// C_ijkl = lambda * delta_ij * delta_kl + 2*mu * ISymm_ijkl
 static Tensor3333d makeIsotropicTangent( double K, double G )
 {
   const double lambda = K - 2.0 / 3.0 * G;
   const double mu     = G;
-
-  Tensor3333d C( 0.0 );
-  for ( int i = 0; i < 3; ++i )
-    for ( int j = 0; j < 3; ++j )
-      for ( int k = 0; k < 3; ++k )
-        for ( int l = 0; l < 3; ++l ) {
-          const int d_ij  = ( i == j ) ? 1 : 0;
-          const int d_kl  = ( k == l ) ? 1 : 0;
-          const int d_ik  = ( i == k ) ? 1 : 0;
-          const int d_jl  = ( j == l ) ? 1 : 0;
-          const int d_il  = ( i == l ) ? 1 : 0;
-          const int d_jk  = ( j == k ) ? 1 : 0;
-          C( i, j, k, l ) = lambda * d_ij * d_kl + mu * ( d_ik * d_jl + d_il * d_jk );
-        }
-  return C;
+  return evaluate( lambda * Spatial3D::IHyd + 2.0 * mu * Spatial3D::ISymm );
 }
 
-// Build the isotropic compliance tensor as the exact inverse of the stiffness tensor
+// Build the isotropic compliance tensor as the exact inverse of the stiffness tensor,
+// using Marmot's IHyd and ISymm:
+// C^{-1}_ijkl = 1/mu * ISymm_ijkl - lambda/(2*mu*(3*lambda+2*mu)) * IHyd_ijkl
 static Tensor3333d makeIsotropicCompliance( double K, double G )
 {
-  // C^{-1}_ijkl = (1/(2mu)) * (delta_ik*delta_jl + delta_il*delta_jk)
-  //             - lambda/(2mu*(3lambda+2mu)) * delta_ij * delta_kl
   const double lambda = K - 2.0 / 3.0 * G;
   const double mu     = G;
-
-  Tensor3333d Cinv( 0.0 );
-  for ( int i = 0; i < 3; ++i )
-    for ( int j = 0; j < 3; ++j )
-      for ( int k = 0; k < 3; ++k )
-        for ( int l = 0; l < 3; ++l ) {
-          const int d_ij     = ( i == j ) ? 1 : 0;
-          const int d_kl     = ( k == l ) ? 1 : 0;
-          const int d_ik     = ( i == k ) ? 1 : 0;
-          const int d_jl     = ( j == l ) ? 1 : 0;
-          const int d_il     = ( i == l ) ? 1 : 0;
-          const int d_jk     = ( j == k ) ? 1 : 0;
-          Cinv( i, j, k, l ) = 1.0 / ( 2.0 * mu ) * ( d_ik * d_jl + d_il * d_jk ) -
-                               lambda / ( 2.0 * mu * ( 3.0 * lambda + 2.0 * mu ) ) * d_ij * d_kl;
-        }
-  return Cinv;
+  return evaluate( ( 1.0 / mu ) * Spatial3D::ISymm -
+                   ( lambda / ( 2.0 * mu * ( 3.0 * lambda + 2.0 * mu ) ) ) * Spatial3D::IHyd );
 }
 
-// Verify that C : C^{-1} = I4_sym (the 4th-order symmetric identity)
+// Verify that C : C^{-1} = I4_sym (the 4th-order symmetric identity Spatial3D::ISymm)
 void testIsotropicInverseConsistency()
 {
   const double K = 10000.0, G = 5000.0;
@@ -546,16 +491,9 @@ void testIsotropicInverseConsistency()
   // Compute C:Cinv_ijkl = C_ijmn * Cinv_mnkl
   Tensor3333d product = einsum< ijmn, mnkl, to_ijkl >( C, Cinv );
 
-  // Should equal the 4th-order symmetric identity I4_sym = 0.5*(delta_ik*delta_jl + delta_il*delta_jk)
-  for ( int i = 0; i < 3; ++i )
-    for ( int j = 0; j < 3; ++j )
-      for ( int k = 0; k < 3; ++k )
-        for ( int l = 0; l < 3; ++l ) {
-          const double expected = 0.5 * ( ( i == k && j == l ? 1.0 : 0.0 ) + ( i == l && j == k ? 1.0 : 0.0 ) );
-          throwExceptionOnFailure( checkIfEqual( product( i, j, k, l ), expected, 1e-10 ),
-                                   MakeString() << __PRETTY_FUNCTION__ << ": C:Cinv != I4sym at (" << i << "," << j
-                                                << "," << k << "," << l << ")" );
-        }
+  // Should equal the 4th-order symmetric identity Spatial3D::ISymm
+  throwExceptionOnFailure( checkIfEqual( product, Spatial3D::ISymm, 1e-10 ),
+                           MakeString() << __PRETTY_FUNCTION__ << ": C:Cinv != ISymm" );
 }
 
 // Liu et al. overload with dTangent_dDeformation=0 and C/Cinv properly paired:
