@@ -32,10 +32,12 @@ namespace Marmot::Materials {
     initializeStateLayout();
   }
 
-  void ADVonMises::computeStressAD( state3DAD& state, const autodiff::dual* dStrain, const timeInfo& timeInfo ) const
+  void ADVonMises::computeStressAD( state3DAD&                 state,
+                                    const Marmot::Vector6dual& dStrain,
+                                    const timeInfo&            timeInfo ) const
   {
-    mVector6dual            S( state.stress );
-    const mVector6dualConst dE( dStrain );
+    mVector6dual            S( state.stress.data() );
+    const mVector6dualConst dE( dStrain.data() );
 
     // compute elastic stiffness
     const Matrix6d Cel = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );

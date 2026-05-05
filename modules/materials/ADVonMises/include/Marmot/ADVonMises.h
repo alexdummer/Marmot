@@ -65,7 +65,9 @@ namespace Marmot::Materials {
     }
 
   protected:
-    void computeStressAD( state3DAD& state, const autodiff::dual* dStrain, const timeInfo& timeInfo ) const override;
+    void computeStressAD( state3DAD&                 state,
+                          const Marmot::Vector6dual& dStrain,
+                          const timeInfo&            timeInfo ) const override;
 
     /**
      * @brief Hardening function.
