@@ -24,7 +24,7 @@
  * the top level directory of marmot.
  * ---------------------------------------------------------------------
  */
-
+#pragma once
 #include <cmath>
 #include <tuple>
 
@@ -39,32 +39,15 @@ namespace Marmot::GradientDamage {
       return g;
     }
 
-    template < typename T >
-    T sigmoid( T omega, double R, double a, double b )
-    {
-      /* auto    sig = [&]( const T om ) { return 1. / ( 1. + exp( -eta * ( om - a ) ) ); }; */
-      /* const T s   = ( 1. - R ) / ( sig( 1. ) - sig( 0. ) ); */
-
-      /* return 1. + s * ( sig( 0 ) - sig( omega ) ); */
-
-      const double aux1 = log( 2 ) / log( a );
-      const T      aux2 = pow( eval( pow( omega, aux1 ) - 1. ), b );
-
-      return 1. - ( 1. - R ) / ( 1. + aux2 );
-    }
     namespace FirstOrderDerived {
 
       std::tuple< double, double > poh( double omega, double eta, double R );
-
-      std::tuple< double, double > sigmoid( double omega, double R, double a, double b );
 
     } // namespace FirstOrderDerived
 
     namespace SecondOrderDerived {
 
       std::tuple< double, double, double > poh( double omega, double eta, double R );
-
-      std::tuple< double, double, double > sigmoid( double omega, double R, double a, double b );
 
     } // namespace SecondOrderDerived
   }   // namespace DecreasingInteractions

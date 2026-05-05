@@ -4,7 +4,7 @@ set(MODULE_NAME
 set(MODULES_DEPENDENCIES
     MarmotMechanicsCore
     MarmotGradientMechanicsCore
-    MarmotFiniteElementCore 
+    MarmotFiniteElementCore
     )
 
 set(DEPENDECIES_FULLFILLED TRUE)
