@@ -8,10 +8,11 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.napoleon",
+    "sphinxcontrib.bibtex",
 ]
 
 project = "Marmot"
-copyright = "2025, University of Innsbruck, BOKU Vienna and other authors"
+copyright = "2026, University of Innsbruck, BOKU Vienna and other authors"
 
 # set sphinx "read the docs" theme
 html_theme = "sphinx_rtd_theme"
@@ -90,3 +91,7 @@ breathe_projects_source = {
 }
 
 breathe_default_members = ("members", "private-members", "protected-members", "undoc-members")
+
+# sphinxcontrib-bibtex configuration
+bibtex_bibfiles = ["pages/publications.bib"]
+bibtex_default_style = "unsrt"

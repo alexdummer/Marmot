@@ -28,8 +28,8 @@ If necessary, get Miniforge:
    :caption: Step 1
 
     curl -L -O \
-        https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
-    bash Miniforge3-Linux-aarch64.sh -b -p ./miniforge3
+        "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    bash "Miniforge3-$(uname)-$(uname -m).sh" -b -p ./miniforge3
 
 Add conda to your environment:
 
