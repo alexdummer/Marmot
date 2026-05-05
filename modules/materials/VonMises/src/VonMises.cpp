@@ -1,6 +1,7 @@
 #include "Marmot/VonMises.h"
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
 #include "Marmot/VonMisesConstants.h"
@@ -86,7 +87,7 @@ namespace Marmot::Materials {
       while ( std::abs( g( dKappa ) ) > VonMisesConstants::innerNewtonTol ) {
 
         if ( counter == VonMisesConstants::nMaxInnerNewtonCycles ) {
-          throw std::runtime_error( "return mapping failed to converge in VonMisesModel::computeStress" );
+          throw StressUpdateFailed( "return mapping failed to converge in VonMisesModel::computeStress" );
         }
         // compute derivative of g wrt kappa
         dg_ddKappa = -Constants::sqrt6 * G - Constants::sqrt2_3 * dfy_ddKappa( kappa + dKappa );

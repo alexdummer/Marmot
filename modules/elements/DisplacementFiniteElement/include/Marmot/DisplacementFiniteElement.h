@@ -33,6 +33,7 @@
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMaterialHypoElastic.h"
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include "Marmot/MarmotMath.h"
@@ -491,7 +492,7 @@ namespace Marmot::Elements {
         try {
           qp.material->computeUniaxialStress( state, C[0], dE[0], timeInfo );
         }
-        catch ( const std::runtime_error& e ) {
+        catch ( const Marmot::StressUpdateFailed& e ) {
           pNewDT = 0.5;
           return;
         }
@@ -518,7 +519,7 @@ namespace Marmot::Elements {
           try {
             qp.material->computePlaneStress( state, C, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
@@ -546,7 +547,7 @@ namespace Marmot::Elements {
           try {
             qp.material->computeStress( state, C66, dE6, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
@@ -574,7 +575,7 @@ namespace Marmot::Elements {
           try {
             qp.material->computeStress( state, C, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }

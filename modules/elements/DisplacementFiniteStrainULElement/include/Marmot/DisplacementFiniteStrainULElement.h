@@ -35,6 +35,7 @@
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotGeostaticStress.h"
 #include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include "Marmot/MarmotMath.h"
@@ -595,7 +596,7 @@ namespace Marmot::Elements {
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
         }
       }
-      catch ( const std::runtime_error& ) {
+      catch ( const Marmot::StressUpdateFailed& ) {
         pNewDT = 0.25;
         return;
       }
@@ -880,7 +881,7 @@ namespace Marmot::Elements {
       try {
         qp.material->computePlaneStrain( response3D, algorithmicModuli3D, deformation3D, timeIncrement );
       }
-      catch ( const std::runtime_error& ) {
+      catch ( const Marmot::StressUpdateFailed& ) {
         pNewDT = 0.25;
         return;
       }

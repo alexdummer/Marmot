@@ -3,6 +3,7 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotKinematics.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotVoigt.h"
@@ -66,7 +67,7 @@ void MarmotMaterialHypoElastic::computePlaneStress( state2D&                stat
     planeStressCount += 1;
     if ( planeStressCount > 13 ) {
       MarmotJournal::warningToMSG( "PlaneStressWrapper requires cutback" );
-      throw std::runtime_error( "Plane stress iteration did not converge" );
+      throw Marmot::StressUpdateFailed( "Plane stress iteration did not converge" );
     }
   }
 
@@ -117,7 +118,7 @@ void MarmotMaterialHypoElastic::computeUniaxialStress( state1D& state1D_,
     count += 1;
     if ( count > 13 ) {
       MarmotJournal::warningToMSG( "UniaxialStressWrapper requires cutback" );
-      throw std::runtime_error( "uniaxial stress iteration did not converge" );
+      throw Marmot::StressUpdateFailed( "uniaxial stress iteration did not converge" );
     }
   }
 

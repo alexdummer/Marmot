@@ -3,6 +3,7 @@
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
@@ -62,7 +63,7 @@ namespace Marmot::Materials {
       while ( abs( g( (double)rhoTrial, kappa, (double)dKappa ) ) > ADVonMisesConstants::innerNewtonTol ) {
 
         if ( counter == ADVonMisesConstants::nMaxInnerNewtonCycles ) {
-          throw std::runtime_error( MakeString()
+          throw StressUpdateFailed( MakeString()
                                     << __PRETTY_FUNCTION__
                                     << ": Return mapping did not converge within maximum number of iterations!" );
         }
