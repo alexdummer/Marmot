@@ -121,8 +121,6 @@ public:
    * respect to the linearized strain
    * @param[in]	dStrain linearized strain increment
    * @param[in]	timeInfo Structure carrying the current (pseudo-)time and the (pseudo-)time increment
-   * @throws StressUpdateFailed exception if the stress update fails, e.g. due to non-convergence of an iterative
-   * algorithm.
    */
   virtual void computeStress( state3D&                state,
                               Marmot::Matrix6d&       dStress_dStrain,

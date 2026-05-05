@@ -66,9 +66,9 @@ namespace Marmot::Materials {
                           const timeInfo&         timeInfo ) const
 
   {
-    mVector6d nomStress( state.stress.data() );
-    Vector6d  dE( dStrain.data() );
-    mMatrix6d C( dStressDDStrain.data() );
+    mVector6d             nomStress( state.stress.data() );
+    Map< const Vector6d > dE( dStrain.data() );
+    mMatrix6d             C( dStressDDStrain.data() );
 
     const double& dT   = timeInfo.dT;
     const double& time = timeInfo.time;

@@ -50,8 +50,6 @@ public:
    * @param[in,out] stress  Cauchy stress tensor
    * @param[in]             dStrain linearized strain increment
    * @param[in]             timeInfo Old (pseudo-)time
-   * @throws StressUpdateFailed exception if the stress update fails, e.g. due to non-convergence of an iterative
-   * algorithm.
    */
   virtual void computeStressAD( state3DAD&                 state,
                                 const Marmot::Vector6dual& dStrain,
