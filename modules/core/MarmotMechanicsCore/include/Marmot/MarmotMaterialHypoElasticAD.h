@@ -47,7 +47,7 @@ public:
    * \f$\frac{\partial\boldsymbol{\sigma}^{(n+1)}}{\partial\boldsymbol{\varepsilon}^{(n+1)}}\f$ can be obtained by means
    * of automatic differentiation.
    *
-   * @param[in,out] stress  Cauchy stress tensor
+   * @param[in,out] state  State carrying the dual Cauchy stress, strain energy, and state variables
    * @param[in]             dStrain linearized strain increment
    * @param[in]             timeInfo Old (pseudo-)time
    */

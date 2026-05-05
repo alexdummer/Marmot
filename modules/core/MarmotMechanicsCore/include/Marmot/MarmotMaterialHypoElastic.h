@@ -117,7 +117,7 @@ public:
    * \f$\frac{\partial\boldsymbol{\sigma}^{(n+1)}}{\partial\boldsymbol{\varepsilon}^{(n+1)}}\f$.
    *
    * @param[in,out]	state  A state3D instance carrying stress, strain energy, and state variables
-   * @param[in,out]	dStressDDstrain	Algorithmic tangent representing the derivative of the Cauchy stress tensor with
+   * @param[in,out]	dStress_dStrain	Algorithmic tangent representing the derivative of the Cauchy stress tensor with
    * respect to the linearized strain
    * @param[in]	dStrain linearized strain increment
    * @param[in]	timeInfo Structure carrying the current (pseudo-)time and the (pseudo-)time increment

@@ -31,7 +31,7 @@
 namespace Marmot {
   namespace ContinuumMechanics::CommonConstitutiveModels {
     /**
-     * \brief Implementation of Duvaut-Lions viscosity for a material with \ref nMatTangentSize internal degrees of
+     * \brief Implementation of Duvaut-Lions viscosity for a material with `nMatTangentSize` internal degrees of
      * freedom
      * @todo: Update member names to more descriptive ones
      */

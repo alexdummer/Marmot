@@ -43,14 +43,15 @@ namespace MarmotLibrary {
    */
   class MarmotMaterialHypoElasticFactory {
   public:
+    /// Function signature for material factory functions registered in the map.
     using materialFactoryFunction = std::function<
       MarmotMaterialHypoElastic*( const double* materialProperties, int nMaterialProperties, int materialNumber ) >;
 
     MarmotMaterialHypoElasticFactory() = delete;
 
     /**
-     * @brief Create a material instance based on its code and properties.
-     * @param[in] materialCode Unique code for the material.
+     * @brief Create a material instance based on its name and properties.
+     * @param[in] materialName       Registered name of the material.
      * @param[in] materialProperties Array of material properties.
      * @param[in] nMaterialProperties Number of properties in the array.
      * @param[in] materialNumber Unique identifier for the material instance.
@@ -62,11 +63,9 @@ namespace MarmotLibrary {
                                                       int                materialNumber );
 
     /**
-     * @brief Register a material with its code and factory function.
-     * @param[in] materialCode Unique code for the material.
-     * @param[in] materialName Name of the material.
-     * @param[in] factoryFunction Function to create material instances.
-     * @return True if registration was successful, false if the code already exists.
+     * @brief Register a material with its name and an auto-generated factory function.
+     * @param[in] materialName  Unique name under which the material is registered.
+     * @return True if registration was successful, false if the name already exists.
      */
     template < class T >
     static bool registerMaterial( const std::string& materialName )

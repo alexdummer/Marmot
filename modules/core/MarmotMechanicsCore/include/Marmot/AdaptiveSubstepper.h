@@ -57,6 +57,16 @@ namespace Marmot::NumericalAlgorithms {
     /// Vector to carry the internal state of a material
     typedef Eigen::Matrix< double, nIntegrationDependentStateVars, 1 > IntegrationStateVector;
 
+    /**
+     * @brief Construct an AdaptiveSubstepper.
+     * @param initialStepSize            Initial sub-step size as a fraction of the total increment (0, 1].
+     * @param minimumStepSize            Minimum allowable sub-step size; triggers a warning if reached.
+     * @param maxScaleUpFactor           Maximum factor by which the sub-step size may be increased.
+     * @param scaleDownFactor            Factor applied to the sub-step size when a sub-step is discarded.
+     * @param integrationErrorTolerance  Richardson-extrapolation error threshold for accepting a sub-step.
+     * @param nPassesToIncrease          Number of successful sub-steps before the step size is allowed to grow.
+     * @param Cel                        Linear-elastic stiffness matrix (6×6).
+     */
     AdaptiveSubstepper( double          initialStepSize,
                         double          minimumStepSize,
                         double          maxScaleUpFactor,

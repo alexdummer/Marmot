@@ -78,9 +78,33 @@ namespace Marmot::NumericalAlgorithms {
      */
     Marmot::Vector6d rotateTensor( const Marmot::Vector6d& tensor );
 
+    /**
+     * @brief Compute the consistent tangent contribution \f$\frac{d\boldsymbol{S}}{d\mathbf{F}}\f$.
+     *
+     * Given the current Cauchy stress, the inverse deformation gradient, and the
+     * Cauchy-stress/strain tangent, returns the third-order tensor mapping variations
+     * of the deformation gradient to variations of the Cauchy stress.
+     *
+     * @param stress        Current Cauchy stress in Voigt notation.
+     * @param FInv          Inverse of the deformation gradient at the end of the increment.
+     * @param dChauchyDEps  Algorithmic Cauchy-stress/strain tangent (6×6).
+     * @return              The 6×3×3 tangent tensor \f$\frac{d\boldsymbol{S}}{d\mathbf{F}}\f$.
+     */
     Marmot::EigenTensors::Tensor633d compute_dS_dF( const Marmot::Vector6d& stress,
                                                     const Eigen::Matrix3d&  FInv,
                                                     const Marmot::Matrix6d& dChauchyDEps );
+
+    /**
+     * @brief Compute the consistent tangent \f$\frac{d\phi}{d\mathbf{F}}\f$ for a scalar quantity.
+     *
+     * Given the inverse deformation gradient and the derivative of a scalar (e.g., an
+     * internal variable) with respect to the strain in Voigt notation, returns the
+     * corresponding 3×3 matrix mapping variations of the deformation gradient.
+     *
+     * @param FInv         Inverse of the deformation gradient at the end of the increment.
+     * @param dScalarDEps  Derivative of the scalar quantity with respect to the strain, in Voigt notation.
+     * @return             The 3×3 sensitivity matrix \f$\frac{d\phi}{d\mathbf{F}}\f$.
+     */
     Eigen::Matrix3d compute_dScalar_dF( const Eigen::Matrix3d& FInv, const Marmot::Vector6d& dScalarDEps );
 
   private:

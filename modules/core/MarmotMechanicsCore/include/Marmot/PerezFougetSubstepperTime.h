@@ -55,6 +55,14 @@ namespace Marmot::NumericalAlgorithms {
     /// Matrix to carry the Jacobian of a material state
     typedef Eigen::Matrix< double, sizeMaterialState, sizeMaterialState > TangentSizedMatrix;
 
+    /**
+     * @brief Construct a PerezFougetSubstepperTime.
+     * @param initialStepSize   Initial sub-step size as a fraction of the total increment (0, 1].
+     * @param minimumStepSize   Minimum allowable sub-step size; triggers a warning if reached.
+     * @param scaleUpFactor     Factor by which the sub-step size is increased after @p nPassesToIncrease successes.
+     * @param scaleDownFactor   Factor applied to the sub-step size when convergence fails.
+     * @param nPassesToIncrease Number of successful sub-steps before the step size may be increased.
+     */
     PerezFougetSubstepperTime( double initialStepSize,
                                double minimumStepSize,
                                double scaleUpFactor,
@@ -69,8 +77,23 @@ namespace Marmot::NumericalAlgorithms {
     /// decrease the next subincrement
     bool decreaseSubstepSize();
 
+    /**
+     * @brief Accumulate the consistent tangent for an elastic sub-step.
+     * @param CelT  Elastic stiffness matrix (6×6) at the current (end-of-sub-step) time.
+     */
     void     extendConsistentTangent( const Matrix6d& CelT );
+
+    /**
+     * @brief Accumulate the consistent tangent for an elastoplastic sub-step.
+     * @param CelT        Elastic stiffness matrix (6×6) at the current time.
+     * @param matTangent  Inverse algorithmic tangent (`TangentSizedMatrix`); left-applied to the current accumulation.
+     */
     void     extendConsistentTangent( const Matrix6d& CelT, const TangentSizedMatrix& matTangent );
+
+    /**
+     * @brief Return the assembled consistent algorithmic stiffness after all sub-steps are finished.
+     * @return  The 6×6 consistent tangent operator.
+     */
     Matrix6d consistentStiffness();
 
   private:

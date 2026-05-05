@@ -49,7 +49,18 @@ namespace Marmot::NumericalAlgorithms {
   class PerezFougetSubstepper {
 
   public:
+    /// Square matrix of size `nSizeMatTangent` used for the incremental tangent assembly
     typedef Eigen::Matrix< double, nSizeMatTangent, nSizeMatTangent > TangentSizedMatrix;
+
+    /**
+     * @brief Construct a PerezFougetSubstepper.
+     * @param initialStepSize   Initial sub-step size as a fraction of the total increment (0, 1].
+     * @param minimumStepSize   Minimum allowable sub-step size; triggers a warning if reached.
+     * @param scaleUpFactor     Factor by which the sub-step size is increased after @p nPassesToIncrease successes.
+     * @param scaleDownFactor   Factor applied to the sub-step size when convergence fails.
+     * @param nPassesToIncrease Number of successful sub-steps before the step size may be increased.
+     * @param Cel               Linear-elastic stiffness matrix (6×6).
+     */
     PerezFougetSubstepper( double          initialStepSize,
                            double          minimumStepSize,
                            double          scaleUpFactor,
