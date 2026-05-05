@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -32,16 +30,16 @@
 namespace Marmot::Materials {
 
   /**
-   * @brief Linear elastic material for phase-field fracture simulations (AT2 model).
+   * @brief Simple AT2 phase-field model for fracture simulations.
    *
-   * Implements the AT2 phase-field fracture model (Bourdin, Francfort, Marigo)
+   * Implements the simple AT2 phase-field fracture model
    * within the general gradient-enhanced hypoelastic framework.
    *
    * The phase-field evolution equation is:
    * \f$ \varphi - l^2 \Delta\varphi = \frac{2l}{G_c}(1-\varphi) \mathcal{H}(\varepsilon) \f$
    *
    * where \f$\mathcal{H}\f$ is the crack driving force history variable
-   * (maximum positive elastic strain energy density encountered so far),
+   * (maximum elastic strain energy density encountered so far),
    * \f$G_c\f$ is the fracture energy, and \f$l\f$ is the internal length scale.
    *
    * The degraded stress is:
@@ -68,6 +66,10 @@ namespace Marmot::Materials {
       stateLayout.add( "strain", 6 );
       stateLayout.finalize();
     }
+
+  private:
+    /// @brief Elastic stiffness tensor
+    const Marmot::Matrix6d C;
   };
 
 } // namespace Marmot::Materials
