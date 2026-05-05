@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -46,8 +44,8 @@ namespace MarmotLibrary {
     MarmotMaterialGeneralGradientEnhancedHypoElasticFactory() = delete;
 
     /**
-     * @brief Create a material instance based on its code and properties.
-     * @param[in] materialCode Unique code for the material.
+     * @brief Create a material instance based on its unique name and properties.
+     * @param[in] materialName Unique name of the material to create.
      * @param[in] materialProperties Array of material properties.
      * @param[in] nMaterialProperties Number of properties in the array.
      * @param[in] materialNumber Unique identifier for the material instance.
@@ -61,9 +59,7 @@ namespace MarmotLibrary {
 
     /**
      * @brief Register a material with its code and factory function.
-     * @param[in] materialCode Unique code for the material.
      * @param[in] materialName Name of the material.
-     * @param[in] factoryFunction Function to create material instances.
      * @return True if registration was successful, false if the code already exists.
      */
     template < class T >
@@ -80,8 +76,8 @@ namespace MarmotLibrary {
       return true;
     }
 
-    /* private: */
     using MaterialFactoryMap = std::unordered_map< std::string, materialFactoryFunction >;
+    /// @brief Get the map of material factory functions by material name.
     static MaterialFactoryMap& materialFactoryFunctionByName();
   };
 } // namespace MarmotLibrary

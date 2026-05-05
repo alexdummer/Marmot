@@ -31,18 +31,41 @@
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
 
-using namespace Eigen;
-using namespace Marmot;
-
+/**
+ * @brief Base class for general gradient-enhanced hypoelastic material models.
+ * @details This class defines the interface for general gradient-enhanced hypoelastic material models,
+ * including methods for computing stress, plane stress response, and managing state variables.
+ * The template parameter `nNonlocalVariables` specifies the number of nonlocal variables used in the material model.
+ *
+ * In addition to the standard balance of linear momentum each nonlocal variable introduces an additional balance
+ * equation, which is solved simultaneously with the balance of linear momentum. This balance equation is defined as:
+ * \f[ \kappa_i - \nabla ( c( \kappa_i ) \nabla \kappa_i ) = f_i (\boldsymbol \varepsilon, \kappa_i ) \f]
+ * where \f$ \kappa_i \f$ is the nonlocal variable, \f$ c( \kappa_i ) \f$ is the nonlocal interaction parameter, and
+ * \f$ f_i \f$ is the local driving variable for the nonlocal variable \f$ \kappa_i \f$. The interaction parameter
+ * \f$ c( \kappa_i ) \f$ defines the influence of the nonlocal variable on its own gradient and can be used to model
+ * phenomena such as damage-dependent interactions. Also phase-field models can be implemented in this framework by
+ * defining the nonlocal variable as the phase-field variable and the local driving variable as a function of the strain
+ * tensor.
+ */
 template < int nNonlocalVariables >
 class MarmotMaterialGeneralGradientEnhancedHypoElastic {
 
 protected:
+  /// @brief Pointer to the array of material properties.
   const double* materialProperties;
-  const int     nMaterialProperties;
+  /// @brief Number of material properties.
+  const int nMaterialProperties;
 
 public:
+  /// @brief Material number (identifier for the material).
   const int materialNumber;
+
+  /**
+   * @brief Constructor for the general gradient-enhanced hypoelastic material model.
+   * @param matProperties_ Pointer to the array of material properties.
+   * @param nMaterialProperties_ Number of material properties.
+   * @param materialNumber_ Material number (identifier for the material).
+   */
   MarmotMaterialGeneralGradientEnhancedHypoElastic( const double* matProperties_,
                                                     int           nMaterialProperties_,
                                                     int           materialNumber_ )
@@ -51,42 +74,80 @@ public:
       materialNumber( materialNumber_ )
   {
   }
+
+  /// @brief Struct to hold the increment information.
   struct increment {
-    Marmot::Vector6d                            dStrain;
-    Eigen::Vector< double, nNonlocalVariables > K;
-    Eigen::Vector< double, nNonlocalVariables > dK;
-    double                                      time;
-    double                                      dT;
+    Marmot::Vector6d                            dStrain; ///< Increment of the strain tensor in Voigt notation
+    Eigen::Vector< double, nNonlocalVariables > K;       ///< Nonlocal variables at the current increment
+    Eigen::Vector< double, nNonlocalVariables > dK;      ///< Increment of the nonlocal variables
+    double                                      time;    ///< Current time
+    double                                      dT;      ///< Time increment
   };
 
+  /// @brief Struct to hold the material response information.
   struct response {
-    Marmot::Vector6d                            stress;
-    Eigen::Vector< double, nNonlocalVariables > KLocal;
-    Eigen::Vector< double, nNonlocalVariables > c;
-    double*                                     stateVars;
+    Marmot::Vector6d                            stress;    ///< Stress tensor in Voigt notation
+    Eigen::Vector< double, nNonlocalVariables > KLocal;    ///< Local driving variables at the current increment
+    Eigen::Vector< double, nNonlocalVariables > c;         ///< Nonlocal interaction parameters at the current increment
+    double*                                     stateVars; ///< Pointer to the array of state variables
   };
 
+  /// @brief Struct to hold the algorithmic tangent matrices for the material model.
   struct tangents {
-    Marmot::Matrix6d                               dStressddStrain = Marmot::Matrix6d::Zero();
+    /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of strain.
+    Marmot::Matrix6d dStressddStrain = Marmot::Matrix6d::Zero();
+    /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of nonlocal variables.
     Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    /// @brief Algorithmic tangent matrix relating the increment of local driving variables to the increment of strain.
     Eigen::Matrix< double, nNonlocalVariables, 6 >
       dKLocalddStrain = Eigen::Matrix< double, nNonlocalVariables, 6 >::Zero();
+    /// @brief Algorithmic tangent matrix relating the increment of local driving variables to the increment of nonlocal
+    /// variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    /// @brief First derivative of nonlocal interaction parameters with respect to nonlocal variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dcddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
+    /// @brief Second derivative of nonlocal interaction parameters with respect to nonlocal variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       d2cddK2 = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
   };
 
+  /// @brief Layout of the state variables for the material model.
   MarmotStateLayoutDynamic stateLayout;
 
+  /**
+   * @brief Compute the stress response of the material model.
+   * @param[in,out] res Reference to the response struct to be filled with the computed stress and other response
+   * variables.
+   * @param[in,out] tan Reference to the tangents struct to be filled with the computed algorithmic tangent matrices.
+   * @param[in] inc Reference to the increment struct containing the strain increment, nonlocal variable increments, and
+   * time information.
+   *
+   * This method must be implemented in derived classes to compute the stress response based on the specific material
+   * model.
+   */
   virtual void computeStress( response& res, tangents& tan, const increment& inc ) const = 0;
 
+  /**
+   * @brief Compute the plane stress response of the material model.
+   * @param[in,out] res Reference to the response struct to be filled with the computed plane stress and other response
+   * variables.
+   * @param[in,out] tan Reference to the tangents struct to be filled with the computed algorithmic tangent matrices for
+   * plane stress.
+   * @param[in] inc Reference to the increment struct containing the strain increment, nonlocal variable increments, and
+   * time information.
+   *
+   * This method provides a default implementation for computing the plane stress response using an iterative approach.
+   * It assumes an initial guess of isochoric deformation and iteratively corrects the out-of-plane strain until
+   * convergence is achieved. Derived classes can override this method if a different approach for plane stress
+   * computation is desired.
+   */
   virtual void computePlaneStress( response& res, tangents& tan, const increment& inc ) const
   {
     using namespace Marmot;
-    using namespace ContinuumMechanics::VoigtNotation;
+    using namespace Eigen;
+    using namespace Marmot::ContinuumMechanics::VoigtNotation;
 
     Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );
 
@@ -113,7 +174,6 @@ public:
 
       // evauate residual
       residual = std::abs( resTemp.stress.array().abs()[2] / std::max( resTemp.stress.array().abs().maxCoeff(), 1. ) );
-      /* std::cout << "residual: " << residual << std::endl; */
       if ( ( residual < 1e-10 && std::abs( strainIncrement ) < 1e-8 ) || ( planeStressCount > 7 && residual < 1e-5 ) ) {
         break;
       }
