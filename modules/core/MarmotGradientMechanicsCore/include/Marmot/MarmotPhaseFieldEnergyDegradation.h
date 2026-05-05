@@ -131,8 +131,7 @@ namespace Marmot::PhaseField {
        * respect to the phase field variable.
        * @details This function returns the value of the cubic degradation function along with its first and second
        * derivatives. The degradation function is defined as \f[ g(\phi) = 3(1 - \phi)^2 - 2(1 - \phi)^3,\f] and its
-       * derivatives are given by \f[ g'(\phi) = -6(1 - \phi)(1 - \phi), \quad g''(\phi) = 6(1 - \phi)(1 - \phi) + 12(1
-       * - \phi)(1 - \phi). \f]
+       * derivatives are given by \f[ g'(\phi) = -6(1 - \phi)\phi, \quad g''(\phi) = 12\phi - 6. \f]
        */
       std::tuple< double, double, double > cubic( const double pf );
 
@@ -143,8 +142,8 @@ namespace Marmot::PhaseField {
        * respect to the phase field variable.
        * @details This function returns the value of the quartic degradation function along with its first and second
        * derivatives. The degradation function is defined as \f[ g(\phi) = 4(1 - \phi)^3 - 3(1 - \phi)^4,\f] and its
-       * derivatives are given by \f[ g'(\phi) = -12(1 - \phi)^2 + 12(1 - \phi)^3, \quad g''(\phi) = 24(1 - \phi)(1 -
-       * \phi) - 36(1 - \phi)^2. \f]
+       * derivatives are given by \f[ g'(\phi) = -12(1 - \phi)^2 + 12(1 - \phi)^3, \quad g''(\phi) = 24(1 - \phi) -
+       * 36(1 - \phi)^2. \f]
        */
       std::tuple< double, double, double > quartic( const double pf );
 

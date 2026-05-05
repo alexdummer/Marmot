@@ -68,7 +68,7 @@ namespace Marmot::Materials {
     }
 
   private:
-    ///> Elastic stiffness tensor
+    /// @brief Elastic stiffness tensor
     const Marmot::Matrix6d C;
   };
 

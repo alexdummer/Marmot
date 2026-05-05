@@ -40,9 +40,9 @@
  * In addition to the standard balance of linear momentum each nonlocal variable introduces an additional balance
  * equation, which is solved simultaneously with the balance of linear momentum. This balance equation is defined as:
  * \f[ \kappa_i - \nabla ( c( \kappa_i ) \nabla \kappa_i ) = f_i (\boldsymbol \varepsilon, \kappa_i ) \f]
- * where \f$ \kappa_i \f$ is the nonlocal variable, \f$ c( \kappa_i ) \f$ is the nonlocal interaction function, and \f$
- * f_i \f$ is the local driving variable for the nonlocal variable \f$ \kappa_i \f$. The nonlocal interaction function
- * \f$ g( \kappa_i ) \f$ defines the influence of the nonlocal variable on its own gradient and can be used to model
+ * where \f$ \kappa_i \f$ is the nonlocal variable, \f$ c( \kappa_i ) \f$ is the nonlocal interaction parameter, and
+ * \f$ f_i \f$ is the local driving variable for the nonlocal variable \f$ \kappa_i \f$. The interaction parameter
+ * \f$ c( \kappa_i ) \f$ defines the influence of the nonlocal variable on its own gradient and can be used to model
  * phenomena such as damage-dependent interactions. Also phase-field models can be implemented in this framework by
  * defining the nonlocal variable as the phase-field variable and the local driving variable as a function of the strain
  * tensor.
@@ -94,23 +94,21 @@ public:
 
   /// @brief Struct to hold the algorithmic tangent matrices for the material model.
   struct tangents {
-    ///> Algorithmic tangent matrix relating the increment of stress to the increment of strain.
+    /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of strain.
     Marmot::Matrix6d dStressddStrain = Marmot::Matrix6d::Zero();
-    ///> Algorithmic tangent matrix relating the increment of stress to the increment of nonlocal variables.
+    /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of nonlocal variables.
     Eigen::Matrix< double, 6, nNonlocalVariables > dStressddK = Eigen::Matrix< double, 6, nNonlocalVariables >::Zero();
+    /// @brief Algorithmic tangent matrix relating the increment of local driving variables to the increment of strain.
     Eigen::Matrix< double, nNonlocalVariables, 6 >
-      ///> Algorithmic tangent matrix relating the increment of local driving variables to the increment of strain.
       dKLocalddStrain = Eigen::Matrix< double, nNonlocalVariables, 6 >::Zero();
-    ///> Algorithmic tangent matrix relating the increment of local driving variables to the increment of nonlocal
+    /// @brief Algorithmic tangent matrix relating the increment of local driving variables to the increment of nonlocal
     /// variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dKLocalddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
-    ///> Algorithmic tangent matrix relating the increment of nonlocal interaction parameters to the increment of
-    /// strain.
+    /// @brief First derivative of nonlocal interaction parameters with respect to nonlocal variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       dcddK = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
-    ///> Algorithmic tangent matrix relating the increment of nonlocal interaction parameters to the increment of
-    /// nonlocal variables.
+    /// @brief Second derivative of nonlocal interaction parameters with respect to nonlocal variables.
     Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >
       d2cddK2 = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
   };

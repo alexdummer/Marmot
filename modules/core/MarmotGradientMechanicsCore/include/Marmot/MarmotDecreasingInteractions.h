@@ -56,12 +56,12 @@ namespace Marmot::GradientDamage {
     namespace FirstOrderDerived {
 
       /**
-       * @brief First-order derived of the Poh & Sun (2017) interaction function with respect to damage
+       * @brief First-order derivative of the Poh & Sun (2017) interaction function with respect to damage
        * @param omega damage variable
        * @param eta parameter controlling the rate of decrease of interactions with damage
        * @param R parameter controlling the residual interactions at full damage
-       * @return a tuple containing the first-order derivative of the interaction function with respect to damage
-       * @details The first-order derived variant of the interaction function @ref poh.
+       * @return a tuple containing the interaction function value and its first derivative with respect to damage
+       * @details The first-order derivative variant of the interaction function @ref poh.
        */
       std::tuple< double, double > poh( double omega, double eta, double R );
 
@@ -70,12 +70,13 @@ namespace Marmot::GradientDamage {
     namespace SecondOrderDerived {
 
       /**
-       * @brief Second-order derived of the Poh & Sun (2017) interaction function with respect to damage
+       * @brief Second-order derivative of the Poh & Sun (2017) interaction function with respect to damage
        * @param omega damage variable
        * @param eta parameter controlling the rate of decrease of interactions with damage
        * @param R parameter controlling the residual interactions at full damage
-       * @return a tuple containing the second-order derivative of the interaction function with respect to damage
-       * @details The second-order derived variant of the interaction function @ref poh.
+       * @return a tuple containing the interaction function value, its first derivative, and its second derivative with
+       * respect to damage
+       * @details The second-order derivative variant of the interaction function @ref poh.
        */
       std::tuple< double, double, double > poh( double omega, double eta, double R );
 
