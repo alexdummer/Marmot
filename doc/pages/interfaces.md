@@ -1,7 +1,5 @@
 # Interfaces
 
-\page interfaces Interfacing with Marmot
-
 There are several conventient ways to interface with Marmot.
 If you want to use Marmot in a finite element framework,
 you may want to try one of the existing available interfaces.
