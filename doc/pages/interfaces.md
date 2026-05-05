@@ -56,8 +56,10 @@ state.strainEnergyDensity = 0.0;
 state.stateVars           = stateVars;
 
 // compute stresses
-Marmot::Matrix6d                       dStress_dStrain;
-const Marmot::Vector6d                 dStrain  = /* strain increment */;
+Marmot::Matrix6d                          dStress_dStrain;
+const Marmot::Vector6d                    dStrain  = Marmot::Vector6d::Zero(); // strain increment
+const double                              time     = 0.0;                      // current time
+const double                              dTime    = 0.01;                     // time increment
 const MarmotMaterialHypoElastic::timeInfo timeInfo = { time, dTime };
 material->computeStress( state, dStress_dStrain, dStrain, timeInfo );
 ```
