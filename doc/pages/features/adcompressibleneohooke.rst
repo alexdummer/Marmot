@@ -13,7 +13,7 @@ See :ref:`compressibleneohooke` for the underlying theory.
 Implementation
 --------------
 
-Implementation follows the :ref:`compressibleneohooke`, however,
+The implementation follows :ref:`compressibleneohooke`; however,
 automatic differentiation is used to compute the consistent algorithmic tangent operator.
 
 .. list-table::
