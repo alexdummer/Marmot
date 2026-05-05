@@ -1,4 +1,5 @@
 #include "Marmot/MarmotMaterialPointSolverFiniteStrain.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include <algorithm>
 #include <cmath>
@@ -101,7 +102,7 @@ void MarmotMaterialPointSolverFiniteStrain::solveStep( const Step& step )
       stateVars = stateVarsTemp;
       counter++;
     }
-    catch ( std::runtime_error& e ) {
+    catch ( const Marmot::StressUpdateFailed& e ) {
       // if failed, reduce time step and retry
       if ( dT <= step.dTMin )
         throw std::runtime_error( "Minimum time step reached, cannot proceed." );

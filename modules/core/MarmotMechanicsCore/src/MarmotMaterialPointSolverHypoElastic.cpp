@@ -1,4 +1,5 @@
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
+#include "Marmot/MarmotMaterialExceptions.h"
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include <fstream>
 
@@ -88,7 +89,7 @@ void MarmotMaterialPointSolverHypoElastic::solveStep( const Step& step )
       stateVars = stateVarsTemp;
       counter++;
     }
-    catch ( std::runtime_error& e ) {
+    catch ( const Marmot::StressUpdateFailed& e ) {
       // if failed, reduce time step and retry
       std::cout << "    Increment failed: " << e.what() << ", reducing time step to " << dT / 2.0 << std::endl;
       if ( dT <= step.dTMin )
