@@ -1,8 +1,20 @@
 # Interfaces
 
-There are several conventient ways to interface with Marmot.
+There are several convenient ways to interface with Marmot.
 If you want to use Marmot in a finite element framework,
 you may want to try one of the existing available interfaces.
+
+## How to use Marmot with EdelweissFE
+
+The [EdelweissFE](https://github.com/EdelweissFE/EdelweissFE) finite element code is designed to work seamlessly with ```Marmot```.
+After the installation of `Marmot`, EdelweissFE can be installed via
+
+```bash
+git clone https://github.com/EdelweissFE/EdelweissFE.git
+cd EdelweissFE
+conda install --file requirements.txt
+pip install .
+```
 
 ## How to use Marmot with Abaqus
 

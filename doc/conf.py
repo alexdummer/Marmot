@@ -8,6 +8,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.napoleon",
+    "sphinxcontrib.bibtex",
 ]
 
 project = "Marmot"
@@ -90,3 +91,7 @@ breathe_projects_source = {
 }
 
 breathe_default_members = ("members", "private-members", "protected-members", "undoc-members")
+
+# sphinxcontrib-bibtex configuration
+bibtex_bibfiles = ["pages/publications.bib"]
+bibtex_default_style = "unsrt"
