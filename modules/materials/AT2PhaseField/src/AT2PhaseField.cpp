@@ -49,7 +49,7 @@ namespace Marmot::Materials {
     const double& nu = materialProperties[1];
     const double& Gc = materialProperties[2];
     const double& l  = materialProperties[3];
-    
+
     // precompute elastic stiffness
     const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 

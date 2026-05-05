@@ -34,9 +34,8 @@ namespace Marmot::Materials {
 
     using namespace MarmotLibrary;
 
-    const static bool AT2PhaseFieldIsRegistered =
-      MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< 1 >::registerMaterial< AT2PhaseField >(
-        "AT2PHASEFIELD" );
+    const static bool AT2PhaseFieldIsRegistered = MarmotMaterialGeneralGradientEnhancedHypoElasticFactory<
+      1 >::registerMaterial< AT2PhaseField >( "AT2PHASEFIELD" );
 
   } // namespace Registration
 

@@ -40,14 +40,13 @@ using namespace Marmot;
 // Helper: create a fresh material + zero-initialised state variable vector.
 // Material properties: E, nu, Gc, l
 // ─────────────────────────────────────────────────────────────────────────────
-static std::pair< AT2PhaseField, std::vector< double > > makeMaterial(
-  double E  = 20000.,
-  double nu = 0.25,
-  double Gc = 2.7,
-  double l  = 0.01 )
+static std::pair< AT2PhaseField, std::vector< double > > makeMaterial( double E  = 20000.,
+                                                                       double nu = 0.25,
+                                                                       double Gc = 2.7,
+                                                                       double l  = 0.01 )
 {
-  const static std::vector< double > props  = { E, nu, Gc, l };
-  AT2PhaseField         mat( props.data(), static_cast< int >( props.size() ), 1 );
+  const static std::vector< double > props = { E, nu, Gc, l };
+  AT2PhaseField                      mat( props.data(), static_cast< int >( props.size() ), 1 );
 
   int                   nStateVars = mat.getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVars, 0.0 );
@@ -55,10 +54,10 @@ static std::pair< AT2PhaseField, std::vector< double > > makeMaterial(
 }
 
 // Convenience typedef
-using Mat1  = MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >;
-using Res1  = Mat1::response;
-using Tan1  = Mat1::tangents;
-using Inc1  = Mat1::increment;
+using Mat1 = MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >;
+using Res1 = Mat1::response;
+using Tan1 = Mat1::tangents;
+using Inc1 = Mat1::increment;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 1 – Undamaged elastic response (phi = 0)
@@ -68,7 +67,7 @@ void testUndamagedElasticResponse()
 {
   auto [mat, stateVars] = makeMaterial();
 
-  const double E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const double   E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
   const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
   // Apply a uniaxial strain increment, no phase-field
@@ -94,21 +93,18 @@ void testUndamagedElasticResponse()
 
   // ── stress should equal C:eps ──
   const Vector6d stressExpected = C * eps;
-  throwExceptionOnFailure(
-    checkIfEqual< double >( res.stress, stressExpected, 1e-10 ),
-    "undamaged stress != C:eps in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual< double >( res.stress, stressExpected, 1e-10 ),
+                           "undamaged stress != C:eps in " + std::string( __PRETTY_FUNCTION__ ) );
 
   // ── gradient coefficient c = l^2 ──
-  throwExceptionOnFailure(
-    checkIfEqual( res.c( 0 ), l * l, 1e-15 ),
-    "c != l^2 in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( res.c( 0 ), l * l, 1e-15 ),
+                           "c != l^2 in " + std::string( __PRETTY_FUNCTION__ ) );
 
   // ── KLocal = (2l/Gc)*(1-phi)*H  with phi=0 and H = psiPlus ──
   const double psiPlus      = 0.5 * eps.dot( C * eps );
   const double KLocalExpect = ( 2. * l / Gc ) * 1.0 * psiPlus;
-  throwExceptionOnFailure(
-    checkIfEqual( res.KLocal( 0 ), KLocalExpect, 1e-10 ),
-    "KLocal mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( res.KLocal( 0 ), KLocalExpect, 1e-10 ),
+                           "KLocal mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -119,7 +115,7 @@ void testDegradedStress()
 {
   auto [mat, stateVars] = makeMaterial();
 
-  const double E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const double   E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
   const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
   Vector6d dEps = Vector6d::Zero();
@@ -145,16 +141,14 @@ void testDegradedStress()
   mat.computeStress( res, tan, inc );
 
   const Vector6d stressExpected = g * ( C * dEps );
-  throwExceptionOnFailure(
-    checkIfEqual< double >( res.stress, stressExpected, 1e-10 ),
-    "degraded stress != g*C:eps in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual< double >( res.stress, stressExpected, 1e-10 ),
+                           "degraded stress != g*C:eps in " + std::string( __PRETTY_FUNCTION__ ) );
 
   // KLocal should use (1-phi) factor
   const double psiPlus      = 0.5 * dEps.dot( C * dEps );
   const double KLocalExpect = ( 2. * l / Gc ) * ( 1. - phi ) * psiPlus;
-  throwExceptionOnFailure(
-    checkIfEqual( res.KLocal( 0 ), KLocalExpect, 1e-10 ),
-    "KLocal mismatch for phi=0.5 in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( res.KLocal( 0 ), KLocalExpect, 1e-10 ),
+                           "KLocal mismatch for phi=0.5 in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,9 +206,9 @@ void testIrreversibility()
   const double& H_after2 = stateVars[0];
 
   // H must not decrease
-  throwExceptionOnFailure(
-    H_after2 >= H_after1 - 1e-15,
-    "irreversibility violated: H decreased on unloading in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( H_after2 >= H_after1 - 1e-15,
+                           "irreversibility violated: H decreased on unloading in " +
+                             std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,8 +219,9 @@ void testIrreversibility()
 void testTangentConsistency()
 {
   auto [mat, stateVars] = makeMaterial();
-  
-  const std::vector<double> statsVarsOld = stateVars; // capture original state variables to reset after each perturbation 
+
+  const std::vector< double >
+    statsVarsOld = stateVars; // capture original state variables to reset after each perturbation
 
   const double phi = 0.3;
   const double dK  = 0.0;
@@ -237,9 +232,7 @@ void testTangentConsistency()
   dEps( 3 )     = 5e-4;
 
   // Compute base response and analytical tangent
-  auto evalAt = [&]( const Vector6d&                dE,
-                     double                        K_val,
-                     std::vector< double >&          sv ) -> std::pair< Vector6d, double > {
+  auto evalAt = [&]( const Vector6d& dE, double K_val, std::vector< double >& sv ) -> std::pair< Vector6d, double > {
     Res1 res;
     Tan1 tan;
     Inc1 inc;
@@ -272,61 +265,59 @@ void testTangentConsistency()
   mat.computeStress( resBase, tanBase, incBase );
 
   const double h = 1e-7; // finite-difference step
-    
+
   // ── dStressddStrain ──
   for ( int j = 0; j < 6; j++ ) {
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
-    stateVars = statsVarsOld; // reset state variables before each perturbation to avoid accumulation of changes
+    stateVars     = statsVarsOld; // reset state variables before each perturbation to avoid accumulation of changes
     auto [sp, kp] = evalAt( dEp, phi, stateVars );
-    stateVars = statsVarsOld; // reset again before the second perturbation
+    stateVars     = statsVarsOld; // reset again before the second perturbation
     auto [sm, km] = evalAt( dEm, phi, stateVars );
     const Vector6d dSdE_num = ( sp - sm ) / ( 2. * h );
     const Vector6d dSdE_ana = tanBase.dStressddStrain.col( j );
-    throwExceptionOnFailure(
-      checkIfEqual< double >( dSdE_ana, dSdE_num, 1e-5 ),
-      "dStressddStrain col " + std::to_string( j ) + " mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
+    throwExceptionOnFailure( checkIfEqual< double >( dSdE_ana, dSdE_num, 1e-5 ),
+                             "dStressddStrain col " + std::to_string( j ) + " mismatch in " +
+                               std::string( __PRETTY_FUNCTION__ ) );
   }
 
   // ── dStressddK (col 0) ──
-  stateVars = statsVarsOld; // reset state variables before perturbation
-  auto [sp, kp] = evalAt( dEps, phi + h, stateVars );
-  stateVars = statsVarsOld; // reset again before second perturbation
-  auto [sm, km] = evalAt( dEps, phi - h, stateVars );
+  stateVars               = statsVarsOld; // reset state variables before perturbation
+  auto [sp, kp]           = evalAt( dEps, phi + h, stateVars );
+  stateVars               = statsVarsOld; // reset again before second perturbation
+  auto [sm, km]           = evalAt( dEps, phi - h, stateVars );
   const Vector6d dSdK_num = ( sp - sm ) / ( 2. * h );
   const Vector6d dSdK_ana = tanBase.dStressddK.col( 0 );
-  throwExceptionOnFailure(
-    checkIfEqual< double >( dSdK_ana, dSdK_num, 1e-5 ),
-    "dStressddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual< double >( dSdK_ana, dSdK_num, 1e-5 ),
+                           "dStressddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
 
   // ── dKLocalddStrain (row 0) ──
   for ( int j = 0; j < 6; j++ ) {
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
-    stateVars = statsVarsOld; // reset state variables before each perturbation
-    auto [sp, kp] = evalAt( dEp, phi, stateVars );
-    stateVars = statsVarsOld; // reset again before second perturbation
-    auto [sm, km] = evalAt( dEm, phi, stateVars );
+    stateVars             = statsVarsOld; // reset state variables before each perturbation
+    auto [sp, kp]         = evalAt( dEp, phi, stateVars );
+    stateVars             = statsVarsOld; // reset again before second perturbation
+    auto [sm, km]         = evalAt( dEm, phi, stateVars );
     const double dKdE_num = ( kp - km ) / ( 2. * h );
     const double dKdE_ana = tanBase.dKLocalddStrain( 0, j );
-    throwExceptionOnFailure(
-      checkIfEqual( dKdE_ana, dKdE_num, 1e-5 ),
-      "dKLocalddStrain col " + std::to_string( j ) + " mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
+    throwExceptionOnFailure( checkIfEqual( dKdE_ana, dKdE_num, 1e-5 ),
+                             "dKLocalddStrain col " + std::to_string( j ) + " mismatch in " +
+                               std::string( __PRETTY_FUNCTION__ ) );
   }
 
   // ── dKLocalddK (0,0) ──
   {
-    stateVars = statsVarsOld; // reset state variables before perturbation
-    auto [sp, kp] = evalAt( dEps, phi + h, stateVars );
-    stateVars = statsVarsOld; // reset again before second perturbation
-    auto [sm, km] = evalAt( dEps, phi - h, stateVars );
+    stateVars             = statsVarsOld; // reset state variables before perturbation
+    auto [sp, kp]         = evalAt( dEps, phi + h, stateVars );
+    stateVars             = statsVarsOld; // reset again before second perturbation
+    auto [sm, km]         = evalAt( dEps, phi - h, stateVars );
     const double dKdK_num = ( kp - km ) / ( 2. * h );
     const double dKdK_ana = tanBase.dKLocalddK( 0, 0 );
-    throwExceptionOnFailure(
-      checkIfEqual( dKdK_ana, dKdK_num, 1e-5 ),
-      "dKLocalddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
+    throwExceptionOnFailure( checkIfEqual( dKdK_ana, dKdK_num, 1e-5 ),
+                             "dKLocalddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
