@@ -125,6 +125,7 @@ public:
                               AlgorithmicModuli< 3 >&    tangents,
                               const Deformation< 3 >&,
                               const TimeIncrement& ) const = 0;
+
   /**
    * @brief Computes the Kirchhoff stress given the deformation, time increment, and eigen deformation.
    * @param[inout] response ConstitutiveResponse instance

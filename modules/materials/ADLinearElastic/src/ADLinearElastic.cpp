@@ -19,12 +19,12 @@ namespace Marmot::Materials {
   {
     assert( nMaterialProperties == 2 );
   }
-  void ADLinearElastic::computeStressAD( state3DAD&            state,
-                                         const autodiff::dual* dStrain,
-                                         const timeInfo&       timeInfo ) const
+  void ADLinearElastic::computeStressAD( state3DAD&                 state,
+                                         const Marmot::Vector6dual& dStrain,
+                                         const timeInfo&            timeInfo ) const
   {
-    mVector6dual            s( state.stress );
-    const mVector6dualConst dE( dStrain );
+    mVector6dual            s( state.stress.data() );
+    const mVector6dualConst dE( dStrain.data() );
 
     const MatrixXdual C( ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu ) );
 

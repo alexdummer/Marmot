@@ -28,7 +28,8 @@
 
 #pragma once
 #include "Eigen/Dense"
-#include "autodiff/forward/dual.hpp"
+#include "autodiff/forward/dual/dual.hpp"
+#include "autodiff/forward/dual/eigen.hpp"
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace Marmot {
