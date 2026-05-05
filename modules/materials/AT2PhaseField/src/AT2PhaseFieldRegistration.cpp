@@ -25,7 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
-#include "Marmot/LinearElasticPhaseFieldFracture.h"
+#include "Marmot/AT2PhaseField.h"
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElasticFactory.h"
 
 namespace Marmot::Materials {
@@ -34,9 +34,9 @@ namespace Marmot::Materials {
 
     using namespace MarmotLibrary;
 
-    const static bool LinearElasticPhaseFieldFractureIsRegistered =
-      MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< 1 >::registerMaterial<
-        LinearElasticPhaseFieldFracture >( "LINEARELASTICPHASEFIELD" );
+    const static bool AT2PhaseFieldIsRegistered =
+      MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< 1 >::registerMaterial< AT2PhaseField >(
+        "AT2PHASEFIELD" );
 
   } // namespace Registration
 

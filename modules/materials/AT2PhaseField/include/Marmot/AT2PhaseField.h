@@ -32,7 +32,7 @@
 namespace Marmot::Materials {
 
   /**
-   * @brief Linear elastic material for phase-field fracture simulations.
+   * @brief Linear elastic material for phase-field fracture simulations (AT2 model).
    *
    * Implements the AT2 phase-field fracture model (Bourdin, Francfort, Marigo)
    * within the general gradient-enhanced hypoelastic framework.
@@ -55,10 +55,10 @@ namespace Marmot::Materials {
    *  - \f$ G_c \f$ : Critical fracture energy
    *  - \f$ l \f$   : Internal length scale
    */
-  class LinearElasticPhaseFieldFracture : public MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 > {
+  class AT2PhaseField : public MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 > {
 
   public:
-    using MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >::MarmotMaterialGeneralGradientEnhancedHypoElastic;
+    AT2PhaseField( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
     void computeStress( response& res, tangents& tan, const increment& inc ) const override;
 

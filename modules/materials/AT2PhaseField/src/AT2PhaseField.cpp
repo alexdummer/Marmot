@@ -25,7 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
-#include "Marmot/LinearElasticPhaseFieldFracture.h"
+#include "Marmot/AT2PhaseField.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotPhaseFieldEnergyDegradation.h"
 #include "Marmot/MarmotTypedefs.h"
@@ -36,9 +36,13 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace Marmot;
 
-  void LinearElasticPhaseFieldFracture::computeStress( response&        res,
-                                                       tangents&        tan,
-                                                       const increment& inc ) const
+  AT2PhaseField::AT2PhaseField( const double* materialProperties, int nMaterialProperties, int materialNumber )
+    : MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >( materialProperties, nMaterialProperties, materialNumber )
+  {
+    initializeStateLayout();
+  }
+
+  void AT2PhaseField::computeStress( response& res, tangents& tan, const increment& inc ) const
   {
     // material properties
     const double& E  = materialProperties[0];
@@ -50,9 +54,8 @@ namespace Marmot::Materials {
     const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
     // access state variables
-    double& H = stateLayout.getAs< double& >( res.stateVars, "maxCrackDrivingForce" );
-    auto    strain =
-      stateLayout.getAs< Eigen::Map< Eigen::Matrix< double, 6, 1 > > >( res.stateVars, "strain" );
+    double& H      = stateLayout.getAs< double& >( res.stateVars, "maxCrackDrivingForce" );
+    auto    strain = stateLayout.getAs< Eigen::Map< Eigen::Matrix< double, 6, 1 > > >( res.stateVars, "strain" );
 
     // accumulate total strain
     const Vector6d eps = strain + inc.dStrain;
