@@ -50,10 +50,13 @@ auto material = std::unique_ptr<MarmotMaterialHypoElastic>(
 material->setCharacteristicElementLength( theCharacteristicElementLength );
 
 // set up a material state (stress, strain energy, state variables)
+const int             nStateVars = material->getNumberOfRequiredStateVars();
+std::vector< double > stateVars( nStateVars, 0.0 );
+
 MarmotMaterialHypoElastic::state3D state;
 state.stress              = Marmot::Vector6d::Zero();
 state.strainEnergyDensity = 0.0;
-state.stateVars           = stateVars;
+state.stateVars           = stateVars.data();
 
 // compute stresses
 Marmot::Matrix6d                          dStress_dStrain;
