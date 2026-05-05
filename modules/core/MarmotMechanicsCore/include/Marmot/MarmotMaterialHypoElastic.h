@@ -120,28 +120,27 @@ public:
    * @param[in,out]	dStressDDstrain	Algorithmic tangent representing the derivative of the Cauchy stress tensor with
    * respect to the linearized strain
    * @param[in]	dStrain linearized strain increment
-   * @param[in]	timeOld	Old (pseudo-)time
-   * @param[in]	dt	(Pseudo-)time increment from the old (pseudo-)time to the current (pseudo-)time
+   * @param[in]	timeInfo Structure carrying the current (pseudo-)time and the (pseudo-)time increment
    */
-  virtual void computeStress( state3D&        state,
-                              double*         dStress_dStrain,
-                              const double*   dStrain,
-                              const timeInfo& timeInfo ) const = 0;
+  virtual void computeStress( state3D&                state,
+                              Marmot::Matrix6d&       dStress_dStrain,
+                              const Marmot::Vector6d& dStrain,
+                              const timeInfo&         timeInfo ) const = 0;
 
   /**
    * Plane stress implementation of @ref computeStress.
    */
-  virtual void computePlaneStress( state2D&        stress2D,
-                                   double*         dStress_dStrain2D,
-                                   const double*   dStrain2D,
-                                   const timeInfo& timeInfo ) const;
+  virtual void computePlaneStress( state2D&                stress2D,
+                                   Marmot::Matrix3d&       dStress_dStrain2D,
+                                   const Marmot::Vector3d& dStrain2D,
+                                   const timeInfo&         timeInfo ) const;
 
   /**
    * Uniaxial stress implementation of @ref computeStress.
    */
   virtual void computeUniaxialStress( state1D&        stress1D,
-                                      double*         dStress_dStrain1D,
-                                      const double*   dStrain,
+                                      double&         dStress_dStrain1D,
+                                      const double    dStrain,
                                       const timeInfo& timeInfo ) const;
 
   /**

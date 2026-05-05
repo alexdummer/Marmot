@@ -18,8 +18,8 @@ namespace Marmot::Materials {
   }
 
   void VonMisesModel::computeStress( state3D&        state,
-                                     double*         dStress_dStrain,
-                                     const double*   dStrain,
+                                     Matrix6d&       dStress_dStrain,
+                                     const Vector6d& dStrain,
                                      const timeInfo& timeInfo ) const
 
   {
@@ -34,8 +34,8 @@ namespace Marmot::Materials {
 
     // map to stress, strain and tangent
     mVector6d  S( state.stress.data() );
-    mMatrix6d  dS_dE( dStress_dStrain );
-    const auto dE = Map< const Vector6d >( dStrain );
+    mMatrix6d  dS_dE( dStress_dStrain.data() );
+    const auto dE = Map< const Vector6d >( dStrain.data() );
 
     // compute elastic stiffness
     const auto Cel = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
