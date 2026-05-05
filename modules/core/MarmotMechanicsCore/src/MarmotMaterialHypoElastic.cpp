@@ -3,7 +3,7 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotKinematics.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotVoigt.h"

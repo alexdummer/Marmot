@@ -33,7 +33,7 @@
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialHypoElastic.h"
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include "Marmot/MarmotMath.h"

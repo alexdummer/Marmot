@@ -2,7 +2,7 @@
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotNumericalDifferentiation.h"
 #include "Marmot/MarmotNumericalDifferentiationForFastor.h"

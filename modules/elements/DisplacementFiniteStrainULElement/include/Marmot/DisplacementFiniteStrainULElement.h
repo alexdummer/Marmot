@@ -35,7 +35,7 @@
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotGeostaticStress.h"
 #include "Marmot/MarmotJournal.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include "Marmot/MarmotMath.h"

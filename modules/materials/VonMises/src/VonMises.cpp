@@ -1,7 +1,7 @@
 #include "Marmot/VonMises.h"
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
 #include "Marmot/VonMisesConstants.h"

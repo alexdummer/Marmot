@@ -3,7 +3,7 @@
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotJournal.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
