@@ -1,5 +1,5 @@
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include <fstream>
 

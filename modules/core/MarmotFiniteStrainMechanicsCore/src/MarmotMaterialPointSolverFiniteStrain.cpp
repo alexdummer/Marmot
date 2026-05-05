@@ -1,5 +1,5 @@
 #include "Marmot/MarmotMaterialPointSolverFiniteStrain.h"
-#include "Marmot/MarmotMaterialExceptions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include <algorithm>
 #include <cmath>
