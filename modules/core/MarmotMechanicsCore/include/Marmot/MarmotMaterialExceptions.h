@@ -43,4 +43,31 @@ namespace Marmot {
     explicit StressUpdateFailed( const std::string& message ) : std::runtime_error( message ) {}
   };
 
+  /** @class SolverConvergenceFailed
+   *  @brief Exception thrown when the Newton-Raphson iteration in a material-point solver fails to
+   *         converge (maximum number of iterations reached or NaN encountered).
+   */
+  class SolverConvergenceFailed : public std::runtime_error {
+  public:
+    explicit SolverConvergenceFailed( const std::string& message ) : std::runtime_error( message ) {}
+  };
+
+  /** @class SolverTimestepExhausted
+   *  @brief Exception thrown when the material-point solver cannot reduce the time step below the
+   *         prescribed minimum.
+   */
+  class SolverTimestepExhausted : public std::runtime_error {
+  public:
+    explicit SolverTimestepExhausted( const std::string& message ) : std::runtime_error( message ) {}
+  };
+
+  /** @class SolverIncrementsExhausted
+   *  @brief Exception thrown when the material-point solver exhausts the maximum number of
+   *         increments without completing the step.
+   */
+  class SolverIncrementsExhausted : public std::runtime_error {
+  public:
+    explicit SolverIncrementsExhausted( const std::string& message ) : std::runtime_error( message ) {}
+  };
+
 } // namespace Marmot
