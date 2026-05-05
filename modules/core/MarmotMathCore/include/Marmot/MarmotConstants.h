@@ -31,7 +31,7 @@
 
 namespace Marmot {
   namespace Constants {
-    /** @brief Constant expression for $\pi$ */
+    /** @brief Constant expression for \f$\pi\f$ */
     constexpr double Pi = 3.141592653589793238463;
     /** @brief Constant expression for 1e-16 */
     constexpr double numZeroPos = 1e-16;
