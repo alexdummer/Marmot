@@ -125,12 +125,9 @@ void testStressTensorSymmetry()
   solver.solve();
 
   auto tau = solver.getHistory().back().stress;
-  for ( int i = 0; i < 3; ++i )
-    for ( int j = 0; j < 3; ++j )
-      throwExceptionOnFailure(
-        checkIfEqual( tau( i, j ), tau( j, i ), 1e-10 ),
-        "I-3: Stress symmetry failed for tau(" + std::to_string( i ) + "," + std::to_string( j ) + ") in " +
-          std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure(
+    checkIfEqual( tau, Fastor::transpose( tau ), 1e-10 ),
+    "I-3: Stress symmetry failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-4: Pure rotation gives zero Kirchhoff stress
