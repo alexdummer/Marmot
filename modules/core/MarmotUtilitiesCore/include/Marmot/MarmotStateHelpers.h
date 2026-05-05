@@ -119,12 +119,24 @@ struct StateMapper< Eigen::Map< Eigen::Matrix< Scalar, Rows, Cols > > > {
 
 class MarmotStateLayoutDynamic {
 public:
+  /**
+   * @brief Describes a single named state variable registered in the layout.
+   */
   struct VarInfo {
-    std::string name;
-    std::size_t size;
-    std::size_t offset;
+    std::string name;    ///< Unique name of the state variable.
+    std::size_t size;    ///< Number of `double` values occupied by this variable.
+    std::size_t offset;  ///< Byte-offset (in units of `double`) from the beginning of the state vector.
   };
 
+  /**
+   * @brief Register a new named state variable.
+   *
+   * Must be called before finalize(). Adding a variable with an already-registered name
+   * or calling this method after finalize() throws @c std::runtime_error.
+   *
+   * @param name  Unique name for the state variable.
+   * @param size  Number of `double` values required by the variable.
+   */
   void add( std::string name, std::size_t size )
   {
     if ( finalized )
@@ -137,6 +149,13 @@ public:
     variables.push_back( { std::move( name ), size, 0 } );
   }
 
+  /**
+   * @brief Compute and lock the offsets of all registered variables.
+   *
+   * Iterates over the registered variables in registration order, assigns each a
+   * contiguous offset, and sets the total size. After this call no further variables
+   * may be added. Calling finalize() a second time throws @c std::runtime_error.
+   */
   void finalize()
   {
     if ( finalized )
@@ -150,6 +169,13 @@ public:
     finalized = true;
   }
 
+  /**
+   * @brief Return the @ref VarInfo record for a registered variable.
+   *
+   * @param name  Name of the variable to look up.
+   * @return      Const reference to the corresponding @ref VarInfo.
+   * @throws std::runtime_error if @p name is not registered.
+   */
   const VarInfo& getInfo( const std::string& name ) const
   {
     auto it = name_to_index.find( name );
@@ -158,30 +184,75 @@ public:
     return variables[it->second];
   }
 
+  /**
+   * @brief Return the {offset, size} pair for a registered variable.
+   *
+   * @param name  Name of the variable.
+   * @return      A pair `{offset, size}` (both in units of `double`).
+   * @throws std::runtime_error if @p name is not registered.
+   */
   std::pair< std::size_t, std::size_t > get( const std::string& name ) const
   {
     const auto& v = getInfo( name );
     return { v.offset, v.size };
   }
 
+  /**
+   * @brief Return a raw pointer to a variable inside a state vector.
+   *
+   * @param base  Pointer to the beginning of the state vector.
+   * @param name  Name of the variable.
+   * @return      `base + offset` for the named variable.
+   * @throws std::runtime_error if @p name is not registered.
+   */
   double* getPtr( double* base, const std::string& name ) const
   {
     const auto& v = getInfo( name );
     return base + v.offset;
   }
 
+  /**
+   * @brief Return a `std::span<double>` view of a variable inside a state vector.
+   *
+   * @param base  Pointer to the beginning of the state vector.
+   * @param name  Name of the variable.
+   * @return      A span covering `[base + offset, base + offset + size)`.
+   * @throws std::runtime_error if @p name is not registered.
+   */
   std::span< double > getSpan( double* base, const std::string& name ) const
   {
     const auto& v = getInfo( name );
     return { base + v.offset, v.size };
   }
 
+  /**
+   * @brief Return a @ref StateView for a variable inside a state vector.
+   *
+   * @param base  Pointer to the beginning of the state vector.
+   * @param name  Name of the variable.
+   * @return      A @ref StateView with `stateLocation = base + offset` and `stateSize = size`.
+   * @throws std::runtime_error if @p name is not registered.
+   */
   StateView getStateView( double* base, const std::string& name ) const
   {
     const auto& v = getInfo( name );
     return StateView{ base + v.offset, static_cast< int >( v.size ) };
   }
 
+  /**
+   * @brief Map a variable inside a state vector to a typed view via @ref StateMapper.
+   *
+   * Delegates to `StateMapper<View>::map(base + offset, size, args...)`.
+   * The layout must have been finalized before calling this method.
+   *
+   * @tparam View   Target view type (must have a matching @ref StateMapper specialization).
+   * @tparam Args   Additional constructor arguments forwarded to @ref StateMapper::map.
+   * @param base    Pointer to the beginning of the state vector.
+   * @param name    Name of the variable.
+   * @param args    Extra arguments forwarded to @ref StateMapper::map.
+   * @return        The mapped view of the requested variable.
+   * @throws std::runtime_error if the layout is not finalized or @p name is not registered.
+   */
   template < class View, class... Args >
   View getAs( double* base, const std::string& name, Args&&... args ) const
   {
@@ -192,8 +263,10 @@ public:
     return StateMapper< View >::map( base + v.offset, v.size, std::forward< Args >( args )... );
   }
 
+  /// Return the total number of `double` values required by all registered variables.
   int totalSize() const { return total_sz; }
 
+  /// Return `true` if finalize() has been called, `false` otherwise.
   bool isFinalized() const { return finalized; }
 
 private:
