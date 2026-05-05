@@ -117,6 +117,15 @@ struct StateMapper< Eigen::Map< Eigen::Matrix< Scalar, Rows, Cols > > > {
 };
 /// \endcond
 
+/**
+ * @class MarmotStateLayoutDynamic
+ * @brief Runtime-defined layout for a flat array of named `double` state variables.
+ *
+ * Variables are registered by name and size via add(), then the layout is locked
+ * with finalize(), which assigns contiguous offsets. After finalization the
+ * various `get*` accessors can be used to reach individual variables inside any
+ * conforming state vector.
+ */
 class MarmotStateLayoutDynamic {
 public:
   /**
@@ -240,16 +249,16 @@ public:
   }
 
   /**
-   * @brief Map a variable inside a state vector to a typed view via @ref StateMapper.
+   * @brief Map a variable inside a state vector to a typed view via `StateMapper`.
    *
    * Delegates to `StateMapper<View>::map(base + offset, size, args...)`.
    * The layout must have been finalized before calling this method.
    *
-   * @tparam View   Target view type (must have a matching @ref StateMapper specialization).
-   * @tparam Args   Additional constructor arguments forwarded to @ref StateMapper::map.
+   * @tparam View   Target view type (must have a matching `StateMapper` specialization).
+   * @tparam Args   Additional constructor arguments forwarded to `StateMapper::map`.
    * @param base    Pointer to the beginning of the state vector.
    * @param name    Name of the variable.
-   * @param args    Extra arguments forwarded to @ref StateMapper::map.
+   * @param args    Extra arguments forwarded to `StateMapper::map`.
    * @return        The mapped view of the requested variable.
    * @throws std::runtime_error if the layout is not finalized or @p name is not registered.
    */
