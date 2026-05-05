@@ -189,11 +189,8 @@ void testIrreversibility()
     mat.computeStress( res, tan, inc );
   }
 
-  // Capture H after step 1
-  const double eps1       = dEps1( 0 );
-  const double psiPlus1   = 0.5 * eps1 * ( E / ( ( 1. + nu ) * ( 1. - 2. * nu ) ) * ( 1. - nu ) * eps1 );
-  // Use exact value from state vars instead
-  const double& H_after1 = stateVars[0]; // "maxCrackDrivingForce" is first state var
+  // Capture H after step 1 from the state variable vector
+  const double& H_after1 = stateVars[0]; // "maxCrackDrivingForce" is the first state var
 
   // Step 2: smaller strain increment that brings total strain back down
   Vector6d dEps2 = Vector6d::Zero();
