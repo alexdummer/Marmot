@@ -488,8 +488,8 @@ void testIsotropicInverseConsistency()
   using namespace Fastor;
   using namespace Marmot::FastorIndices;
 
-  // Compute C:Cinv_ijkl = C_ijmn * Cinv_mnkl
-  Tensor3333d product = einsum< ijmn, mnkl, to_ijkl >( C, Cinv );
+  // Compute C:Cinv_ijkl = C_ijmn * Cinv_mnkl = C_ijmn * Cinv_klmn (Cinv is fully symmetric)
+  Tensor3333d product = einsum< ijmn, klmn, to_ijkl >( C, Cinv );
 
   // Should equal the 4th-order symmetric identity Spatial3D::ISymm
   throwExceptionOnFailure( checkIfEqual( product, Spatial3D::ISymm, 1e-10 ),
