@@ -46,7 +46,7 @@ static std::pair< AT2PhaseField, std::vector< double > > makeMaterial(
   double Gc = 2.7,
   double l  = 0.01 )
 {
-  std::vector< double > props  = { E, nu, Gc, l };
+  const static std::vector< double > props  = { E, nu, Gc, l };
   AT2PhaseField         mat( props.data(), static_cast< int >( props.size() ), 1 );
 
   int                   nStateVars = mat.getNumberOfRequiredStateVars();
@@ -166,9 +166,6 @@ void testIrreversibility()
 {
   auto [mat, stateVars] = makeMaterial();
 
-  const double E = 20000., nu = 0.25;
-  const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
-
   // Step 1: large strain
   Vector6d dEps1 = Vector6d::Zero();
   dEps1( 0 )     = 2e-3;
@@ -228,6 +225,8 @@ void testIrreversibility()
 void testTangentConsistency()
 {
   auto [mat, stateVars] = makeMaterial();
+  
+  const std::vector<double> statsVarsOld = stateVars; // capture original state variables to reset after each perturbation 
 
   const double phi = 0.3;
   const double dK  = 0.0;
@@ -239,8 +238,8 @@ void testTangentConsistency()
 
   // Compute base response and analytical tangent
   auto evalAt = [&]( const Vector6d&                dE,
-                     double                         K_val,
-                     std::vector< double >          sv ) -> std::pair< Vector6d, double > {
+                     double                        K_val,
+                     std::vector< double >&          sv ) -> std::pair< Vector6d, double > {
     Res1 res;
     Tan1 tan;
     Inc1 inc;
@@ -273,13 +272,15 @@ void testTangentConsistency()
   mat.computeStress( resBase, tanBase, incBase );
 
   const double h = 1e-7; // finite-difference step
-
+    
   // ── dStressddStrain ──
   for ( int j = 0; j < 6; j++ ) {
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
+    stateVars = statsVarsOld; // reset state variables before each perturbation to avoid accumulation of changes
     auto [sp, kp] = evalAt( dEp, phi, stateVars );
+    stateVars = statsVarsOld; // reset again before the second perturbation
     auto [sm, km] = evalAt( dEm, phi, stateVars );
     const Vector6d dSdE_num = ( sp - sm ) / ( 2. * h );
     const Vector6d dSdE_ana = tanBase.dStressddStrain.col( j );
@@ -289,22 +290,24 @@ void testTangentConsistency()
   }
 
   // ── dStressddK (col 0) ──
-  {
-    auto [sp, kp] = evalAt( dEps, phi + h, stateVars );
-    auto [sm, km] = evalAt( dEps, phi - h, stateVars );
-    const Vector6d dSdK_num = ( sp - sm ) / ( 2. * h );
-    const Vector6d dSdK_ana = tanBase.dStressddK.col( 0 );
-    throwExceptionOnFailure(
-      checkIfEqual< double >( dSdK_ana, dSdK_num, 1e-5 ),
-      "dStressddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
-  }
+  stateVars = statsVarsOld; // reset state variables before perturbation
+  auto [sp, kp] = evalAt( dEps, phi + h, stateVars );
+  stateVars = statsVarsOld; // reset again before second perturbation
+  auto [sm, km] = evalAt( dEps, phi - h, stateVars );
+  const Vector6d dSdK_num = ( sp - sm ) / ( 2. * h );
+  const Vector6d dSdK_ana = tanBase.dStressddK.col( 0 );
+  throwExceptionOnFailure(
+    checkIfEqual< double >( dSdK_ana, dSdK_num, 1e-5 ),
+    "dStressddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
 
   // ── dKLocalddStrain (row 0) ──
   for ( int j = 0; j < 6; j++ ) {
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
+    stateVars = statsVarsOld; // reset state variables before each perturbation
     auto [sp, kp] = evalAt( dEp, phi, stateVars );
+    stateVars = statsVarsOld; // reset again before second perturbation
     auto [sm, km] = evalAt( dEm, phi, stateVars );
     const double dKdE_num = ( kp - km ) / ( 2. * h );
     const double dKdE_ana = tanBase.dKLocalddStrain( 0, j );
@@ -315,7 +318,9 @@ void testTangentConsistency()
 
   // ── dKLocalddK (0,0) ──
   {
+    stateVars = statsVarsOld; // reset state variables before perturbation
     auto [sp, kp] = evalAt( dEps, phi + h, stateVars );
+    stateVars = statsVarsOld; // reset again before second perturbation
     auto [sm, km] = evalAt( dEps, phi - h, stateVars );
     const double dKdK_num = ( kp - km ) / ( 2. * h );
     const double dKdK_ana = tanBase.dKLocalddK( 0, 0 );
@@ -324,7 +329,6 @@ void testTangentConsistency()
       "dKLocalddK mismatch in " + std::string( __PRETTY_FUNCTION__ ) );
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 int main()
 {

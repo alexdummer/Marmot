@@ -49,13 +49,13 @@ namespace Marmot::Materials {
     const double& nu = materialProperties[1];
     const double& Gc = materialProperties[2];
     const double& l  = materialProperties[3];
-
+    
     // precompute elastic stiffness
     const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
     // access state variables
     double& H      = stateLayout.getAs< double& >( res.stateVars, "maxCrackDrivingForce" );
-    auto    strain = stateLayout.getAs< Eigen::Map< Eigen::Matrix< double, 6, 1 > > >( res.stateVars, "strain" );
+    auto    strain = stateLayout.getAs< Map< Vector6d > >( res.stateVars, "strain" );
 
     // accumulate total strain
     const Vector6d eps = strain + inc.dStrain;
