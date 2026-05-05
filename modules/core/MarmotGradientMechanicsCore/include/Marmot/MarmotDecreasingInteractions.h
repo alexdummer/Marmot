@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -24,6 +22,7 @@
  * the top level directory of marmot.
  * ---------------------------------------------------------------------
  */
+
 #pragma once
 #include <cmath>
 #include <tuple>
@@ -32,6 +31,21 @@ namespace Marmot::GradientDamage {
 
   namespace DecreasingInteractions {
 
+    /**
+     * @brief Damage dependent nonlocal interaction function acc. Poh & Sun (2017)
+     * @param omega damage variable
+     * @param eta parameter controlling the rate of decrease of interactions with damage
+     * @param R parameter controlling the residual interactions at full damage
+     * @tparam T type of the interaction function value (e.g., double, dual, etc.)
+     * @return interaction function value
+     *
+     * @details The function is defined as:
+     * \f[ g(\omega) = \frac{(1 - R) \exp(-\eta \omega) + R - \exp(-\eta) }{ 1 - \exp(-\eta)} \f]
+     * where \f$ \omega \f$ is the damage variable, \f$ \eta \f$ controls the rate of decrease of interactions with
+     * damage, and \f$ R \f$ controls the residual interactions at full damage. The function is designed to decrease as
+     * damage increases, with a residual interaction value of \f$ R \f$ at full damage (\f$ \omega = 1 \f$).
+     *
+     */
     template < typename T >
     T poh( T omega, double eta, double R )
     {
@@ -41,12 +55,28 @@ namespace Marmot::GradientDamage {
 
     namespace FirstOrderDerived {
 
+      /**
+       * @brief First-order derived of the Poh & Sun (2017) interaction function with respect to damage
+       * @param omega damage variable
+       * @param eta parameter controlling the rate of decrease of interactions with damage
+       * @param R parameter controlling the residual interactions at full damage
+       * @return a tuple containing the first-order derivative of the interaction function with respect to damage
+       * @details The first-order derived variant of the interaction function @ref poh.
+       */
       std::tuple< double, double > poh( double omega, double eta, double R );
 
     } // namespace FirstOrderDerived
 
     namespace SecondOrderDerived {
 
+      /**
+       * @brief Second-order derived of the Poh & Sun (2017) interaction function with respect to damage
+       * @param omega damage variable
+       * @param eta parameter controlling the rate of decrease of interactions with damage
+       * @param R parameter controlling the residual interactions at full damage
+       * @return a tuple containing the second-order derivative of the interaction function with respect to damage
+       * @details The second-order derived variant of the interaction function @ref poh.
+       */
       std::tuple< double, double, double > poh( double omega, double eta, double R );
 
     } // namespace SecondOrderDerived
