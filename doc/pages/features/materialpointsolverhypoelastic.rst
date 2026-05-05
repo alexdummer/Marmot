@@ -151,4 +151,5 @@ Practical Applications
 
 
 .. doxygenclass:: MarmotMaterialPointSolverHypoElastic
+   :project: MarmotMechanicsCore
    :allow-dot-graphs:

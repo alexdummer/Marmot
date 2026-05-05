@@ -129,6 +129,7 @@ namespace Marmot::Elements {
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
         /// @brief Layout of the state variable vector at the quadrature point
+        /// \hideinitializer
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 9 },
           { .name = "F0 XX", .length = 1 },

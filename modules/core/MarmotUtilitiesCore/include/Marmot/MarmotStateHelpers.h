@@ -45,6 +45,12 @@
 template < class View, int... Args >
 struct StateMapper;
 
+/// \cond DOXYGEN_SKIP
+// Template specialisations of StateMapper are hidden from Doxygen because
+// Sphinx's C++ domain parser cannot handle deeply nested template arguments
+// (e.g. StateMapper< Eigen::Map< Eigen::MatrixXd > >) and would emit
+// "Invalid C++ declaration" warnings for every specialisation.
+
 /**
  * @struct StateMapper<double>
  * @brief Specialization of StateMapper for single double values.
@@ -109,6 +115,7 @@ struct StateMapper< Eigen::Map< Eigen::Matrix< Scalar, Rows, Cols > > > {
     return Eigen::Map< Eigen::Matrix< Scalar, Rows, Cols > >( ptr, Rows, Cols );
   }
 };
+/// \endcond
 
 class MarmotStateLayoutDynamic {
 public:

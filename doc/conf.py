@@ -96,6 +96,17 @@ breathe_projects_source = {
 
 breathe_default_members = ("members", "private-members", "protected-members", "undoc-members")
 
+suppress_warnings = [
+    # Shared headers (e.g. Marmot.h, MarmotTypedefs.h) are picked up by every
+    # per-module autodoxygenindex page and re-emit the same cpp:type directives.
+    "cpp.duplicate_declaration",
+    # Some Doxygen-generated declarations use nested templates that Sphinx's C++
+    # domain parser cannot handle; suppress the resulting parse errors.
+    "cpp.error",
+    # Duplicate RST target names produced by repeated Doxygen anchors.
+    "ref.duplicate",
+]
+
 # sphinxcontrib-bibtex configuration
 bibtex_bibfiles = ["pages/publications.bib"]
 bibtex_default_style = "unsrt"

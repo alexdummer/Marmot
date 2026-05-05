@@ -34,6 +34,14 @@
  * @brief Sub-stepper for semi-explicit return-mapping algorithms (Pérez–Fouget algorithm, Mark II).
  */
 
+/// \cond DOXYGEN_SKIP
+// This file defines a class also named PerezFougetSubstepper in the same
+// namespace as PerezFougetSubstepperMarkII.h.  Having two Doxygen-documented
+// classes with the same fully-qualified name produces CRITICAL "Duplicate ID"
+// errors during the Sphinx build.  The semi-explicit variant is therefore
+// excluded from the generated API documentation; see PerezFougetSubstepperMarkII.h
+// for the documented interface.
+
 namespace Marmot::NumericalAlgorithms {
 
   /**
@@ -174,3 +182,4 @@ namespace Marmot::NumericalAlgorithms {
     return consistentTangent.topLeftCorner( 6, 6 );
   }
 } // namespace Marmot::NumericalAlgorithms
+/// \endcond

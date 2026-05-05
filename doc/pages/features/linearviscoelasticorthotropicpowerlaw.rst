@@ -34,7 +34,7 @@ Additionally, the Poisson's ratios :math:`\nu_{12}`, :math:`\nu_{23}`, and :math
    The definition of Poisson's ratio in Marmot differs from the standard definition.
    In Marmot, Poisson's ratio :math:`\nu_{ij}` is defined as the ratio of the lateral strain in direction :math:`x_j`
    to the axial strain in direction :math:`x_i` when a uniaxial stress is applied in direction :math:`x_i`.
-   See namespace :ref:`Marmot::ContinuumMechanics::Elasticity` for more details.
+   See namespace :cpp:any:`Marmot::ContinuumMechanics::Elasticity` for more details.
 
 Accordingly, the normalized initial elastic compliance tensor now reads
 

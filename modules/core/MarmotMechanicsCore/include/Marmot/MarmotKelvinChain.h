@@ -85,6 +85,10 @@ namespace Marmot::Materials {
     struct Factorial {
       enum { value = N * Factorial< N - 1 >::value };
     };
+    /// \cond DOXYGEN_SKIP
+    // Specialisation Factorial<0> is hidden from Doxygen: both the primary
+    // template and this specialisation would get the same documentation ID,
+    // causing a CRITICAL "Duplicate ID" error during the Sphinx build.
     /**
      * @brief Template specialization of Factorial for 0.
      *
@@ -94,6 +98,7 @@ namespace Marmot::Materials {
     struct Factorial< 0 > {
       enum { value = 1 };
     };
+    /// \endcond
     /**
      * @brief Evaluates the Post–Widder inversion formula to approximate the discrete retardance function
      * \f$L_k(\tau)\f$.
