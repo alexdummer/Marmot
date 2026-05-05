@@ -1,5 +1,5 @@
 Linear Viscoelastic Orthotropic Power Law model
-===================================
+===============================================
 
 Theory
 ------
@@ -19,6 +19,7 @@ the initial elastic stiffness tensor :math:`\Cel` is replaced by
 .. math::
 
    \Cel_0 = s\, \Cel( E_1, E_2, E_3, G_{12}, G_{23}, G_{31}, \nu_{12}, \nu_{23}, \nu_{31} ),
+
 where the Young's moduli :math:`E_1`, :math:`E_2`, and :math:`E_3`
 and the shear moduli :math:`G_{12}`, :math:`G_{23}`, and :math:`G_{31}`
 are given in the material directions :math:`x_1`, :math:`x_2`, and :math:`x_3`.
