@@ -71,7 +71,6 @@ breathe_default_project = "Marmot"
 
 breathe_projects_source = {
     "Marmot": ("../", []),
-    "MarmotTopLevel": ("../include/Marmot", ["Marmot.h", "MarmotElement.h", "MarmotMaterial.h"]),
     "MarmotFiniteElementCore": (
         "../modules/core/MarmotFiniteElementCore/include/Marmot",
         getAllHeadersInFolder("../modules/core/MarmotFiniteElementCore/include/Marmot/"),
