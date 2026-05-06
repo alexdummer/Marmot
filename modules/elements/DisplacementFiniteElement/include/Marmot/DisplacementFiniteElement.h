@@ -635,7 +635,8 @@ namespace Marmot::Elements {
     Map< const RhsSized > dQ( dQ_ );
     Map< RhsSized >       Pe( Pe_ );
 
-    Voigt S, dE;
+    Voigt S  = Voigt::Zero();
+    Voigt dE = Voigt::Zero();
 
     for ( QuadraturePoint& qp : qps ) {
 
@@ -715,9 +716,9 @@ namespace Marmot::Elements {
           timeInfo.time = time[1];
           timeInfo.dT   = dT;
           try {
-            qp.material->computeStressExplicit( state, dE6.data(), timeInfo );
+            qp.material->computeStressExplicit( state, dE6, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
@@ -742,9 +743,9 @@ namespace Marmot::Elements {
           timeInfo.time = time[1];
           timeInfo.dT   = dT;
           try {
-            qp.material->computeStressExplicit( state, dE.data(), timeInfo );
+            qp.material->computeStressExplicit( state, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }

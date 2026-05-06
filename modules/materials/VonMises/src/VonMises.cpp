@@ -129,7 +129,7 @@ namespace Marmot::Materials {
     }
   }
 
-  void VonMisesModel::computeStressExplicit( state3D& state, const double* dStrain, const timeInfo& timeInfo ) const
+  void VonMisesModel::computeStressExplicit( state3D& state, const Vector6d& dStrain, const timeInfo& timeInfo ) const
 
   {
     // elasticity parameters
@@ -143,7 +143,7 @@ namespace Marmot::Materials {
 
     // map to stress, strain and tangent
     mVector6d  S( state.stress.data() );
-    const auto dE = Map< const Vector6d >( dStrain );
+    const auto dE = dStrain;
 
     // compute elastic stiffness
     const auto Cel = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
@@ -207,7 +207,7 @@ namespace Marmot::Materials {
       }
 
       if ( std::abs( g_val ) > VonMisesConstants::innerNewtonTol ) {
-        throw std::runtime_error( "return mapping failed to converge in VonMisesModel::computeStressExplicit" );
+        throw Marmot::StressUpdateFailed( "return mapping failed to converge in VonMisesModel::computeStressExplicit" );
       }
 
       dLambda = Constants::sqrt3_2 * dKappa;

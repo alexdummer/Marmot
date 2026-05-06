@@ -137,9 +137,9 @@ public:
    * @note The default implementation calls @ref computeStress and ignores the algorithmic tangent.
    * @note Derived classes may override this method for efficiency reasons.
    */
-  virtual void computeStressExplicit( state3D& state, const double* dStrain, const timeInfo& timeInfo ) const
+  virtual void computeStressExplicit( state3D& state, const Marmot::Vector6d& dStrain, const timeInfo& timeInfo ) const
   {
-    double dStress_dStrain[36];
+    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
     computeStress( state, dStress_dStrain, dStrain, timeInfo );
   }
 
