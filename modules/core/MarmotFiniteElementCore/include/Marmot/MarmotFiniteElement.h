@@ -136,7 +136,7 @@ namespace Marmot {
     namespace Spatial1D {
       namespace Bar2 {
 
-        constexpr int nNodes = 2;
+        constexpr int nNodes = 2; ///< Number of nodes for a Bar2 element.
         using NSized     = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
         using dNdXiSized = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function natural derivatives.
 
@@ -148,7 +148,7 @@ namespace Marmot {
 
       namespace Bar3 {
 
-        constexpr int nNodes = 3;
+        constexpr int nNodes = 3; ///< Number of nodes for a Bar3 element.
         using NSized     = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
         using dNdXiSized = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function natural derivatives.
 
@@ -593,7 +593,8 @@ namespace Marmot {
      * @brief Return the predefined Gauss point list for a given element shape and integration type.
      * @param[in] shape           Element shape enumerator.
      * @param[in] integrationType Full or reduced integration.
-     * @return Const reference to the corresponding vector of @ref QuadraturePointInfo.
+     * @return Const reference to the corresponding vector of
+     *         @ref Marmot::FiniteElement::Quadrature::QuadraturePointInfo entries.
      */
     const std::vector< QuadraturePointInfo >& getGaussPointInfo( Marmot::FiniteElement::ElementShapes shape,
                                                                  IntegrationTypes                     integrationType );
@@ -610,16 +611,19 @@ namespace Marmot {
       constexpr int nDim = 1; ///< Number of spatial dimensions for 1-D quadrature.
 
       // clang-format off
-            const std::vector< QuadraturePointInfo >  gaussPointList1 = { ///< 1-point Gauss rule for 1-D elements.
+            /// 1-point Gauss rule for 1-D elements.
+            const std::vector< QuadraturePointInfo >  gaussPointList1 = {
                 { ( Eigen::VectorXd ( 1 ) << 0 ).finished(),               2.0 }
             };
 
-            const std::vector< QuadraturePointInfo >  gaussPointList2 = { ///< 2-point Gauss rule for 1-D elements.
+            /// 2-point Gauss rule for 1-D elements.
+            const std::vector< QuadraturePointInfo >  gaussPointList2 = {
                 { ( Eigen::VectorXd ( 1 ) << -gp2 ).finished(),           1.0 },
                 { ( Eigen::VectorXd ( 1 ) << +gp2 ).finished(),           1.0 }
             };
 
-            const std::vector< QuadraturePointInfo >  gaussPointList3 = { ///< 3-point Gauss rule for 1-D elements.
+            /// 3-point Gauss rule for 1-D elements.
+            const std::vector< QuadraturePointInfo >  gaussPointList3 = {
                 { ( Eigen::VectorXd ( 1 ) << -gp3 ).finished(),            5./9 },
                 { ( Eigen::VectorXd ( 1 ) << 0.   ).finished(),            8./9 },
                 { ( Eigen::VectorXd ( 1 ) << +gp3 ).finished(),            5./9 }
@@ -632,18 +636,21 @@ namespace Marmot {
       constexpr int nDim = 2; ///< Number of spatial dimensions for 2-D quadrature.
 
       // clang-format off
-            const std::vector< QuadraturePointInfo > gaussPointList1x1 = { ///< 1×1 Gauss rule for 2-D quadrilateral elements.
+            /// 1×1 Gauss rule for 2-D quadrilateral elements.
+            const std::vector< QuadraturePointInfo > gaussPointList1x1 = {
                 { Eigen::Vector2d::Zero(),                             4. }
             };
 
-            const std::vector< QuadraturePointInfo > gaussPointList2x2 = { ///< 2×2 Gauss rule for 2-D quadrilateral elements.
+            /// 2×2 Gauss rule for 2-D quadrilateral elements.
+            const std::vector< QuadraturePointInfo > gaussPointList2x2 = {
                 { ( Eigen::Vector2d () << +gp2,     +gp2 ).finished(),   1.0 },
                 { ( Eigen::Vector2d () << -gp2,     +gp2 ).finished(),   1.0 },
                 { ( Eigen::Vector2d () << -gp2,     -gp2 ).finished(),   1.0 },
                 { ( Eigen::Vector2d () << +gp2,     -gp2 ).finished(),   1.0 }
             };
 
-            const std::vector< QuadraturePointInfo > gaussPointList3x3 = { ///< 3×3 Gauss rule for 2-D quadrilateral elements.
+            /// 3×3 Gauss rule for 2-D quadrilateral elements.
+            const std::vector< QuadraturePointInfo > gaussPointList3x3 = {
                 { ( Eigen::Vector2d () << 0,        0.   ).finished(),   64./81},
                 { ( Eigen::Vector2d () << -gp3,     -gp3 ).finished(),   25./81},
                 { ( Eigen::Vector2d () << +gp3,     -gp3 ).finished(),   25./81},
@@ -668,22 +675,26 @@ namespace Marmot {
       constexpr int nDim = 3; ///< Number of spatial dimensions for 3-D quadrature.
 
       // clang-format off
-            const inline std::vector< QuadraturePointInfo > gaussPointList1x1x1 = { ///< 1×1×1 Gauss rule for 3-D hexahedral elements.
+            /// 1×1×1 Gauss rule for 3-D hexahedral elements.
+            const inline std::vector< QuadraturePointInfo > gaussPointList1x1x1 = {
                 { Eigen::Vector3d::Zero(),                                         8.0 }
             };
 
-            const inline std::vector< QuadraturePointInfo > gaussPointListTetra4 = { ///< 1-point rule for Tetra4 elements.
+            /// 1-point rule for Tetra4 elements.
+            const inline std::vector< QuadraturePointInfo > gaussPointListTetra4 = {
                 { (Eigen::Vector3d() << 1./4, 1./4, 1./4).finished(),  1./6}
             };
 
-            const inline std::vector< QuadraturePointInfo > gaussPointListTetra10 = { ///< 4-point rule for Tetra10 elements.
+            /// 4-point rule for Tetra10 elements.
+            const inline std::vector< QuadraturePointInfo > gaussPointListTetra10 = {
                 { (Eigen::Vector3d() << (5-std::sqrt(5))/20,    (5-std::sqrt(5))/20,    (5-std::sqrt(5))/20     ).finished(),  1./24},
                 { (Eigen::Vector3d() << (5-std::sqrt(5))/20,    (5-std::sqrt(5))/20,    (5+3*std::sqrt(5))/20   ).finished(),  1./24},
                 { (Eigen::Vector3d() << (5-std::sqrt(5))/20,    (5+3*std::sqrt(5))/20,  (5-std::sqrt(5))/20     ).finished(),  1./24},
                 { (Eigen::Vector3d() << (5+3*std::sqrt(5))/20,  (5-std::sqrt(5))/20,    (5-std::sqrt(5))/20     ).finished(),  1./24},
             };
 
-            const inline std::vector< QuadraturePointInfo > gaussPointList2x2x2 = { ///< 2×2×2 Gauss rule for 3-D hexahedral elements.
+            /// 2×2×2 Gauss rule for 3-D hexahedral elements.
+            const inline std::vector< QuadraturePointInfo > gaussPointList2x2x2 = {
                 { ( Eigen::Vector3d () << -gp2,    -gp2,   -gp2 ).finished(),       1.0},
                 { ( Eigen::Vector3d () << +gp2,    -gp2,   -gp2 ).finished(),       1.0},
                 { ( Eigen::Vector3d () << +gp2,    +gp2,   -gp2 ).finished(),       1.0},
@@ -694,7 +705,8 @@ namespace Marmot {
                 { ( Eigen::Vector3d () << -gp2,    +gp2,   +gp2 ).finished(),       1.0},
             };
 
-            const inline std::vector< QuadraturePointInfo > gaussPointList3x3x3 = { ///< 3×3×3 Gauss rule for 3-D hexahedral elements.
+            /// 3×3×3 Gauss rule for 3-D hexahedral elements.
+            const inline std::vector< QuadraturePointInfo > gaussPointList3x3x3 = {
                 { ( Eigen::Vector3d () << -gp3,     -gp3,   -gp3 ).finished(),       0.171467764060357},
                 { ( Eigen::Vector3d () << 0,        -gp3,   -gp3 ).finished(),       0.274348422496571},
                 { ( Eigen::Vector3d () << +gp3,     -gp3,   -gp3 ).finished(),       0.171467764060357},

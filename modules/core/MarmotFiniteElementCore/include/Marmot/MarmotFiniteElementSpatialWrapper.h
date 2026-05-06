@@ -48,7 +48,8 @@ public:
   const int                                 nNodes;         ///< Number of nodes shared by parent and child element.
   const int                                 nRhsChild;      ///< Size of the child element's right-hand-side vector.
   const Eigen::Map< const Eigen::VectorXi > rhsIndicesToBeProjected; ///< Indices in the child RHS vector that need projection.
-  const int                                 projectedSize, unprojectedSize; ///< Sizes of projected and unprojected DOF sets.
+  const int                                 projectedSize;   ///< Number of projected DOFs (child-element dimension).
+  const int                                 unprojectedSize; ///< Number of unprojected DOFs (ambient-space dimension).
 
   std::unique_ptr< MarmotElement > childElement;       ///< Owned child element instance.
   Eigen::MatrixXd                  T;                  ///< Coordinate transformation matrix from child to parent space.
@@ -109,7 +110,16 @@ public:
   /// @copydoc MarmotElement::initializeYourself
   void initializeYourself();
 
-  /// @copydoc MarmotElement::computeYourself
+  /**
+   * @brief Perform element computations with coordinate transformation.
+   * @param[in]  QTotal  Total dof vector in the ambient (parent) space.
+   * @param[in]  dQ      Incremental dof vector in the ambient space.
+   * @param[out] Pe      Internal force vector in the ambient space.
+   * @param[out] Ke      Stiffness matrix in the ambient space.
+   * @param[in]  time    Current time.
+   * @param[in]  dT      Time step size.
+   * @param[out] pNewdT  Suggested new time step size.
+   */
   void computeYourself( const double* QTotal,
                         const double* dQ,
                         double*       Pe,
@@ -121,7 +131,17 @@ public:
   /// @copydoc MarmotElement::setInitialConditions
   void setInitialConditions( StateTypes state, const double* values );
 
-  /// @copydoc MarmotElement::computeDistributedLoad
+  /**
+   * @brief Compute contribution from distributed surface loads with coordinate transformation.
+   * @param[in]  loadType    Type of distributed load.
+   * @param[out] P           External load vector in the ambient space.
+   * @param[out] K           Load stiffness matrix in the ambient space.
+   * @param[in]  elementFace Index of element face.
+   * @param[in]  load        Applied load values.
+   * @param[in]  QTotal      Total dof vector.
+   * @param[in]  time        Current time.
+   * @param[in]  dT          Time step size.
+   */
   void computeDistributedLoad( DistributedLoadTypes loadType,
                                double*              P,
                                double*              K,
@@ -131,7 +151,15 @@ public:
                                const double*        time,
                                double               dT );
 
-  /// @copydoc MarmotElement::computeBodyForce
+  /**
+   * @brief Compute body force contribution with coordinate transformation.
+   * @param[out] P      External load vector in the ambient space.
+   * @param[out] K      Load stiffness matrix in the ambient space.
+   * @param[in]  load   Applied body force values.
+   * @param[in]  QTotal Total dof vector.
+   * @param[in]  time   Current time.
+   * @param[in]  dT     Time step size.
+   */
   void computeBodyForce( double*       P,
                          double*       K,
                          const double* load,

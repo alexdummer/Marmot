@@ -46,10 +46,11 @@ namespace MarmotLibrary {
     MarmotElementFactory()       = delete;
 
     /**
-     * @brief Create an element instance based on its code and number.
-     * @param[in] elementCode Unique code for the element.
+     * @brief Create an element instance based on its name and number.
+     * @param[in] elementName   Registered name of the element type.
      * @param[in] elementNumber Unique identifier for the element instance.
-     * @return Pointer to the created MarmotElement instance, or nullptr if creation failed.
+     * @return Pointer to the created MarmotElement instance.
+     * @throws std::invalid_argument if @p elementName is not registered.
      */
     static MarmotElement* createElement( const std::string& elementName, int elementNumber )
     {
@@ -65,8 +66,9 @@ namespace MarmotLibrary {
 
     /**
      * @brief Register an element with its name.
-     * @param[in] elementName Name of the element.
-     * @return True if registration was successful, false if the code already exists.
+     * @param[in] elementName     Name of the element type to register.
+     * @param[in] factoryFunction Factory function pointer that creates the element.
+     * @return True if registration was successful.
      */
     static bool registerElement( const std::string& elementName, elementFactoryFunction factoryFunction )
     {
