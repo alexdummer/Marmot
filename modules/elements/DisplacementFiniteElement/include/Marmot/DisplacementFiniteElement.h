@@ -283,7 +283,7 @@ namespace Marmot::Elements {
                           double        dT,
                           double&       pNewdT );
 
-    /** #
+    /**
      * @brief Compute internal force only (no tangent stiffness).
      * @details Uses the small-strain relation \f$\Delta\boldsymbol{\varepsilon}=\mathbf{B}\,\Delta\mathbf{u}\f$ and
      * integrates
@@ -312,15 +312,21 @@ namespace Marmot::Elements {
 
     /**
      * @brief Compute the lumped (diagonal) mass matrix.
-     * @details Uses the manifold-based approach according to
-     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
+     * @details Uses the manifold-based lumping scheme according to
+     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME.
+     * The lumped mass entries are computed using a weighted shape function
+     * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$,
+     * where \f$N\f$ is the high-order shape function and \f$N_\mathrm{lin}\f$ is the corresponding
+     * linear (corner-node) shape function on the same element.
      */
     void computeLumpedInertia( double* M );
 
     /**
      * @brief Compute lumped damping matrix using a damping coefficient.
-     * @details Uses the manifold-based approach according to
-     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
+     * @details Uses the manifold-based lumping scheme according to
+     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME.
+     * The lumped damping entries are computed using a weighted shape function
+     * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$ analogous to computeLumpedInertia.
      */
     void computeLumpedDamping( double* C );
 
@@ -665,7 +671,7 @@ namespace Marmot::Elements {
 /* } */
 /* Eigen::VectorXd stress1D( 1 ); */
 /* stress1D( 0 )               = state.stress; */
-/* qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( stress1D ); */ #
+/* qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( stress1D ); */
 
         throw std::runtime_error( "Explicit uniaxial stress not implemented yet" );
       }
@@ -701,7 +707,6 @@ namespace Marmot::Elements {
         else if ( sectionType == SectionType::PlaneStrain ) {
 
           Vector6d dE6 = planeVoigtToVoigt( dE );
-          Matrix6d C66;
 
           // Vector6d S6 = qp.managedStateVars->stress;
           MarmotMaterialHypoElastic::state3D  state;
@@ -874,7 +879,7 @@ namespace Marmot::Elements {
     Map< RhsSized > LMM( M );
     LMM.setZero();
 
-    constexpr int nNodesLinear  = pow( 2, nDim );
+    constexpr int nNodesLinear  = ( 1 << nDim );
     auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
       const auto N_    = this->N( qp.xi );
@@ -898,7 +903,7 @@ namespace Marmot::Elements {
     Map< RhsSized > LCM( C );
     LCM.setZero();
 
-    constexpr int nNodesLinear  = pow( 2, nDim );
+    constexpr int nNodesLinear  = ( 1 << nDim );
     auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
       const auto N_    = this->N( qp.xi );
