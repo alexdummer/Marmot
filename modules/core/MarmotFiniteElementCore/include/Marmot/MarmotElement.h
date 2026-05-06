@@ -48,14 +48,14 @@ public:
   /** @brief Types of element state variables used in initialization and output. */
   enum StateTypes {
 
-    Sigma11,
-    Sigma22,
-    Sigma33,
-    HydrostaticStress,
-    GeostaticStress,
-    MarmotMaterialStateVars,
-    MarmotMaterialInitialization,
-    HasEigenDeformation,
+    Sigma11,                     ///< Normal stress component σ₁₁.
+    Sigma22,                     ///< Normal stress component σ₂₂.
+    Sigma33,                     ///< Normal stress component σ₃₃.
+    HydrostaticStress,           ///< Hydrostatic (mean) stress.
+    GeostaticStress,             ///< Geostatic in-situ stress state.
+    MarmotMaterialStateVars,     ///< Internal material state variables.
+    MarmotMaterialInitialization,///< Trigger for material model initialization.
+    HasEigenDeformation,         ///< Flag indicating presence of eigen (initial) deformation.
   };
 
   /** @brief Types of distributed loads applicable to element boundaries. */

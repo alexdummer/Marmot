@@ -36,9 +36,9 @@
  */
 class MarmotMaterialSection {
 public:
-  const std::string materialName;
-  const double*     materialProperties;
-  int               nMaterialProperties;
+  const std::string materialName;        ///< Name identifying the material model.
+  const double*     materialProperties;  ///< Pointer to the array of material property values.
+  int               nMaterialProperties; ///< Number of material property values.
 
   MarmotMaterialSection( const std::string materialName, const double* materialProperties, int nMaterialProperties )
     : materialName( materialName ),
@@ -54,8 +54,8 @@ public:
  */
 class ElementProperties {
 public:
-  const double* elementProperties;
-  int           nElementProperties;
+  const double* elementProperties;  ///< Pointer to the array of element property values.
+  int           nElementProperties; ///< Number of element property values.
 
   ElementProperties( const double* elementProperties, int nElementProperties )
     : elementProperties( elementProperties ), nElementProperties( nElementProperties ){};

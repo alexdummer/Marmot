@@ -41,6 +41,7 @@ namespace MarmotLibrary {
    */
   class MarmotElementFactory {
   public:
+    /// @brief Factory function pointer type: takes an element number and returns a new MarmotElement.
     using elementFactoryFunction = MarmotElement* (*)( int elementNumber );
     MarmotElementFactory()       = delete;
 
