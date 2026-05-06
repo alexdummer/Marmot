@@ -183,14 +183,14 @@ namespace Marmot::Elements::Registration {
                        GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6, 4 >::PlaneStress >() );
 
   const static bool G6GC3D20R8_isRegistered = MarmotLibrary::MarmotElementFactory::
-    registerElement( "G6GC3D20R8",
+    registerElement( "G6GC3D20RM",
                      makeFactoryFunction<
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >,
                        ReducedIntegration,
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >::SectionType::Solid >() );
 
   const static bool G6GC3D208_isRegistered = MarmotLibrary::MarmotElementFactory::
-    registerElement( "G6GC3D208",
+    registerElement( "G6GC3D20M",
                      makeFactoryFunction<
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >,
                        FullIntegration,

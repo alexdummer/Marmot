@@ -48,6 +48,18 @@ mathjax3_config = {
             "DelNu": "\\mathbb{D}_\\nu",
             "PhiRate": "\\dot{\\Phi}",
             "JRate": "\\dot{J}",
+            "kl": "k",  # local field variable
+            "knl": "\\bar{\\kl}",  # nonlocal field variable
+            "Nk": "\\mathbf{N}^{\\mathrm{\\kl}}",  # shape function vector for the nonlocal field variable
+            "fuint": "f^{\\mathrm{u}}_\\mathrm{int,e}",  # element internal force vector associated with the displacement degrees of freedom
+            "fext": "f_\\mathrm{ext,e}",  # element external load vector
+            "fextb": "f_\\mathrm{ext,e}^\\mathrm{b}",  # body-force vector
+            "fextp": "f_\\mathrm{ext,e}^\\mathrm{p}",  # distributed load vector
+            "fk": "f^{\\mathrm{\\kl}}_\\mathrm{e}",  # element load vector associated with the nonlocal degrees of freedom
+            "qu": "q^{\\mathrm{u}}",  # displacement nodal field vector
+            "qk": "q^{\\mathrm{\\kl}}",  # nonlocal nodal field vector
+            "ru": "r^{\\mathrm{u}}",  # displacement nodal field vector
+            "rk": "r^{\\mathrm{\\kl}}",  # nonlocal nodal field vector
         },
     },
 }

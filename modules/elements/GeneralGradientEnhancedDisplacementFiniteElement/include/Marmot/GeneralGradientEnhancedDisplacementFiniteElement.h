@@ -47,10 +47,30 @@ using namespace Eigen;
 
 namespace Marmot::Elements {
 
+  /**
+   * @class Marmot::Elements::GeneralGradientEnhancedDisplacementFiniteElement
+   * @tparam nDim Number of spatial dimensions (1, 2, or 3).
+   * @tparam nNodes Number of element nodes for the displacement field.
+   * @tparam nNonlocalVariables Number of nonlocal variables.
+   * @tparam nNonLocalNodes Number of nonlocal element nodes. Usually the order of the nonlocal interpolation is similar
+   * or one order lower than the local interpolation, so nNonLocalNodes <= nNodes.
+   * @brief General Gradient Enhanced Displacement-based finite element template.
+   * @details Uses linearized kinematics (small strains) and supports 1D, 2D, and 3D
+   * formulations via a section assumption. Holds quadrature-point state and
+   * delegates constitutive updates to Marmot materials while assembling element
+   * residuals and tangents, taking non-local effects into account.
+   */
   template < int nDim, int nNodes, int nNonlocalVariables = 1, int nNonLocalNodes = nNodes >
   class GeneralGradientEnhancedDisplacementFiniteElement : public MarmotElement {
 
   public:
+    /**
+     * @brief Kinematic section assumption used by the element.
+     * @details Controls which constitutive call is performed at quadrature points.
+     * - PlaneStress
+     * - PlaneStrain
+     * - Solid
+     */
     enum SectionType {
       PlaneStress,
       PlaneStrain,
@@ -88,11 +108,20 @@ namespace Marmot::Elements {
     using dNdXiSizedK            = typename ParentGeometryElementK::dNdXiSized;
     using BSizedK                = typename ParentGeometryElementK::BSized;
 
+    /** Element-level properties (e.g., thickness for 2D, area for 1D). */
     Map< const VectorXd > elementProperties;
-    const int             elLabel;
+    /** Element label (ID) used for logging and material creation. */
+    const int elLabel;
 
+    /** Section assumption applied by this element instance. */
     const SectionType sectionType;
 
+    /**
+     * @brief Data and state associated with a quadrature point.
+     * @details Holds parent coordinates, integration weight, Jacobian determinant, shape functions N and their
+     * gradients dNdX, kinematic (strain-displacement) B-matrices for both local and non-local evaluations, and a
+     * material instance with managed state variables.
+     */
     struct QuadraturePoint {
 
       const XiSized xi;
@@ -107,6 +136,12 @@ namespace Marmot::Elements {
       dNdXiSizedK dNdX_K;
       BSizedK     B_K;
 
+      /**
+       * @brief Manager for per-quadrature-point state variables.
+       * @details Provides named accessors to stress \f$\sigma\f$, strain \f$\varepsilon\f$
+       * and the material state vector. The layout is [stress(6), strain(6), begin of material state(...)]
+       * in 3D Voigt notation.
+       */
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
         inline const static auto layout = makeLayout( {
@@ -156,44 +191,87 @@ namespace Marmot::Elements {
           weight( weight ),
           detJ( 0.0 ),
           J0xW( 0.0 ),
+          N( NSized::Zero() ),
           dNdX( dNdXiSized::Zero() ),
           B( BSized::Zero() ),
+          N_K( NSizedK::Zero() ),
           dNdX_K( dNdXiSizedK::Zero() ),
           B_K( BSizedK::Zero() ){};
     };
 
+    /// Quadrature points owned by the element (one per integration point).
     std::vector< QuadraturePoint > qps;
 
+    /**
+     * @brief Construct element with ID, quadrature rule and section assumption.
+     * @param elementID Unique element label.
+     * @param integrationType Integration (quadrature) rule.
+     * @param sectionType Section assumption (1D/2D/3D).
+     */
     GeneralGradientEnhancedDisplacementFiniteElement( int                                         elementID,
                                                       FiniteElement::Quadrature::IntegrationTypes integrationType,
                                                       SectionType                                 sectionType );
 
+    /** @brief Total number of required state variables for this element (sum over all quadrature points). */
     int getNumberOfRequiredStateVars();
 
+    /** @brief Node-level fields exposed by the element. Returns ["displacement", "nonlocal field", "strain symmetric"]
+     * for the respective nodes. */
     std::vector< std::vector< std::string > > getNodeFields();
 
+    /** @brief The permutation pattern for the residual vector and the stiffness matrix to aggregate all entries in
+     * order to resemble the defined fields nodewise.  */
     std::vector< int > getDofIndicesPermutationPattern();
 
+    /** @brief Number of nodes of this element type. */
     int getNNodes() { return nNodes; }
 
+    /** @brief Number of spatial dimensions. */
     int getNSpatialDimensions() { return nDim; }
 
+    /** @brief Number of degrees of freedom per element. */
     int getNDofPerElement() { return sizeLoadVector; }
 
+    /** @brief Geometric shape of the element (as reported by the local geometry element). */
     std::string getElementShape() { return localGeometryElement.getElementShape(); }
 
+    /** @brief Map the provided element state vector to all quadrature points. */
     void assignStateVars( double* stateVars, int nStateVars );
 
+    /** @brief Assign element properties (e.g., thickness in 2D, area in 1D). */
     void assignProperty( const ElementProperties& marmotElementProperty );
 
+    /** @brief Assign material section and instantiate per-quadrature-point materials. */
     void assignProperty( const MarmotMaterialSection& marmotElementProperty );
 
+    /** @brief Provide nodal coordinates to local and non-local geometry elements. */
     void assignNodeCoordinates( const double* coordinates );
 
+    /** @brief Precompute geometry-related quantities at quadrature points (B, detJ, J0xW, N_K, dNdX_K). */
     void initializeYourself();
 
+    /**
+     * @brief Initialize state or materials.
+     * @param state MarmotMaterialInitialization, GeostaticStress or MarmotMaterialStateVars.
+     * @param values For GeostaticStress: [sigmaY(z1), y1, sigmaY(z2), y2, kx, kz].
+     */
     void setInitialConditions( StateTypes state, const double* values );
 
+    /**
+     * @brief Assemble distributed surface loads on a boundary face.
+     * @details Pressure contributions are integrated on the boundary \f$\Gamma_e\f$:
+     * \f[
+     * \mathbf{\fextp} = - \int_{\Gamma_e} p\, \mathbf{N}^\mathsf{T} \mathbf{n}\, \mathrm{d}\Gamma\, .
+     * \f]
+     * @param loadType Pressure or SurfaceTraction.
+     * @param P Element RHS contribution (accumulated).
+     * @param K Optional stiffness contribution (unused).
+     * @param elementFace Boundary face index.
+     * @param load Pressure magnitude or traction vector (size nDim).
+     * @param QTotal Total DOF vector (unused).
+     * @param time Current time data forwarded to materials.
+     * @param dT Time increment.
+     */
     void computeDistributedLoad( MarmotElement::DistributedLoadTypes loadType,
                                  double*                             P,
                                  double*                             K,
@@ -203,6 +281,11 @@ namespace Marmot::Elements {
                                  const double*                       time,
                                  double                              dT );
 
+    /**
+     * @brief Assemble body force contribution.
+     * @details Integrates \f$\mathbf{\fextb} = \int_{\Omega_e} \mathbf{N}^\mathsf{T} \mathbf{f}\,
+     * \mathrm{d}\Omega\f$.
+     */
     void computeBodyForce( double* P,
                            double* K,
 
@@ -211,6 +294,46 @@ namespace Marmot::Elements {
                            const double* time,
                            double        dT );
 
+    /**
+     * @brief Compute internal force and consistent tangent stiffness.
+     * @details Uses the small-strain relation \f$\Delta \eps = \mathbf{B}\, \Delta \mathbf{\qu}\f$,
+     * interpolates the non-local variables as \f$ \knl = \Nk\, \mathbf{\qk}\f$. Internal forces and consistent tangents
+     * are evaluated by Gauss quadrature:
+     * \f[
+     * \mathbf{K}_e = \begin{bmatrix} \mathbf{K}_{uu} & \mathbf{K}_{uk} \\ \mathbf{K}_{ku} & \mathbf{K}_{kk}
+     * \end{bmatrix},\qquad
+     * \mathbf{\fuint} = \sum_{qp} \mathbf{B}^\mathsf{T}\, \sig\, J_0\, w_{qp}\, .
+     * \f]
+     * \f[
+     * \mathbf{\fk} = \sum_{qp} \left (\mathbf{\Nk}^\mathsf{T}\, \knl\, + c\, \partial_\mathbf{x}
+     * \mathbf{\Nk}^\mathsf{T}\,\partial_\mathbf{x} \mathbf{\Nk}\, \mathbf{\qk} - \mathbf{\Nk}^\mathsf{T}\, \kl \right )
+     * J_0\, w_{qp} \, .
+     * \f]
+     * The stiffness submatrices are evaluated using the following expressions:
+     * \f[
+     * \mathbf{K}_{uu} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \mathbf{\eps}}
+     * \mathbf{B}\, J_0\, w_{qp},\quad
+     * \mathbf{K}_{u\kl} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \kl} \mathbf{\Nk}\,
+     * J_0\, w_{qp},\quad
+     * \mathbf{K}_{\kl u} = -\sum_{qp} \mathbf{\Nk}^\mathsf{T} \frac{\partial \kl}{\partial \mathbf{\eps}} \mathbf{B}\,
+     * J_0\, w_{qp},
+     * \f]
+     * \f[
+     * \mathbf{K}_{\kl\kl} = \sum_{qp} \left( \mathbf{\Nk}^\mathsf{T}\, \mathbf{\Nk} + c \, \partial_\mathbf{x}
+     * \mathbf{\Nk}^\mathsf{T} \,  \partial_\mathbf{x} \mathbf{\Nk} + \frac{\partial c}{\partial \knl} \,
+     * \partial_\mathbf{x} \mathbf{\Nk}^\mathsf{T} \, \partial_\mathbf{x}   \mathbf{\Nk}\, \qk \, \mathbf{\Nk} -
+     * \mathbf{\Nk}^\mathsf{T}\, \frac{\partial \kl}{\partial \knl} \right) J_0\, w_{qp}\, .
+     * \f]
+     * If pNewdT<1, the routine returns early to signal time step reduction.
+     * @param QTotal Total displacement vector in field-wise format: \f$\mathbf{q} = [\mathbf{\qu},
+     * \mathbf{\qk}]^\mathsf{T}\f$.
+     * @param dQ Incremental displacement.
+     * @param Pe Internal force vector (accumulated).
+     * @param Ke Tangent stiffness matrix (accumulated).
+     * @param time Time data forwarded to materials.
+     * @param dT Time increment.
+     * @param pNewdT Suggested scaling of dT by the material; if reduced (<1), the routine returns early.
+     */
     void computeYourself( const double* QTotal,
                           const double* dQ,
                           double*       Pe,
@@ -219,6 +342,10 @@ namespace Marmot::Elements {
                           double        dT,
                           double&       pNewdT );
 
+    /**
+     * @brief Access a named state view at a quadrature point.
+     * @note Using "sdv" returns the raw material state vector and is deprecated.
+     */
     StateView getStateView( const std::string& stateName, int qpNumber )
     {
       const auto& qp = qps[qpNumber];
@@ -237,10 +364,13 @@ namespace Marmot::Elements {
       }
     }
 
+    /** @brief Get physical coordinates at the element center. */
     std::vector< double > getCoordinatesAtCenter();
 
+    /** @brief Get physical coordinates at each quadrature point. */
     std::vector< std::vector< double > > getCoordinatesAtQuadraturePoints();
 
+    /** @brief Number of quadrature points of this element. */
     int getNumberOfQuadraturePoints();
   };
 
