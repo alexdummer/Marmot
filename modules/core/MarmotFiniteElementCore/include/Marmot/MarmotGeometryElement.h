@@ -74,7 +74,7 @@ public:
   MarmotGeometryElement()
     : coordinates( nullptr ), shape( Marmot::FiniteElement::getElementShapeByMetric( nDim, nNodes ) ){};
 
-  /// @brief Returns an Ensight Gold shape string (e.g.\ @c "quad4", @c "hexa8") for this element.
+  /// @brief Returns an Ensight Gold shape string (e.g. @c quad4, @c hexa8) for this element.
   std::string getElementShape() const
   {
     using namespace Marmot::FiniteElement;
@@ -132,7 +132,7 @@ public:
     return ( dNdXi.transpose() * JacobianInverse ).transpose();
   }
 
-  /// @brief Compute the deformation gradient @f$\mathbf{F}@f$ from physical derivatives and displacements @p Q.
+  /// @brief Compute the deformation gradient \f$\mathbf{F}\f$ from physical derivatives and displacements @p Q.
   /// @param[in] dNdX Physical shape function derivatives.
   /// @param[in] Q    Element displacement vector.
   JacobianSized F( const dNdXiSized& dNdX, const CoordinateVector& Q ) const

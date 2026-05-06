@@ -54,7 +54,7 @@ public:
     HydrostaticStress,           ///< Hydrostatic (mean) stress.
     GeostaticStress,             ///< Geostatic in-situ stress state.
     MarmotMaterialStateVars,     ///< Internal material state variables.
-    MarmotMaterialInitialization,///< Trigger for material model initialization.
+    MarmotMaterialInitialization, ///< Trigger for material model initialization.
     HasEigenDeformation,         ///< Flag indicating presence of eigen (initial) deformation.
   };
 
