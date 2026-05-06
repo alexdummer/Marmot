@@ -1,6 +1,7 @@
 #include "Marmot/FiniteStrainJ2Plasticity.h"
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotNumericalDifferentiation.h"
@@ -101,7 +102,7 @@ namespace Marmot::Materials {
       while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
         if ( counter > 10 )
-          throw std::runtime_error( "inner newton not converged" );
+          throw StressUpdateFailed( "inner newton not converged" );
 
         dX = -dR_dX.colPivHouseholderQr().solve( R );
         X += dX;
@@ -241,7 +242,7 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
@@ -258,7 +259,7 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
@@ -403,7 +404,7 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
@@ -420,7 +421,7 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
@@ -567,7 +568,7 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
@@ -582,7 +583,7 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
@@ -684,6 +685,6 @@ namespace Marmot::Materials {
     }
 
     Tensor33d& Fp = stateLayout.getAs< Tensor33d& >( stateVars, "Fp" );
-    Fp.eye();
+    memcpy( Fp.data(), Spatial3D::I.data(), 9 * sizeof( double ) );
   }
 } // namespace Marmot::Materials

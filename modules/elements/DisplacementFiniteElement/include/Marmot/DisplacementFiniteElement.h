@@ -29,6 +29,7 @@
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElement.h"
 #include "Marmot/MarmotElementProperty.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotFiniteElement.h"
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
@@ -495,8 +496,9 @@ namespace Marmot::Elements {
     Map< KeSizedMatrix >  Ke( Ke_ );
     Map< RhsSized >       Pe( Pe_ );
 
-    Voigt  S, dE;
-    CSized C;
+    Voigt  S  = Voigt::Zero();
+    Voigt  dE = Voigt::Zero();
+    CSized C  = CSized::Zero();
 
     for ( QuadraturePoint& qp : qps ) {
 
@@ -517,9 +519,9 @@ namespace Marmot::Elements {
         timeInfo.time = time[1];
         timeInfo.dT   = dT;
         try {
-          qp.material->computeUniaxialStress( state, C.data(), dE.data(), timeInfo );
+          qp.material->computeUniaxialStress( state, C[0], dE[0], timeInfo );
         }
-        catch ( const std::runtime_error& e ) {
+        catch ( const Marmot::StressUpdateFailed& e ) {
           pNewDT = 0.5;
           return;
         }
@@ -544,9 +546,9 @@ namespace Marmot::Elements {
           timeInfo.time = time[1];
           timeInfo.dT   = dT;
           try {
-            qp.material->computePlaneStress( state, C.data(), dE.data(), timeInfo );
+            qp.material->computePlaneStress( state, C, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
@@ -572,9 +574,9 @@ namespace Marmot::Elements {
           timeInfo.time = time[1];
           timeInfo.dT   = dT;
           try {
-            qp.material->computeStress( state, C66.data(), dE6.data(), timeInfo );
+            qp.material->computeStress( state, C66, dE6, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
@@ -600,9 +602,9 @@ namespace Marmot::Elements {
           timeInfo.time = time[1];
           timeInfo.dT   = dT;
           try {
-            qp.material->computeStress( state, C.data(), dE.data(), timeInfo );
+            qp.material->computeStress( state, C, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const Marmot::StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }

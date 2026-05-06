@@ -35,12 +35,12 @@ namespace Marmot::Materials {
     throw std::runtime_error( std::string(
       MakeString() << __PRETTY_FUNCTION__ << ": Damping coefficient not specified for ADLinearElastic." ) );
   }
-  void ADLinearElastic::computeStressAD( state3DAD&            state,
-                                         const autodiff::dual* dStrain,
-                                         const timeInfo&       timeInfo ) const
+  void ADLinearElastic::computeStressAD( state3DAD&                 state,
+                                         const Marmot::Vector6dual& dStrain,
+                                         const timeInfo&            timeInfo ) const
   {
-    mVector6dual            s( state.stress );
-    const mVector6dualConst dE( dStrain );
+    mVector6dual            s( state.stress.data() );
+    const mVector6dualConst dE( dStrain.data() );
 
     const MatrixXdual C( ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu ) );
 

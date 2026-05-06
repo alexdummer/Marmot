@@ -25,10 +25,8 @@
  */
 
 #pragma once
-#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialHypoElasticAD.h"
-#include <Eigen/src/Core/Map.h>
-#include <string>
+#include "Marmot/MarmotTypedefs.h"
 
 using namespace Marmot;
 
@@ -54,7 +52,9 @@ namespace Marmot::Materials {
     double getDampingCoefficient() override;
 
   protected:
-    void computeStressAD( state3DAD& state, const autodiff::dual* dStrain, const timeInfo& timeInfo ) const;
+    void computeStressAD( state3DAD&                 state,
+                          const Marmot::Vector6dual& dStrain,
+                          const timeInfo&            timeInfo ) const override;
 
     void initializeStateLayout() { stateLayout.finalize(); }
   };

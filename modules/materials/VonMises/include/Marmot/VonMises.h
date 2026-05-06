@@ -42,10 +42,10 @@ namespace Marmot::Materials {
       initializeStateLayout();
     }
 
-    void computeStress( state3D&        state,
-                        double*         dStressDDStrain,
-                        const double*   dStrain,
-                        const timeInfo& timeInfo ) const override;
+    void computeStress( state3D&                state,
+                        Marmot::Matrix6d&       dStressDDStrain,
+                        const Marmot::Vector6d& dStrain,
+                        const timeInfo&         timeInfo ) const override;
 
     void computeStressExplicit( state3D& state, const double* dStrain, const timeInfo& timeInfo ) const override;
     /**

@@ -256,7 +256,7 @@ namespace Marmot {
       void modifyTangent( Eigen::Matrix< double, 6, 6 >& tangent, const Increment& increment );
 
       /// @brief The hypo-elastic material model
-      MarmotMaterialHypoElastic* material;
+      std::unique_ptr< MarmotMaterialHypoElastic > material;
 
       /// @brief Number of state variables in the material model
       int nStateVars;

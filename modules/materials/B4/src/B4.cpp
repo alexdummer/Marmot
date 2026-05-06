@@ -61,15 +61,15 @@ namespace Marmot::Materials {
       .E0 = SolidificationTheory::computeZerothElasticModul( minTauBasic, n, basicCreepComplianceApproximationOrder );
   }
 
-  void B4::computeStress( state3D&        state,
-                          double*         dStressDDStrain,
-                          const double*   dStrain,
-                          const timeInfo& timeInfo ) const
+  void B4::computeStress( state3D&                state,
+                          Marmot::Matrix6d&       dStressDDStrain,
+                          const Marmot::Vector6d& dStrain,
+                          const timeInfo&         timeInfo ) const
 
   {
-    mVector6d nomStress( state.stress.data() );
-    Vector6d  dE( dStrain );
-    mMatrix6d C( dStressDDStrain );
+    mVector6d             nomStress( state.stress.data() );
+    Map< const Vector6d > dE( dStrain.data() );
+    mMatrix6d             C( dStressDDStrain.data() );
 
     const double& dT   = timeInfo.dT;
     const double& time = timeInfo.time;

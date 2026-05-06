@@ -68,15 +68,15 @@ namespace Marmot::Materials {
   }
 
   void LinearElastic::computeStress( state3D&        state,
-                                     double*         dStressDDStrain,
-                                     const double*   dStrain,
+                                     Matrix6d&       dStressDDStrain,
+                                     const Vector6d& dStrain,
                                      const timeInfo& timeInfo ) const
   {
 
     // map stress, strain increment and stiffness tensor
     mVector6d             S( state.stress.data() );
-    Map< const Vector6d > dE( dStrain );
-    mMatrix6d             mC( dStressDDStrain );
+    Map< const Vector6d > dE( dStrain.data() );
+    mMatrix6d             mC( dStressDDStrain.data() );
     mC = globalStiffnessTensor;
 
     // Zero strain increment check
