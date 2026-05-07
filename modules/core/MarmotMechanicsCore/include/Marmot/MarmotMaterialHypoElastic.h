@@ -197,8 +197,18 @@ public:
     }
   }
 
+  /**
+   * @brief Returns the mass density of the material.
+   * @throws std::runtime_error if the material does not provide a density.
+   * @note Override this in materials that support dynamic/inertia analysis.
+   */
   virtual double getDensity() { throw std::runtime_error( "getDensity() not implemented for this material." ); }
 
+  /**
+   * @brief Returns the damping coefficient of the material.
+   * @throws std::runtime_error if the material does not provide a damping coefficient.
+   * @note Override this in materials that support dynamic damping analysis.
+   */
   virtual double getDampingCoefficient()
   {
     throw std::runtime_error( "getDampingCoefficient() not implemented for this material." );
