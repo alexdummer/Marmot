@@ -2,6 +2,7 @@
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
 #include "Marmot/MarmotTesting.h"
 #include "Marmot/MarmotTypedefs.h"
+#include "Marmot/ADLinearElastic.h"
 
 using namespace Marmot::Testing;
 using namespace Marmot::Solvers;
@@ -80,12 +81,24 @@ void testADLinearElastic()
                            MakeString() << __PRETTY_FUNCTION__ << "comparison with reference solution failed" );
 }
 
+void testADLinearElasticDensityAndDamping()
+{
+  const double materialProperties[4] = { 210000., 0.3, 12.5, 0.08 };
+  auto         mat                    = Marmot::Materials::ADLinearElastic( materialProperties, 4, 1 );
+
+  throwExceptionOnFailure( checkIfEqual( mat.getDensity(), 12.5, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << "density retrieval failed" );
+  throwExceptionOnFailure( checkIfEqual( mat.getDampingCoefficient(), 0.08, 1e-12 ),
+                           MakeString() << __PRETTY_FUNCTION__ << "damping retrieval failed" );
+}
+
 int main()
 {
 
   std::vector< std::function< void( void ) > > tests = {
     testADLinearElastic,
     testADLinearElasticObjectivity,
+    testADLinearElasticDensityAndDamping,
   };
 
   executeTestsAndCollectExceptions( tests );

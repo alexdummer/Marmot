@@ -1,5 +1,6 @@
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
 #include "Marmot/MarmotTesting.h"
+#include "Marmot/B4.h"
 #include <Eigen/Dense>
 
 using namespace Marmot::Testing;
@@ -41,6 +42,15 @@ Eigen::Vector< double, 22 > getMaterialPropertiesB4()
     autogenousShrinkageHalfTime, alpha, rt, ultimateDryingShrinkageStrain, dryingShrinkageHalfTime, dryingStart, hEnv,
     q5, nKelvinDrying, minTauDrying, castTime, timeToDays;
 
+  return materialProperties;
+}
+
+Eigen::Vector< double, 24 > getMaterialPropertiesB4WithDensityAndDamping()
+{
+  Eigen::Vector< double, 24 > materialProperties;
+  materialProperties.head< 22 >() = getMaterialPropertiesB4();
+  materialProperties[22]          = 2.35;
+  materialProperties[23]          = 0.07;
   return materialProperties;
 }
 
@@ -132,9 +142,20 @@ void testB4CoordinateInvariance()
   throwExceptionOnFailure( spinTurbokreisel( solver, 1e-10, 1e-8 ), "Turbokreisel failed!" );
 }
 
+void testB4DensityAndDamping()
+{
+  const auto materialProperties = getMaterialPropertiesB4WithDensityAndDamping();
+  auto       mat                = Marmot::Materials::B4( materialProperties.data(), materialProperties.size(), 1 );
+
+  throwExceptionOnFailure( checkIfEqual( mat.getDensity(), 2.35, 1e-12 ),
+                           "density retrieval failed for B4 in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( mat.getDampingCoefficient(), 0.07, 1e-12 ),
+                           "damping retrieval failed for B4 in " + std::string( __PRETTY_FUNCTION__ ) );
+}
+
 int main()
 {
-  std::vector< std::function< void() > > tests = { testB4, testB4CoordinateInvariance };
+  std::vector< std::function< void() > > tests = { testB4, testB4CoordinateInvariance, testB4DensityAndDamping };
   executeTestsAndCollectExceptions( tests );
   return 0;
 }

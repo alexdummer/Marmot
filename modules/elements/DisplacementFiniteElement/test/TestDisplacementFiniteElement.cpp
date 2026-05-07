@@ -227,11 +227,121 @@ void testInitializeYourselfAndShapeFunctions()
   throwExceptionOnFailure( checkIfEqual( qp0.B( 2, 3 ), expected_dN2dx ), "Incorrect B(2,3) for QP0." );
 }
 
+void testComputeYourselfExplicitMatchesImplicitPlaneStrain()
+{
+  constexpr int nDim    = 2;
+  constexpr int nNodes  = 4;
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::PlaneStrain;
+
+  const std::vector< double > nodeCoordsVec = { 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 };
+  const std::vector< double > matProps      = { 10000.0, 0.2, 2.0, 0.1 };
+  const std::vector< double > elPropsVec    = { 1.0 };
+
+  MarmotMaterialSection materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+  ElementProperties     elProps( elPropsVec.data(), elPropsVec.size() );
+
+  auto elementImplicit = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  auto elementExplicit = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId + 1, intType, secType );
+
+  elementImplicit->assignNodeCoordinates( nodeCoordsVec.data() );
+  elementExplicit->assignNodeCoordinates( nodeCoordsVec.data() );
+
+  elementImplicit->assignProperty( elProps );
+  elementImplicit->assignProperty( materialSection );
+  elementExplicit->assignProperty( elProps );
+  elementExplicit->assignProperty( materialSection );
+
+  const int nStateVars = elementImplicit->getNumberOfRequiredStateVars();
+  std::vector< double > stateVarsImplicit( nStateVars, 0.0 );
+  std::vector< double > stateVarsExplicit( nStateVars, 0.0 );
+  elementImplicit->assignStateVars( stateVarsImplicit.data(), nStateVars );
+  elementExplicit->assignStateVars( stateVarsExplicit.data(), nStateVars );
+
+  elementImplicit->initializeYourself();
+  elementExplicit->initializeYourself();
+
+  const int       nDof = elementImplicit->getNDofPerElement();
+  Eigen::VectorXd q    = Eigen::VectorXd::Zero( nDof );
+  Eigen::VectorXd dQ( nDof );
+  dQ << 1.0e-4, -2.0e-4, 0.5e-4, 1.2e-4, -1.1e-4, 0.9e-4, 2.0e-4, -0.3e-4;
+  Eigen::VectorXd pImplicit = Eigen::VectorXd::Zero( nDof );
+  Eigen::VectorXd pExplicit = Eigen::VectorXd::Zero( nDof );
+  Eigen::MatrixXd kDummy    = Eigen::MatrixXd::Zero( nDof, nDof );
+
+  double time[2]      = { 0.0, 0.0 };
+  double dt           = 1.0;
+  double pNewDtImp    = 1.0;
+  double pNewDtExp    = 1.0;
+
+  elementImplicit->computeYourself( q.data(), dQ.data(), pImplicit.data(), kDummy.data(), time, dt, pNewDtImp );
+  elementExplicit->computeYourselfExplicit( q.data(), dQ.data(), pExplicit.data(), time, dt, pNewDtExp );
+
+  throwExceptionOnFailure( checkIfEqual( pExplicit, pImplicit, 1e-10 ),
+                           "Explicit internal force does not match implicit result." );
+  throwExceptionOnFailure( checkIfEqual( pNewDtExp, 1.0, 1e-12 ), "Unexpected pNewDt in explicit computation." );
+
+  for ( size_t i = 0; i < elementImplicit->qps.size(); i++ ) {
+    const auto& implicitState = elementImplicit->qps[i].managedStateVars;
+    const auto& explicitState = elementExplicit->qps[i].managedStateVars;
+    throwExceptionOnFailure( checkIfEqual( implicitState->stress, explicitState->stress, 1e-10 ),
+                             "Stress mismatch between explicit and implicit update." );
+    throwExceptionOnFailure( checkIfEqual( implicitState->strain, explicitState->strain, 1e-10 ),
+                             "Strain mismatch between explicit and implicit update." );
+  }
+}
+
+void testLumpedInertiaAndDamping()
+{
+  constexpr int nDim    = 2;
+  constexpr int nNodes  = 4;
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::PlaneStrain;
+
+  const std::vector< double > nodeCoordsVec = { 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 };
+  const std::vector< double > matProps      = { 10000.0, 0.2, 2.5, 0.4 };
+  const std::vector< double > elPropsVec    = { 1.0 };
+
+  MarmotMaterialSection materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+  ElementProperties     elProps( elPropsVec.data(), elPropsVec.size() );
+
+  auto element = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  element->assignNodeCoordinates( nodeCoordsVec.data() );
+  element->assignProperty( elProps );
+  element->assignProperty( materialSection );
+
+  const int nStateVars = element->getNumberOfRequiredStateVars();
+  std::vector< double > stateVars( nStateVars, 0.0 );
+  element->assignStateVars( stateVars.data(), nStateVars );
+  element->initializeYourself();
+
+  const int       nDof = element->getNDofPerElement();
+  Eigen::VectorXd lumpedMass    = Eigen::VectorXd::Zero( nDof );
+  Eigen::VectorXd lumpedDamping = Eigen::VectorXd::Zero( nDof );
+  Eigen::MatrixXd consistentMass = Eigen::MatrixXd::Zero( nDof, nDof );
+
+  element->computeLumpedInertia( lumpedMass.data() );
+  element->computeLumpedDamping( lumpedDamping.data() );
+  element->computeConsistentInertia( consistentMass.data() );
+
+  Eigen::VectorXd consistentRowSum = consistentMass.rowwise().sum();
+  throwExceptionOnFailure( checkIfEqual( lumpedMass, consistentRowSum, 1e-10 ),
+                           "Lumped inertia does not match consistent mass row-sum for quad4." );
+
+  const double dampingToDensity = matProps[3] / matProps[2];
+  throwExceptionOnFailure( checkIfEqual( lumpedDamping, lumpedMass * dampingToDensity, 1e-12 ),
+                           "Lumped damping is not scaled lumped inertia." );
+}
+
 int main()
 {
   auto tests = std::vector< std::function< void() > >{ testInstantiationAndBasicProperties,
-                                                       testStiffnessMatrixCalculationPlaneStress,
-                                                       testInitializeYourselfAndShapeFunctions };
+                                                        testStiffnessMatrixCalculationPlaneStress,
+                                                        testInitializeYourselfAndShapeFunctions,
+                                                        testComputeYourselfExplicitMatchesImplicitPlaneStrain,
+                                                        testLumpedInertiaAndDamping };
 
   executeTestsAndCollectExceptions( tests );
 
