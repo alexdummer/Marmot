@@ -87,9 +87,9 @@ void testADLinearElasticDensityAndDamping()
   auto         mat                    = Marmot::Materials::ADLinearElastic( materialProperties, 4, 1 );
 
   throwExceptionOnFailure( checkIfEqual( mat.getDensity(), 12.5, 1e-12 ),
-                           MakeString() << __PRETTY_FUNCTION__ << "density retrieval failed" );
+                           MakeString() << __PRETTY_FUNCTION__ << " density retrieval failed" );
   throwExceptionOnFailure( checkIfEqual( mat.getDampingCoefficient(), 0.08, 1e-12 ),
-                           MakeString() << __PRETTY_FUNCTION__ << "damping retrieval failed" );
+                           MakeString() << __PRETTY_FUNCTION__ << " damping retrieval failed" );
 }
 
 int main()
