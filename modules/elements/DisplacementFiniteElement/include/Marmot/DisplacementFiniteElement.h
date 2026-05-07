@@ -651,28 +651,6 @@ namespace Marmot::Elements {
 
       if constexpr ( nDim == 1 ) {
 
-/* MarmotMaterialHypoElastic::state1D  state; */
-/* MarmotMaterialHypoElastic::timeInfo timeInfo; */
-
-/* // set state info */
-/* state.stress = reduce3DVoigt< ParentGeometryElement::voigtSize >( qp.managedStateVars->stress )( 0 ); */
-/* state.strainEnergyDensity = 0.0; */
-/* state.stateVars           = qp.managedStateVars->materialStateVars.data(); */
-
-/* // set time info */
-/* timeInfo.time = time[1]; */
-/* timeInfo.dT   = dT; */
-/* try { */
-/*   qp.material->computeUniaxialStress( state, C.data(), dE.data(), timeInfo ); */
-/* } */
-/* catch ( const std::runtime_error& e ) { */
-/*   pNewDT = 0.5; */
-/*   return; */
-/* } */
-/* Eigen::VectorXd stress1D( 1 ); */
-/* stress1D( 0 )               = state.stress; */
-/* qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( stress1D ); */
-
         throw std::runtime_error( "Explicit uniaxial stress not implemented yet" );
       }
 
