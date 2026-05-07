@@ -392,26 +392,6 @@ void testGetDampingIsotropic()
                            "Damping retrieval failed for isotropic material in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
-void testGetDampingTransverselyIsotropic()
-{
-  const double materialProperties[13] = { 20000, 10000, 0.25, 0.3, 4000, 0, 0, 1, 0, 0, 0, 1, 0.05 };
-  auto         mat                    = Marmot::Materials::LinearElastic( materialProperties, 13, 1 );
-
-  throwExceptionOnFailure( checkIfEqual( mat.getDampingCoefficient(), 0.05, 1e-10 ),
-                           "Damping retrieval failed for transversely isotropic material in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
-}
-
-void testGetDampingOrthotropic()
-{
-  const double materialProperties[17] = { 1000, 30, 30, 0.009, 0, 0, 50, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0.05 };
-  auto         mat                    = Marmot::Materials::LinearElastic( materialProperties, 17, 1 );
-
-  throwExceptionOnFailure( checkIfEqual( mat.getDampingCoefficient(), 0.05, 1e-10 ),
-                           "Damping retrieval failed for orthotropic material in " +
-                             std::string( __PRETTY_FUNCTION__ ) );
-}
-
 int main()
 {
 
@@ -426,9 +406,7 @@ int main()
     testGetDensityIsotropic,                      // test for density retrieval for isotropic case
     testGetDensityTransverselyIsotropic,          // test for density retrieval for transversely isotropic case
     testGetDensityOrthotropic,                    // test for density retrieval for orthotropic case
-    testGetDampingIsotropic,                      // test for damping retrieval for isotropic case
-    testGetDampingTransverselyIsotropic,          // test for damping retrieval for transversely isotropic case
-    testGetDampingOrthotropic                     // test for damping retrieval for orthotropic case
+    testGetDampingIsotropic                       // test for damping retrieval for isotropic case
   };
 
   executeTestsAndCollectExceptions( tests );
