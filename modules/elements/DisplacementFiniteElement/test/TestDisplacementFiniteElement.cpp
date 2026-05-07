@@ -73,11 +73,11 @@ void testStiffnessMatrixCalculationPlaneStress()
 
   // Node coordinates defining a general quadrilateral
   const std::vector< double > nodeCoordsVec = { 0.0,
-                                                0.0,   // Node 1 (x,y)
+                                                0.0, // Node 1 (x,y)
                                                 6.0,
-                                                0.0,   // Node 2 (x,y)
+                                                0.0, // Node 2 (x,y)
                                                 8.0,
-                                                6.0,   // Node 3 (x,y)
+                                                6.0, // Node 3 (x,y)
                                                 2.0,
                                                 6.0 }; // Node 4 (x,y)
   const auto                  secType       = DisplacementFiniteElement< nDim, nNodes >::SectionType::PlaneStress;
@@ -253,7 +253,7 @@ void testComputeYourselfExplicitMatchesImplicitPlaneStrain()
   elementExplicit->assignProperty( elProps );
   elementExplicit->assignProperty( materialSection );
 
-  const int nStateVars = elementImplicit->getNumberOfRequiredStateVars();
+  const int             nStateVars = elementImplicit->getNumberOfRequiredStateVars();
   std::vector< double > stateVarsImplicit( nStateVars, 0.0 );
   std::vector< double > stateVarsExplicit( nStateVars, 0.0 );
   elementImplicit->assignStateVars( stateVarsImplicit.data(), nStateVars );
@@ -270,24 +270,24 @@ void testComputeYourselfExplicitMatchesImplicitPlaneStrain()
   Eigen::VectorXd pExplicit = Eigen::VectorXd::Zero( nDof );
   Eigen::MatrixXd kDummy    = Eigen::MatrixXd::Zero( nDof, nDof );
 
-  double time[2]      = { 0.0, 0.0 };
-  double dt           = 1.0;
-  double pNewDtImp    = 1.0;
-  double pNewDtExp    = 1.0;
+  double time[2]   = { 0.0, 0.0 };
+  double dt        = 1.0;
+  double pNewDtImp = 1.0;
+  double pNewDtExp = 1.0;
 
   elementImplicit->computeYourself( q.data(), dQ.data(), pImplicit.data(), kDummy.data(), time, dt, pNewDtImp );
   elementExplicit->computeYourselfExplicit( q.data(), dQ.data(), pExplicit.data(), time, dt, pNewDtExp );
 
-  throwExceptionOnFailure( checkIfEqual( pExplicit, pImplicit, 1e-10 ),
+  throwExceptionOnFailure( pExplicit.isApprox( pImplicit, 1e-10 ),
                            "Explicit internal force does not match implicit result." );
   throwExceptionOnFailure( checkIfEqual( pNewDtExp, 1.0, 1e-12 ), "Unexpected pNewDt in explicit computation." );
 
   for ( size_t i = 0; i < elementImplicit->qps.size(); i++ ) {
     const auto& implicitState = elementImplicit->qps[i].managedStateVars;
     const auto& explicitState = elementExplicit->qps[i].managedStateVars;
-    throwExceptionOnFailure( checkIfEqual( implicitState->stress, explicitState->stress, 1e-10 ),
+    throwExceptionOnFailure( implicitState->stress.isApprox( explicitState->stress, 1e-10 ),
                              "Stress mismatch between explicit and implicit update." );
-    throwExceptionOnFailure( checkIfEqual( implicitState->strain, explicitState->strain, 1e-10 ),
+    throwExceptionOnFailure( implicitState->strain.isApprox( explicitState->strain, 1e-10 ),
                              "Strain mismatch between explicit and implicit update." );
   }
 }
@@ -312,14 +312,14 @@ void testLumpedInertiaAndDamping()
   element->assignProperty( elProps );
   element->assignProperty( materialSection );
 
-  const int nStateVars = element->getNumberOfRequiredStateVars();
+  const int             nStateVars = element->getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVars, 0.0 );
   element->assignStateVars( stateVars.data(), nStateVars );
   element->initializeYourself();
 
-  const int       nDof = element->getNDofPerElement();
-  Eigen::VectorXd lumpedMass    = Eigen::VectorXd::Zero( nDof );
-  Eigen::VectorXd lumpedDamping = Eigen::VectorXd::Zero( nDof );
+  const int       nDof           = element->getNDofPerElement();
+  Eigen::VectorXd lumpedMass     = Eigen::VectorXd::Zero( nDof );
+  Eigen::VectorXd lumpedDamping  = Eigen::VectorXd::Zero( nDof );
   Eigen::MatrixXd consistentMass = Eigen::MatrixXd::Zero( nDof, nDof );
 
   element->computeLumpedInertia( lumpedMass.data() );
@@ -327,21 +327,21 @@ void testLumpedInertiaAndDamping()
   element->computeConsistentInertia( consistentMass.data() );
 
   Eigen::VectorXd consistentRowSum = consistentMass.rowwise().sum();
-  throwExceptionOnFailure( checkIfEqual( lumpedMass, consistentRowSum, 1e-10 ),
+  throwExceptionOnFailure( lumpedMass.isApprox( consistentRowSum, 1e-10 ),
                            "Lumped inertia does not match consistent mass row-sum for quad4." );
 
   const double dampingToDensity = matProps[3] / matProps[2];
-  throwExceptionOnFailure( checkIfEqual( lumpedDamping, lumpedMass * dampingToDensity, 1e-12 ),
+  throwExceptionOnFailure( lumpedDamping.isApprox( lumpedMass * dampingToDensity, 1e-12 ),
                            "Lumped damping is not scaled lumped inertia." );
 }
 
 int main()
 {
   auto tests = std::vector< std::function< void() > >{ testInstantiationAndBasicProperties,
-                                                        testStiffnessMatrixCalculationPlaneStress,
-                                                        testInitializeYourselfAndShapeFunctions,
-                                                        testComputeYourselfExplicitMatchesImplicitPlaneStrain,
-                                                        testLumpedInertiaAndDamping };
+                                                       testStiffnessMatrixCalculationPlaneStress,
+                                                       testInitializeYourselfAndShapeFunctions,
+                                                       testComputeYourselfExplicitMatchesImplicitPlaneStrain,
+                                                       testLumpedInertiaAndDamping };
 
   executeTestsAndCollectExceptions( tests );
 

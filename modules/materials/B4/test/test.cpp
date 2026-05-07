@@ -1,6 +1,6 @@
+#include "Marmot/B4.h"
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
 #include "Marmot/MarmotTesting.h"
-#include "Marmot/B4.h"
 #include <Eigen/Dense>
 
 using namespace Marmot::Testing;

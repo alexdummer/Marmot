@@ -1,8 +1,8 @@
+#include "Marmot/ADLinearElastic.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
 #include "Marmot/MarmotTesting.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/ADLinearElastic.h"
 
 using namespace Marmot::Testing;
 using namespace Marmot::Solvers;
@@ -84,7 +84,7 @@ void testADLinearElastic()
 void testADLinearElasticDensityAndDamping()
 {
   const double materialProperties[4] = { 210000., 0.3, 12.5, 0.08 };
-  auto         mat                    = Marmot::Materials::ADLinearElastic( materialProperties, 4, 1 );
+  auto         mat                   = Marmot::Materials::ADLinearElastic( materialProperties, 4, 1 );
 
   throwExceptionOnFailure( checkIfEqual( mat.getDensity(), 12.5, 1e-12 ),
                            MakeString() << __PRETTY_FUNCTION__ << " density retrieval failed" );

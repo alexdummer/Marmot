@@ -77,9 +77,7 @@ void testVonMises()
 void testVonMisesDensityAndDamping()
 {
   const std::vector< double > materialProperties = { 210000., 0.3, 200., 2100., 20., 20., 7.5, 0.15 };
-  auto                        mat = Marmot::Materials::VonMisesModel( materialProperties.data(),
-                                                materialProperties.size(),
-                                                1 );
+  auto mat = Marmot::Materials::VonMisesModel( materialProperties.data(), materialProperties.size(), 1 );
 
   throwExceptionOnFailure( checkIfEqual( mat.getDensity(), 7.5, 1e-12 ),
                            "density retrieval failed for VonMises in " + std::string( __PRETTY_FUNCTION__ ) );
