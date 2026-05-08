@@ -170,12 +170,11 @@ namespace Marmot::Materials {
     return;
   }
 
-  double B4::getDensity(const double* stateVars) const
+  double B4::getDensity( const double* stateVars ) const
   {
     if ( nMaterialProperties >= 23 )
       return materialProperties[22];
     throw std::runtime_error( std::string( MakeString() << __PRETTY_FUNCTION__ << ": Density not specified for B4." ) );
   }
-
 
 } // namespace Marmot::Materials

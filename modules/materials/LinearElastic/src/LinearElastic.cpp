@@ -84,7 +84,7 @@ namespace Marmot::Materials {
     state.stress += dStressDDStrain * dStrain;
   }
 
-  double LinearElastic::getDensity(const double* stateVars) const
+  double LinearElastic::getDensity( const double* stateVars ) const
   {
     int base_props = static_cast< int >( anisotropicType );
     if ( nMaterialProperties >= base_props + 1 )

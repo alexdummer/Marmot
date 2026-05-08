@@ -159,7 +159,7 @@ namespace Marmot::Materials {
 
     B4( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
-    double getDensity(const double* stateVars) const override;
+    double getDensity( const double* stateVars ) const override;
 
     void computeStress( state3D&                state,
                         Marmot::Matrix6d&       dStressDDStrain,

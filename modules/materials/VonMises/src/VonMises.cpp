@@ -10,7 +10,7 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace Marmot;
 
-  double VonMisesModel::getDensity(const double* stateVars ) const
+  double VonMisesModel::getDensity( const double* stateVars ) const
   {
     if ( this->nMaterialProperties < 7 ) {
       throw std::runtime_error(
@@ -18,7 +18,6 @@ namespace Marmot::Materials {
     }
     return this->materialProperties[6];
   }
-
 
   void VonMisesModel::computeStress( state3D&        state,
                                      Matrix6d&       dStress_dStrain,

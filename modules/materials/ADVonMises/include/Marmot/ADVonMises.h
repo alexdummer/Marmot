@@ -64,7 +64,7 @@ namespace Marmot::Materials {
       stateLayout.finalize();
     }
 
-    double getDensity(const double* stateVars ) const override;
+    double getDensity( const double* stateVars ) const override;
 
   protected:
     void computeStressAD( state3DAD&                 state,

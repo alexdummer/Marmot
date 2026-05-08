@@ -201,6 +201,5 @@ public:
    * @brief Returns the mass density of the material.
    * @note Must be overriden in each specific material.
    */
-  virtual double getDensity( const double *stateVars) const = 0;  
-
+  virtual double getDensity( const double* stateVars ) const = 0;
 };

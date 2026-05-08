@@ -321,7 +321,6 @@ namespace Marmot::Elements {
      */
     void computeLumpedInertia( double* M );
 
-
     /**
      * @brief Access a named state view at a quadrature point.
      * @note Using "sdv" returns the raw material state vector and is deprecated.
@@ -839,7 +838,7 @@ namespace Marmot::Elements {
 
     for ( const auto& qp : qps ) {
       const auto   N_  = this->NB( this->N( qp.xi ) );
-      const double rho = qp.material->getDensity(qp.managedStateVars->materialStateVars.data());
+      const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       Me += N_.transpose() * N_ * qp.detJ * qp.weight * rho;
     }
   }
@@ -858,7 +857,7 @@ namespace Marmot::Elements {
       VectorXd N_weighted = 0.5 * ( N_ );
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
 
-      const double rho = qp.material->getDensity(qp.managedStateVars->materialStateVars.data());
+      const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       VectorXd     m_  = N_weighted * qp.detJ * qp.weight * rho;
       for ( int i = 0; i < nNodes; i++ ) {
         for ( int d = 0; d < nDim; d++ )

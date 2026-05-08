@@ -50,8 +50,8 @@ namespace Marmot::Materials {
     void computeStressExplicit( state3D&                state,
                                 const Marmot::Vector6d& dStrain,
                                 const timeInfo&         timeInfo ) const override;
-    
-    double getDensity(const double* stateVars) const override;
+
+    double getDensity( const double* stateVars ) const override;
 
     void initializeStateLayout() override
     {

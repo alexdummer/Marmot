@@ -43,7 +43,7 @@ namespace Marmot::Materials {
 
     LinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
-    double getDensity(const double * stateVars) const override;
+    double getDensity( const double* stateVars ) const override;
 
   protected:
     /// @brief Type of isotropic and anisotropic behavior.
