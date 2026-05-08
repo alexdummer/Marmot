@@ -1,6 +1,7 @@
 #include "Marmot/B4.h"
 #include "Marmot/B4Shrinkage.h"
 #include "Marmot/MarmotElasticity.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialHypoElastic.h"
 #include "Marmot/MarmotTypedefs.h"
 #include <string>
@@ -44,7 +45,9 @@ namespace Marmot::Materials {
       solidificationParameters          ( { q1, q2, q3, q4, n, m } )
   // clang-format on
   {
-    initializeStateLayout();
+    stateLayout.add( "basicCreepStateVars", nKelvinBasic * 6 );
+    stateLayout.add( "dryingCreepStateVars", nKelvinDrying * 6 );
+    stateLayout.finalize();
     solidificationKelvinProperties.retardationTimes = KelvinChain::generateRetardationTimes( nKelvinBasic,
                                                                                              minTauBasic,
                                                                                              10. );
@@ -167,6 +170,13 @@ namespace Marmot::Materials {
                                        deltaStress,
                                        CelUnitInv );
     return;
+  }
+
+  double B4::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties >= 23 )
+      return materialProperties[22];
+    throw std::runtime_error( std::string( MakeString() << __PRETTY_FUNCTION__ << ": Density not specified for B4." ) );
   }
 
 } // namespace Marmot::Materials

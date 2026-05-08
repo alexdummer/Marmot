@@ -159,6 +159,8 @@ namespace Marmot::Materials {
 
     B4( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
+    double getDensity( const double* stateVars ) const override;
+
     void computeStress( state3D&                state,
                         Marmot::Matrix6d&       dStressDDStrain,
                         const Marmot::Vector6d& dStrain,
@@ -181,13 +183,6 @@ namespace Marmot::Materials {
     static constexpr int dryingCreepComplianceApproximationOrder = 5;
     /// \brief approximation order of the Post-Widder formula for basic creep
     static constexpr int basicCreepComplianceApproximationOrder = 2;
-
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "basicCreepStateVars", nKelvinBasic * 6 );
-      stateLayout.add( "dryingCreepStateVars", nKelvinDrying * 6 );
-      stateLayout.finalize();
-    }
 
     /// \brief drying creep compliance function
     template < typename T_ >

@@ -58,11 +58,7 @@ namespace Marmot::Materials {
 
     ADVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kappa", 1 );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
 
   protected:
     void computeStressAD( state3DAD&                 state,

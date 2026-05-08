@@ -43,7 +43,7 @@ namespace Marmot::Materials {
 
     LinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
-    double getDensity() override;
+    double getDensity( const double* stateVars ) const override;
 
   protected:
     /// @brief Type of isotropic and anisotropic behavior.
@@ -158,7 +158,5 @@ namespace Marmot::Materials {
                         Marmot::Matrix6d&       dStressDDStrain,
                         const Marmot::Vector6d& dStrain,
                         const timeInfo&         timeInfo ) const override;
-
-    void initializeStateLayout() override { stateLayout.finalize(); }
   };
 } // namespace Marmot::Materials
