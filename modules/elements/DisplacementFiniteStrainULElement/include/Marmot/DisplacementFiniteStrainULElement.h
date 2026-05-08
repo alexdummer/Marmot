@@ -757,7 +757,7 @@ namespace Marmot::Elements {
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
         }
       }
-      catch ( const std::runtime_error& ) {
+      catch ( const Marmot::StressUpdateFailed& ) {
         pNewDT = 0.25;
         return;
       }
@@ -908,7 +908,7 @@ namespace Marmot::Elements {
 
     for ( const auto& qp : qps ) {
       const auto   N_  = this->NB( this->N( qp.xi ) );
-      const double rho = qp.material->getDensity();
+      const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       Me += N_.transpose() * N_ * qp.J0xW * rho;
     }
   }
@@ -928,35 +928,11 @@ namespace Marmot::Elements {
       Eigen::VectorXd N_weighted = 0.5 * ( N_ );
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
 
-      const double    rho = qp.material->getDensity();
+      const double    rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       Eigen::VectorXd m_  = N_weighted * qp.J0xW * rho;
       for ( int i = 0; i < nNodes; i++ ) {
         for ( int d = 0; d < nDim; d++ )
           LMM( i * nDim + d ) += m_( i );
-      }
-    }
-  }
-
-  template < int nDim, int nNodes >
-  void DisplacementFiniteStrainULElement< nDim, nNodes >::computeLumpedDamping( double* C )
-  {
-    Eigen::Map< RhsSized > LCM( C );
-    LCM.setZero();
-
-    constexpr int nNodesLinear  = std::pow( 2, nDim );
-    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
-    for ( const auto& qp : qps ) {
-      const auto N_    = this->N( qp.xi );
-      const auto N_lin = linGeometryEl.N( qp.xi );
-
-      Eigen::VectorXd N_weighted = 0.5 * ( N_ );
-      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
-
-      const double    eta = qp.material->getDampingCoefficient();
-      Eigen::VectorXd m_  = N_weighted * qp.J0xW * eta;
-      for ( int i = 0; i < nNodes; i++ ) {
-        for ( int d = 0; d < nDim; d++ )
-          LCM( i * nDim + d ) += m_( i );
       }
     }
   }

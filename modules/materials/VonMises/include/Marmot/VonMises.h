@@ -34,13 +34,7 @@ namespace Marmot::Materials {
   class VonMisesModel : public MarmotMaterialHypoElastic {
 
   public:
-    // using MarmotMaterialHypoElastic::MarmotMaterialHypoElastic;
-
-    VonMisesModel( const double* materialProperties, const int nMaterialProperties, const int materialLabel )
-      : MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialLabel )
-    {
-      initializeStateLayout();
-    }
+    VonMisesModel( const double* materialProperties, const int nMaterialProperties, const int materialLabel );
 
     void computeStress( state3D&                state,
                         Marmot::Matrix6d&       dStressDDStrain,
@@ -52,12 +46,6 @@ namespace Marmot::Materials {
                                 const timeInfo&         timeInfo ) const override;
 
     double getDensity( const double* stateVars ) const override;
-
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kappa", 1 );
-      stateLayout.finalize();
-    }
   };
 
 } // namespace Marmot::Materials

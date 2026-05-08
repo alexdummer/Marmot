@@ -184,33 +184,13 @@ namespace Marmot::Materials {
      * @brief Get material density.
      * @return Density value.
      */
-    double getDensity() const override
+    double getDensity( const double* stateVars ) const override
     {
       if ( this->nMaterialProperties < 8 ) {
         throw std::runtime_error(
           std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 8." ) );
       }
       return this->density;
-    }
-
-    /**
-     * @brief Get damping coefficient.
-     * @return Damping coefficient.
-     */
-    double getDampingCoefficient() const override
-    {
-      if ( this->nMaterialProperties < 9 ) {
-        throw std::runtime_error( std::string(
-          MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 9." ) );
-      }
-      return this->materialProperties[8];
-    }
-
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "Fp", 9 );     // plastic deformation gradient
-      stateLayout.add( "alphaP", 1 ); // strain-like hardening variable
-      stateLayout.finalize();
     }
 
     /** @brief Initialize state (sets @f$\boldsymbol F^{\mathrm p} = \boldsymbol I@f$) */

@@ -53,7 +53,8 @@ namespace Marmot::Materials {
       direction2                        ( { materialProperties[20], materialProperties[21], materialProperties[22] } )
   // clang-format on
   {
-    initializeStateLayout();
+    stateLayout.add( "kelvinStateVars", 6 * nKelvin );
+    stateLayout.finalize();
 
     retardationTimes = KelvinChain::generateRetardationTimes( nKelvin, minTau, spacing );
 

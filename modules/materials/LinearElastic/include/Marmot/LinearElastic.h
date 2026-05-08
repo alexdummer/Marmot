@@ -158,7 +158,5 @@ namespace Marmot::Materials {
                         Marmot::Matrix6d&       dStressDDStrain,
                         const Marmot::Vector6d& dStrain,
                         const timeInfo&         timeInfo ) const override;
-
-    void initializeStateLayout() override { stateLayout.finalize(); }
   };
 } // namespace Marmot::Materials

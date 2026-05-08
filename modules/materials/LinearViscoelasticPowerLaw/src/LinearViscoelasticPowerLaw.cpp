@@ -35,7 +35,8 @@ namespace Marmot::Materials {
       timeToDays                        ( materialProperties[6] )
   // clang-format on
   {
-    initializeStateLayout();
+    stateLayout.add( "kelvinStateVars", 6 * nKelvin );
+    stateLayout.finalize();
 
     // assume sqrt( 10 ) spacing between retardation times
     retardationTimes = KelvinChain::generateRetardationTimes( nKelvin, minTau, sqrt( 10. ) );

@@ -160,14 +160,6 @@ public:
                                       const timeInfo& timeInfo ) const;
 
   /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
-
-  /**
    * @brief Get a view to the state variables.
    * @param stateName Name of the state variable
    * @param stateVars Pointer to the state variable array
@@ -183,6 +175,7 @@ public:
    * @return Total number of required state variables
    */
   int getNumberOfRequiredStateVars() const { return stateLayout.totalSize(); }
+
   /**
    * @brief Initialize the state variables at a material point.
    * @param stateVars Pointer to the state variable array

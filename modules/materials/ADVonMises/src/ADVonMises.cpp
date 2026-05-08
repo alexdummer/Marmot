@@ -40,8 +40,8 @@ namespace Marmot::Materials {
       delta( materialProperties[5] ),
       G( E / ( 2. * ( 1. + nu ) ) )
   {
-    assert( nMaterialProperties == 6 );
-    initializeStateLayout();
+    stateLayout.add( "kappa", 1 );
+    stateLayout.finalize();
   }
 
   void ADVonMises::computeStressAD( state3DAD&                 state,

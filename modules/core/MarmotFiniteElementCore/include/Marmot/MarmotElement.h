@@ -215,16 +215,6 @@ public:
   };
 
   /**
-   * @brief Compute lumped damping matrix.
-   * @param[out] C damping as diagonal matrix.
-   * @note Default implementation throws an exception.
-   */
-  virtual void computeLumpedDamping( double* C )
-  {
-    throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
-  };
-
-  /**
    * @brief Compute consistent inertia matrix.
    * @param[out] I Inertia matrix.
    * @note Default implementation throws an exception.

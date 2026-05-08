@@ -14,10 +14,9 @@ namespace Marmot::Materials {
     : MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD( materialProperties,
                                                                 nMaterialProperties,
                                                                 materialNumber ),
-      E( materialProperties[0] ),
-      nu( materialProperties[1] )
+      C( Isotropic::stiffnessTensor( materialProperties[0], materialProperties[1] ) )
   {
-    assert( nMaterialProperties >= 2 );
+    stateLayout.finalize();
   }
 
   double ADLinearElastic::getDensity( const double* stateVars ) const
@@ -32,11 +31,7 @@ namespace Marmot::Materials {
                                          const Marmot::Vector6dual& dStrain,
                                          const timeInfo&            timeInfo ) const
   {
-    mVector6dual            s( state.stress.data() );
-    const mVector6dualConst dE( dStrain.data() );
 
-    const MatrixXdual C( ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu ) );
-
-    s = s + C * dE;
+    state.stress = state.stress + C * dStrain;
   }
 } // namespace Marmot::Materials

@@ -83,7 +83,7 @@ namespace Marmot::Materials {
      * @brief Get material density.
      * @return Density value.
      */
-    double getDensity() const override
+    double getDensity( const double* stateVars ) const override
     {
       if ( this->nMaterialProperties < 3 ) {
         throw std::runtime_error(
@@ -91,24 +91,6 @@ namespace Marmot::Materials {
       }
       return this->materialProperties[2];
     }
-
-    /**
-     * @brief Get damping coefficient.
-     * @return Damping coefficient.
-     */
-    double getDampingCoefficient() const override
-    {
-      if ( this->nMaterialProperties < 4 ) {
-        throw std::runtime_error( std::string(
-          MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 4." ) );
-      }
-      return this->materialProperties[3];
-    }
-
-    /**
-     * @brief Initialize the state layout (no state variables here).
-     */
-    void initializeStateLayout() override { stateLayout.finalize(); }
   };
 
 } // namespace Marmot::Materials

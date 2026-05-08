@@ -40,11 +40,8 @@ namespace Marmot::Materials {
   public:
     using MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD;
 
-    /// @brief Young's modulus for isotropic materials
-    const double& E;
-
-    /// @brief Poisson's ratio for isotropic materials
-    const double& nu;
+    /// @brief Elasticity tensor for isotropic materials
+    const autodiff::MatrixXdual C;
 
     ADLinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
@@ -54,7 +51,5 @@ namespace Marmot::Materials {
     void computeStressAD( state3DAD&                 state,
                           const Marmot::Vector6dual& dStrain,
                           const timeInfo&            timeInfo ) const override;
-
-    void initializeStateLayout() override { stateLayout.finalize(); }
   };
 } // namespace Marmot::Materials

@@ -45,7 +45,9 @@ namespace Marmot::Materials {
       solidificationParameters          ( { q1, q2, q3, q4, n, m } )
   // clang-format on
   {
-    initializeStateLayout();
+    stateLayout.add( "basicCreepStateVars", nKelvinBasic * 6 );
+    stateLayout.add( "dryingCreepStateVars", nKelvinDrying * 6 );
+    stateLayout.finalize();
     solidificationKelvinProperties.retardationTimes = KelvinChain::generateRetardationTimes( nKelvinBasic,
                                                                                              minTauBasic,
                                                                                              10. );

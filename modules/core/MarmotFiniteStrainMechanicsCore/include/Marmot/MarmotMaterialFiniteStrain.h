@@ -257,14 +257,6 @@ public:
     double*                                     stateVars ) const;
 
   /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
-
-  /**
    * @brief Get a view to the state variables.
    * @param stateName Name of the state variable
    * @param stateVars Pointer to the state variable array
@@ -296,20 +288,8 @@ public:
 
   /**
    * @brief Get the mass density of the material.
+   * @param[in] stateVars Pointer to the state variable array
    * @return Mass density
-   *
-   * @note The default implementation throws a std::runtime_error.
    */
-  virtual double getDensity() const { throw std::runtime_error( "getDensity() not implemented for this material" ); }
-
-  /**
-   * @brief Get the damping coefficient of the material.
-   * @return Damping coefficient
-   *
-   * @note The default implementation throws a std::runtime_error.
-   */
-  virtual double getDampingCoefficient() const
-  {
-    throw std::runtime_error( "getDampingCoefficient() not implemented for this material" );
-  }
+  virtual double getDensity( const double* stateVars ) const = 0;
 };

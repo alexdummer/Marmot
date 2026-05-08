@@ -19,6 +19,15 @@ namespace Marmot::Materials {
     return this->materialProperties[6];
   }
 
+  VonMisesModel::VonMisesModel( const double* materialProperties,
+                                const int     nMaterialProperties,
+                                const int     materialLabel )
+    : MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialLabel )
+  {
+    stateLayout.add( "kappa", 1 );
+    stateLayout.finalize();
+  }
+
   void VonMisesModel::computeStress( state3D&        state,
                                      Matrix6d&       dStress_dStrain,
                                      const Vector6d& dStrain,
