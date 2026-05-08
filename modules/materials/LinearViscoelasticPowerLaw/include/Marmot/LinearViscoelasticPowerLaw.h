@@ -92,6 +92,8 @@ namespace Marmot::Materials {
       stateLayout.finalize();
     }
 
+    double getDensity( const double* stateVars ) const override;
+
   private:
     /// @brief Young's modulus of the #nKelvin Kelvin units
     KelvinChain::Properties elasticModuli;

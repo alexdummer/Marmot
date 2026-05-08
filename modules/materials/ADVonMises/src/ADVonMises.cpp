@@ -17,6 +17,17 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace ContinuumMechanics::Elasticity;
 
+  double ADVonMises::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties < 7 ) {
+      throw std::runtime_error( MakeString() << __PRETTY_FUNCTION__
+                                            << ": Density not provided in material properties array!" );
+    }
+    else {
+      return materialProperties[6];
+    }
+  }
+
   ADVonMises::ADVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber )
     : MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD( materialProperties,
                                                                 nMaterialProperties,

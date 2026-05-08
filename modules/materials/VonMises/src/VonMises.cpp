@@ -10,7 +10,7 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace Marmot;
 
-  double VonMisesModel::getDensity()
+  double VonMisesModel::getDensity(const double* stateVars ) const
   {
     if ( this->nMaterialProperties < 7 ) {
       throw std::runtime_error(
@@ -19,14 +19,6 @@ namespace Marmot::Materials {
     return this->materialProperties[6];
   }
 
-  double VonMisesModel::getDampingCoefficient()
-  {
-    if ( this->nMaterialProperties < 8 ) {
-      throw std::runtime_error( std::string(
-        MakeString() << __PRETTY_FUNCTION__ << ": No damping coefficient given! nMaterialProperties < 8." ) );
-    }
-    return this->materialProperties[7];
-  }
 
   void VonMisesModel::computeStress( state3D&        state,
                                      Matrix6d&       dStress_dStrain,

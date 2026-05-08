@@ -170,19 +170,12 @@ namespace Marmot::Materials {
     return;
   }
 
-  double B4::getDensity()
+  double B4::getDensity(const double* stateVars) const
   {
     if ( nMaterialProperties >= 23 )
       return materialProperties[22];
     throw std::runtime_error( std::string( MakeString() << __PRETTY_FUNCTION__ << ": Density not specified for B4." ) );
   }
 
-  double B4::getDampingCoefficient()
-  {
-    if ( nMaterialProperties >= 24 )
-      return materialProperties[23];
-    throw std::runtime_error(
-      std::string( MakeString() << __PRETTY_FUNCTION__ << ": Damping coefficient not specified for B4." ) );
-  }
 
 } // namespace Marmot::Materials

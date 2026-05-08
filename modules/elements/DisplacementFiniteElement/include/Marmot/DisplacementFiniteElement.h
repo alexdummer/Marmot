@@ -321,14 +321,6 @@ namespace Marmot::Elements {
      */
     void computeLumpedInertia( double* M );
 
-    /**
-     * @brief Compute lumped damping matrix using a damping coefficient.
-     * @details Uses the manifold-based lumping scheme according to
-     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME.
-     * The lumped damping entries are computed using a weighted shape function
-     * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$ analogous to computeLumpedInertia.
-     */
-    void computeLumpedDamping( double* C );
 
     /**
      * @brief Access a named state view at a quadrature point.
@@ -847,7 +839,7 @@ namespace Marmot::Elements {
 
     for ( const auto& qp : qps ) {
       const auto   N_  = this->NB( this->N( qp.xi ) );
-      const double rho = qp.material->getDensity();
+      const double rho = qp.material->getDensity(qp.managedStateVars->materialStateVars.data());
       Me += N_.transpose() * N_ * qp.detJ * qp.weight * rho;
     }
   }
@@ -866,35 +858,11 @@ namespace Marmot::Elements {
       VectorXd N_weighted = 0.5 * ( N_ );
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
 
-      const double rho = qp.material->getDensity();
+      const double rho = qp.material->getDensity(qp.managedStateVars->materialStateVars.data());
       VectorXd     m_  = N_weighted * qp.detJ * qp.weight * rho;
       for ( int i = 0; i < nNodes; i++ ) {
         for ( int d = 0; d < nDim; d++ )
           LMM( i * nDim + d ) += m_( i );
-      }
-    }
-  }
-
-  template < int nDim, int nNodes >
-  void DisplacementFiniteElement< nDim, nNodes >::computeLumpedDamping( double* C )
-  {
-    Map< RhsSized > LCM( C );
-    LCM.setZero();
-
-    constexpr int nNodesLinear  = ( 1 << nDim );
-    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
-    for ( const auto& qp : qps ) {
-      const auto N_    = this->N( qp.xi );
-      const auto N_lin = linGeometryEl.N( qp.xi );
-
-      VectorXd N_weighted = 0.5 * ( N_ );
-      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
-
-      const double eta = qp.material->getDampingCoefficient();
-      VectorXd     m_  = N_weighted * qp.detJ * qp.weight * eta;
-      for ( int i = 0; i < nNodes; i++ ) {
-        for ( int d = 0; d < nDim; d++ )
-          LCM( i * nDim + d ) += m_( i );
       }
     }
   }

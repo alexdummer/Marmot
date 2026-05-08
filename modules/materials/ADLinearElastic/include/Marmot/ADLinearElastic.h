@@ -48,14 +48,13 @@ namespace Marmot::Materials {
 
     ADLinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
-    double getDensity() override;
-    double getDampingCoefficient() override;
+    double getDensity( const double* stateVars ) const override;
 
   protected:
     void computeStressAD( state3DAD&                 state,
                           const Marmot::Vector6dual& dStrain,
                           const timeInfo&            timeInfo ) const override;
 
-    void initializeStateLayout() { stateLayout.finalize(); }
+    void initializeStateLayout() override { stateLayout.finalize(); }
   };
 } // namespace Marmot::Materials

@@ -50,14 +50,8 @@ namespace Marmot::Materials {
     void computeStressExplicit( state3D&                state,
                                 const Marmot::Vector6d& dStrain,
                                 const timeInfo&         timeInfo ) const override;
-    /**
-     * @brief Get material density.
-     * @return Density value.
-     * @throw std::runtime_error if density is not defined.
-     */
-    double getDensity() override;
-
-    double getDampingCoefficient() override;
+    
+    double getDensity(const double* stateVars) const override;
 
     void initializeStateLayout() override
     {

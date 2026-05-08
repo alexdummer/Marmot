@@ -74,20 +74,17 @@ namespace Marmot::Materials {
   {
 
     // map stress, strain increment and stiffness tensor
-    mVector6d             S( state.stress.data() );
-    Map< const Vector6d > dE( dStrain.data() );
-    mMatrix6d             mC( dStressDDStrain.data() );
-    mC = globalStiffnessTensor;
+    dStressDDStrain = globalStiffnessTensor;
 
     // Zero strain increment check
-    if ( ( dE.array() == 0 ).all() )
+    if ( ( dStrain.array() == 0 ).all() )
       return;
 
     // Compute stress increment
-    S += mC * dE;
+    state.stress += dStressDDStrain * dStrain;
   }
 
-  double LinearElastic::getDensity()
+  double LinearElastic::getDensity(const double* stateVars) const
   {
     int base_props = static_cast< int >( anisotropicType );
     if ( nMaterialProperties >= base_props + 1 )
@@ -98,14 +95,4 @@ namespace Marmot::Materials {
     }
   }
 
-  double LinearElastic::getDampingCoefficient()
-  {
-    int base_props = static_cast< int >( anisotropicType );
-    if ( nMaterialProperties >= base_props + 2 )
-      return materialProperties[base_props + 1];
-    else {
-      throw std::runtime_error( std::string(
-        MakeString() << __PRETTY_FUNCTION__ << ": Damping coefficient not specified for this material." ) );
-    }
-  }
 } // namespace Marmot::Materials
