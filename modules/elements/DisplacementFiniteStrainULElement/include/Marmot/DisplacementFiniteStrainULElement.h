@@ -379,13 +379,6 @@ namespace Marmot::Elements {
      */
     void computeLumpedInertia( double* M );
 
-    /**
-     * @brief Compute lumped damping matrix using a damping coefficient.
-     * @details Using the manifold based approach according to
-     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
-     */
-    void computeLumpedDamping( double* C );
-
     /** @brief Get a view to a state variable at a specific quadrature point of the element
      * @param stateName[in] Name of the state variable
      * @param qpNumber[in] Number of the quadrature point where the state variable is stored
