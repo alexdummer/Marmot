@@ -313,13 +313,13 @@ namespace Marmot::Elements {
      * \f[
      * \mathbf{K}_{uu} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \mathbf{\eps}}
      * \mathbf{B}\, J_0\, w_{qp},\quad
-     * \mathbf{K}_{u\kl} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \kl} \mathbf{\Nk}\,
+     * \mathbf{K}_{u\knl} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \knl} \mathbf{\Nk}\,
      * J_0\, w_{qp},\quad
-     * \mathbf{K}_{\kl u} = -\sum_{qp} \mathbf{\Nk}^\mathsf{T} \frac{\partial \kl}{\partial \mathbf{\eps}} \mathbf{B}\,
+     * \mathbf{K}_{\knl u} = -\sum_{qp} \mathbf{\Nk}^\mathsf{T} \frac{\partial \kl}{\partial \mathbf{\eps}} \mathbf{B}\,
      * J_0\, w_{qp},
      * \f]
      * \f[
-     * \mathbf{K}_{\kl\kl} = \sum_{qp} \left( \mathbf{\Nk}^\mathsf{T}\, \mathbf{\Nk} + c \, \partial_\mathbf{x}
+     * \mathbf{K}_{\knl\knl} = \sum_{qp} \left( \mathbf{\Nk}^\mathsf{T}\, \mathbf{\Nk} + c \, \partial_\mathbf{x}
      * \mathbf{\Nk}^\mathsf{T} \,  \partial_\mathbf{x} \mathbf{\Nk} + \frac{\partial c}{\partial \knl} \,
      * \partial_\mathbf{x} \mathbf{\Nk}^\mathsf{T} \, \partial_\mathbf{x}   \mathbf{\Nk}\, \qk \, \mathbf{\Nk} -
      * \mathbf{\Nk}^\mathsf{T}\, \frac{\partial \kl}{\partial \knl} \right) J_0\, w_{qp}\, .

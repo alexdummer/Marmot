@@ -40,7 +40,7 @@ namespace Marmot::GradientDamage {
      * @return interaction function value
      *
      * @details The function is defined as:
-     * \f[ g(\omega) = \frac{(1 - R) \exp(-\eta \omega) + R - \exp(-\eta) }{ 1 - \exp(-\eta)} \f]
+     * \f[ g(\omega) = \frac{(1 - R) \exp(-\eta \, \omega) + R - \exp(-\eta) }{ 1 - \exp(-\eta)} \f]
      * where \f$ \omega \f$ is the damage variable, \f$ \eta \f$ controls the rate of decrease of interactions with
      * damage, and \f$ R \f$ controls the residual interactions at full damage. The function is designed to decrease as
      * damage increases, with a residual interaction value of \f$ R \f$ at full damage (\f$ \omega = 1 \f$).
