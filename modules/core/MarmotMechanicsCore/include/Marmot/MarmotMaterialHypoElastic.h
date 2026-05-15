@@ -128,6 +128,22 @@ public:
                               const timeInfo&         timeInfo ) const = 0;
 
   /**
+   * Explicit version of @ref computeStress for use in explicit time integration schemes.
+   * The algorithmic tangent is not needed in explicit schemes and will therefore not be computed.
+   * @param[in,out] state  A state3D instance carrying stress, strain energy, and state variables
+   * @param[in]   dStrain linearized strain increment
+   * @param[in]   timeInfo Structure carrying time information
+   *
+   * @note The default implementation calls @ref computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( state3D& state, const Marmot::Vector6d& dStrain, const timeInfo& timeInfo ) const
+  {
+    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
+    computeStress( state, dStress_dStrain, dStrain, timeInfo );
+  }
+
+  /**
    * Plane stress implementation of @ref computeStress.
    */
   virtual void computePlaneStress( state2D&                stress2D,
@@ -142,14 +158,6 @@ public:
                                       double&         dStress_dStrain1D,
                                       const double    dStrain,
                                       const timeInfo& timeInfo ) const;
-
-  /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
 
   /**
    * @brief Get a view to the state variables.
@@ -167,6 +175,7 @@ public:
    * @return Total number of required state variables
    */
   int getNumberOfRequiredStateVars() const { return stateLayout.totalSize(); }
+
   /**
    * @brief Initialize the state variables at a material point.
    * @param stateVars Pointer to the state variable array
@@ -181,5 +190,9 @@ public:
     }
   }
 
-  virtual double getDensity() { return -1; }
+  /**
+   * @brief Returns the mass density of the material.
+   * @note Must be overriden in each specific material.
+   */
+  virtual double getDensity( const double* stateVars ) const = 0;
 };

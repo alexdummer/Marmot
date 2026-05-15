@@ -113,11 +113,7 @@ namespace Marmot::Materials {
                         const Marmot::Vector6d& dStrain,
                         const timeInfo&         timeInfo ) const override;
 
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kelvinStateVars", 6 * nKelvin );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
 
   private:
     /// @brief Elastic moduli of the Kelvin chain units
