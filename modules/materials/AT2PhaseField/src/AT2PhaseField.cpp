@@ -15,6 +15,20 @@ namespace Marmot::Materials {
     initializeStateLayout();
   }
 
+  double AT2PhaseField::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties <= 4 )
+      throw std::runtime_error( "Density not provided in material properties for AT2PhaseField." );
+    return materialProperties[4];
+  }
+
+  std::vector< double > AT2PhaseField::getNonlocalViscosity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties <= 5 )
+      throw std::runtime_error( "Viscosity not provided in material properties for AT2PhaseField." );
+    return { materialProperties[5] };
+  }
+
   void AT2PhaseField::computeStress( response& res, tangents& tan, const increment& inc ) const
   {
     // material properties

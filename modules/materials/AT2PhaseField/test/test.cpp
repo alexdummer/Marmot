@@ -274,9 +274,9 @@ void testTangentConsistency()
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
-    stateVars     = statsVarsOld; // reset state variables before each perturbation to avoid accumulation of changes
+    stateVars     = stateVarsOld; // reset state variables before each perturbation to avoid accumulation of changes
     auto [sp, kp] = evalAt( dEp, phi, stateVars );
-    stateVars     = statsVarsOld; // reset again before the second perturbation
+    stateVars     = stateVarsOld; // reset again before the second perturbation
     auto [sm, km] = evalAt( dEm, phi, stateVars );
     const Vector6d dSdE_num = ( sp - sm ) / ( 2. * h );
     const Vector6d dSdE_ana = tanBase.dStressddStrain.col( j );
@@ -286,9 +286,9 @@ void testTangentConsistency()
   }
 
   // ── dStressddK (col 0) ──
-  stateVars               = statsVarsOld; // reset state variables before perturbation
+  stateVars               = stateVarsOld; // reset state variables before perturbation
   auto [sp, kp]           = evalAt( dEps, phi + h, stateVars );
-  stateVars               = statsVarsOld; // reset again before second perturbation
+  stateVars               = stateVarsOld; // reset again before second perturbation
   auto [sm, km]           = evalAt( dEps, phi - h, stateVars );
   const Vector6d dSdK_num = ( sp - sm ) / ( 2. * h );
   const Vector6d dSdK_ana = tanBase.dStressddK.col( 0 );
@@ -300,9 +300,9 @@ void testTangentConsistency()
     Vector6d dEp = dEps, dEm = dEps;
     dEp( j ) += h;
     dEm( j ) -= h;
-    stateVars             = statsVarsOld; // reset state variables before each perturbation
+    stateVars             = stateVarsOld; // reset state variables before each perturbation
     auto [sp, kp]         = evalAt( dEp, phi, stateVars );
-    stateVars             = statsVarsOld; // reset again before second perturbation
+    stateVars             = stateVarsOld; // reset again before second perturbation
     auto [sm, km]         = evalAt( dEm, phi, stateVars );
     const double dKdE_num = ( kp - km ) / ( 2. * h );
     const double dKdE_ana = tanBase.dKLocalddStrain( 0, j );
@@ -313,9 +313,9 @@ void testTangentConsistency()
 
   // ── dKLocalddK (0,0) ──
   {
-    stateVars             = statsVarsOld; // reset state variables before perturbation
+    stateVars             = stateVarsOld; // reset state variables before perturbation
     auto [sp, kp]         = evalAt( dEps, phi + h, stateVars );
-    stateVars             = statsVarsOld; // reset again before second perturbation
+    stateVars             = stateVarsOld; // reset again before second perturbation
     auto [sm, km]         = evalAt( dEps, phi - h, stateVars );
     const double dKdK_num = ( kp - km ) / ( 2. * h );
     const double dKdK_ana = tanBase.dKLocalddK( 0, 0 );

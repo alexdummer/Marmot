@@ -27,9 +27,10 @@
  */
 
 #pragma once
+#include "Marmot/MarmotExceptions.h"
+#include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/MarmotVoigt.h"
 
 /**
  * @brief Base class for general gradient-enhanced hypoelastic material models.
@@ -114,7 +115,11 @@ public:
       d2cddK2 = Eigen::Matrix< double, nNonlocalVariables, nNonlocalVariables >::Zero();
   };
 
-  /// @brief Layout of the state variables for the material model.
+  /**
+   * @brief Layout of the state variables for the material model.
+   * @note Must be defined in derived classes to specify the structure and organization of the state variables used in
+   * the material model.
+   */
   MarmotStateLayoutDynamic stateLayout;
 
   /**
@@ -148,7 +153,6 @@ public:
   {
     using namespace Marmot;
     using namespace Eigen;
-    using namespace Marmot::ContinuumMechanics::VoigtNotation;
 
     Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );
 
@@ -190,7 +194,7 @@ public:
 
       planeStressCount += 1;
       if ( planeStressCount > 13 ) {
-        throw std::runtime_error( "PlaneStressWrapper requires cutback" );
+        throw Marmot::StressUpdateFailed( "PlaneStressWrapper requires cutback" );
       }
     }
 
@@ -213,6 +217,7 @@ public:
    * @return Total number of required state variables
    */
   int getNumberOfRequiredStateVars() const { return stateLayout.totalSize(); }
+
   /**
    * @brief Initialize the state variables at a material point.
    * @param stateVars Pointer to the state variable array
@@ -226,6 +231,22 @@ public:
       stateVars[i] = 0.0;
     }
   }
+  /**
+   * @brief Get the density of the material.
+   * @return Density of the material
+   *
+   * This method must be implemented in derived classes to return the density of the material, which is required for
+   * dynamic analyses.
+   */
+  virtual double getDensity( const double* stateVars ) const = 0;
 
-  virtual double getDensity() { return -1; }
+  /**
+   * @brief Get the nonlocal viscosity of the material.
+   * @return Vector containing the nonlocal viscosity values for each nonlocal variable
+   *
+   * This method must be implemented in derived classes to return the nonlocal viscosity values, which are required for
+   * dynamic analyses involving nonlocal variables. The returned vector should have a length equal to
+   * `nNonlocalVariables`.
+   */
+  virtual std::vector< double > getNonlocalViscosity( const double* stateVars ) const = 0;
 };

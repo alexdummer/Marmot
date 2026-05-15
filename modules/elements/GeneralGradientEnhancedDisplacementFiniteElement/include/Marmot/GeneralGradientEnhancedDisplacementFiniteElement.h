@@ -28,6 +28,7 @@
 #pragma once
 #include "Marmot/MarmotElement.h"
 #include "Marmot/MarmotElementProperty.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotFiniteElement.h"
 #include "Marmot/MarmotGeometryElement.h"
 #include "Marmot/MarmotJournal.h"
@@ -38,7 +39,6 @@
 #include "Marmot/MarmotStateVarVectorManager.h"
 #include "Marmot/MarmotTypedefs.h"
 #include "Marmot/MarmotVoigt.h"
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -343,6 +343,69 @@ namespace Marmot::Elements {
                           double&       pNewdT );
 
     /**
+     * @brief Compute internal force without tangents.
+     * @details Uses the small-strain relation \f$\Delta \eps = \mathbf{B}\, \Delta \mathbf{\qu}\f$,
+     * interpolates the non-local variables as \f$ \knl = \Nk\, \mathbf{\qk}\f$. Internal forces and consistent tangents
+     * are evaluated by Gauss quadrature:
+     * \f[
+     * \mathbf{K}_e = \begin{bmatrix} \mathbf{K}_{uu} & \mathbf{K}_{uk} \\ \mathbf{K}_{ku} & \mathbf{K}_{kk}
+     * \end{bmatrix},\qquad
+     * \mathbf{\fuint} = \sum_{qp} \mathbf{B}^\mathsf{T}\, \sig\, J_0\, w_{qp}\, .
+     * \f]
+     * \f[
+     * \mathbf{\fk} = \sum_{qp} \left (\mathbf{\Nk}^\mathsf{T}\, \knl\, + c\, \partial_\mathbf{x}
+     * \mathbf{\Nk}^\mathsf{T}\,\partial_\mathbf{x} \mathbf{\Nk}\, \mathbf{\qk} - \mathbf{\Nk}^\mathsf{T}\, \kl \right )
+     * J_0\, w_{qp} \, .
+     * \f]
+     * The stiffness submatrices are evaluated using the following expressions:
+     * \f[
+     * \mathbf{K}_{uu} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \mathbf{\eps}}
+     * \mathbf{B}\, J_0\, w_{qp},\quad
+     * \mathbf{K}_{u\knl} = \sum_{qp} \mathbf{B}^\mathsf{T} \frac{\partial \mathbf{\sig}}{\partial \knl} \mathbf{\Nk}\,
+     * J_0\, w_{qp},\quad
+     * \mathbf{K}_{\knl u} = -\sum_{qp} \mathbf{\Nk}^\mathsf{T} \frac{\partial \kl}{\partial \mathbf{\eps}} \mathbf{B}\,
+     * J_0\, w_{qp},
+     * \f]
+     * \f[
+     * \mathbf{K}_{\knl\knl} = \sum_{qp} \left( \mathbf{\Nk}^\mathsf{T}\, \mathbf{\Nk} + c \, \partial_\mathbf{x}
+     * \mathbf{\Nk}^\mathsf{T} \,  \partial_\mathbf{x} \mathbf{\Nk} + \frac{\partial c}{\partial \knl} \,
+     * \partial_\mathbf{x} \mathbf{\Nk}^\mathsf{T} \, \partial_\mathbf{x}   \mathbf{\Nk}\, \qk \, \mathbf{\Nk} -
+     * \mathbf{\Nk}^\mathsf{T}\, \frac{\partial \kl}{\partial \knl} \right) J_0\, w_{qp}\, .
+     * \f]
+     * If pNewdT<1, the routine returns early to signal time step reduction.
+     * @param QTotal Total displacement vector in field-wise format: \f$\mathbf{q} = [\mathbf{\qu},
+     * \mathbf{\qk}]^\mathsf{T}\f$.
+     * @param dQ Incremental displacement.
+     * @param Pe Internal force vector (accumulated).
+     * @param Ke Tangent stiffness matrix (accumulated).
+     * @param time Time data forwarded to materials.
+     * @param dT Time increment.
+     * @param pNewdT Suggested scaling of dT by the material; if reduced (<1), the routine returns early.
+     */
+    void computeYourselfExplicit( const double* QTotal,
+                                  const double* dQ,
+                                  double*       Pe,
+                                  const double* time,
+                                  double        dT,
+                                  double&       pNewdT );
+    /**
+     * @brief Compute consistent mass matrix using material density.
+     * @details \f$\mathbf{M}_e = \sum_{qp} \rho\, \mathbf{N}^\mathsf{T}\mathbf{N}\, J_0 w\f$.
+     */
+    void computeConsistentInertia( double* M );
+
+    /**
+     * @brief Compute the lumped (diagonal) mass matrix.
+     * @details Uses the manifold-based lumping scheme according to
+     * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME.
+     * The lumped mass entries are computed using a weighted shape function
+     * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$,
+     * where \f$N\f$ is the high-order shape function and \f$N_\mathrm{lin}\f$ is the corresponding
+     * linear (corner-node) shape function on the same element.
+     */
+    void computeLumpedInertia( double* M );
+
+    /**
      * @brief Access a named state view at a quadrature point.
      * @note Using "sdv" returns the raw material state vector and is deprecated.
      */
@@ -351,9 +414,9 @@ namespace Marmot::Elements {
       const auto& qp = qps[qpNumber];
 
       if ( stateName == "sdv" ) {
-        MarmotJournal::warning() << __PRETTY_FUNCTION__
-                                 << " on 'sdv' is discouraged and deprecated, please use precise state name"
-                                 << std::endl;
+        MarmotJournal::warningToMSG( MakeString()
+                                     << __PRETTY_FUNCTION__
+                                     << " on 'sdv' is discouraged and deprecated, please use precise state name" );
         return { qp.managedStateVars->materialStateVars.data(),
                  static_cast< int >( qp.managedStateVars->materialStateVars.size() ) };
       }
@@ -668,12 +731,198 @@ namespace Marmot::Elements {
             throw std::invalid_argument( "Invalid section type for 3D element! Must be Solid" );
         }
       }
-      catch ( std::exception& e ) {
+      catch ( StressUpdateFailed& e ) {
         pNewDT = 0.25;
         return;
       }
       qp.managedStateVars->stress = res.stress;
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+    }
+  }
+
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeYourselfExplicit( const double* QTotal_,
+                             const double* dQ_,
+                             double*       Pe_,
+                             const double* time,
+                             double        dT,
+                             double&       pNewDT )
+  {
+
+    Map< const RhsSized > QTotal( QTotal_ );
+    Map< const RhsSized > dQ( dQ_ );
+    Map< RhsSized >       Pe( Pe_ );
+
+    // incremental nodal displacements Q and nodal internal parameters qK
+    const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
+    const Ref< const KSizedVector > dQK( dQ.tail( sizeDoFK ) );
+    const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
+    const Ref< const KSizedVector > qK( QTotal.tail( sizeDoFK ) );
+
+    // Righthandside
+    Ref< USizedVector > fU( Pe.head( sizeDoFU ) );
+    Ref< KSizedVector > fK( Pe.tail( sizeDoFK ) );
+
+    using namespace Marmot;
+    using namespace ContinuumMechanics::VoigtNotation;
+
+    using response  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
+    using tangents  = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::tangents;
+    using increment = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::increment;
+
+    for ( size_t i = 0; i < this->qps.size(); i++ ) {
+
+      QuadraturePoint& qp = this->qps[i];
+
+      const BSized&      B      = qp.B;
+      const NSizedK&     N_K    = qp.N_K;
+      const dNdXiSizedK& dNdX_K = qp.dNdX_K;
+
+      Voigt dE = B * dQU;
+
+      // delta of _K at Gausspoint
+      Vector< double, nNonlocalVariables > K;
+      Vector< double, nNonlocalVariables > dK;
+
+      for ( size_t n = 0; n < nNonlocalVariables; n++ ) {
+        Eigen::Index idx = static_cast< Eigen::Index >( n ) * static_cast< Eigen::Index >( nNonLocalNodes );
+        K( n )           = N_K * qK.segment( idx, nNonLocalNodes );
+        dK( n )          = N_K * dQK.segment( idx, nNonLocalNodes );
+      }
+
+      response  res;
+      tangents  tan;
+      increment inc;
+      try {
+        if constexpr ( nDim == 2 ) {
+          Vector6d dE6  = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          res.stress    = qp.managedStateVars->stress;
+          res.stateVars = qp.managedStateVars->materialStateVars.data();
+          inc           = { dE6, K, dK, time[1], dT };
+          CSized C      = CSized::Zero();
+          Voigt  S      = Voigt::Zero();
+
+          if ( sectionType == SectionType::PlaneStress ) {
+            qp.material->computePlaneStress( res, tan, inc );
+            S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+          }
+          else if ( sectionType == SectionType::PlaneStrain ) {
+            qp.material->computeStress( res, tan, inc );
+            S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+          }
+          else {
+            throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
+          }
+
+          fU -= B.transpose() * S * qp.J0xW;
+
+          for ( int n = 0; n < nNonlocalVariables; n++ ) {
+            Eigen::Index idx = n * nNonLocalNodes;
+            fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
+                                                   res.c( n ) * dNdX_K.transpose() * dNdX_K *
+                                                     qK.segment( idx, nNonLocalNodes ) -
+                                                   N_K.transpose() * res.KLocal( n ) ) *
+                                                 qp.J0xW;
+          }
+        }
+
+        else if ( nDim == 3 ) {
+          if ( sectionType == Solid ) {
+
+            res.stress    = qp.managedStateVars->stress;
+            res.stateVars = qp.managedStateVars->materialStateVars.data();
+            inc           = { dE, K, dK, time[1], dT };
+            qp.material->computeStress( res, tan, inc );
+
+            fU -= B.transpose() * res.stress * qp.J0xW;
+
+            for ( int n = 0; n < nNonlocalVariables; n++ ) {
+              Eigen::Index idx = n * nNonLocalNodes;
+              fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
+                                                     res.c( n ) * dNdX_K.transpose() * dNdX_K *
+                                                       qK.segment( idx, nNonLocalNodes ) -
+                                                     N_K.transpose() * res.KLocal( n ) ) *
+                                                   qp.J0xW;
+            }
+          }
+          else
+            throw std::invalid_argument( "Invalid section type for 3D element! Must be Solid" );
+        }
+      }
+      catch ( StressUpdateFailed& e ) {
+        pNewDT = 0.25;
+        return;
+      }
+      qp.managedStateVars->stress = res.stress;
+      qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+    }
+  }
+
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeConsistentInertia( double* M )
+  {
+    Map< KeSizedMatrix > Me( M );
+    Me.setZero();
+
+    for ( const auto& qp : qps ) {
+      const auto                  N_  = localGeometryElement.NB( localGeometryElement.N( qp.xi ) );
+      const NSizedK&              N_K = qp.N_K;
+      const double                rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
+      const std::vector< double > eta = qp.material->getNonlocalViscosity(
+        qp.managedStateVars->materialStateVars.data() );
+      Me.topLeftCorner( sizeDoFU, sizeDoFU ) += N_.transpose() * N_ * qp.detJ * qp.J0xW * rho;
+      for ( int n = 0; n < nNonlocalVariables; n++ ) {
+        Eigen::Index idx = n * nNonLocalNodes;
+        Me.bottomRightCorner( sizeDoFK, sizeDoFK )
+          .block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += N_K.transpose() * N_K * qp.J0xW * qp.weight * eta[idx];
+      }
+    }
+  }
+
+  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
+  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
+    computeLumpedInertia( double* M )
+  {
+    Map< RhsSized > LMM( M );
+    LMM.setZero();
+
+    constexpr int nNodesLinear  = ( 1 << nDim );
+    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
+    for ( const auto& qp : qps ) {
+      const auto N_    = localGeometryElement.N( qp.xi );
+      const auto N_lin = linGeometryEl.N( qp.xi );
+
+      VectorXd N_weighted = 0.5 * ( N_ );
+      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+
+      // when nNodes == nNonlocalNodes
+      VectorXd N_weighted_nonlocal;
+      if ( nNodes != nNonLocalNodes ) {
+        N_weighted_nonlocal = VectorXd::Zero( nNonLocalNodes );
+        N_weighted_nonlocal = N_lin;
+      }
+      else {
+        N_weighted_nonlocal = N_weighted;
+      }
+
+      const double                rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
+      const std::vector< double > eta = qp.material->getNonlocalViscosity(
+        qp.managedStateVars->materialStateVars.data() );
+      VectorXd m_ = N_weighted * qp.detJ * qp.weight * rho;
+      for ( int i = 0; i < nNodes; i++ ) {
+        for ( int d = 0; d < nDim; d++ )
+          LMM( i * nDim + d ) += m_( i );
+      }
+      for ( int n = 0; n < nNonlocalVariables; n++ ) {
+        Eigen::Index idx = n * nNonLocalNodes;
+        VectorXd     mK  = N_weighted_nonlocal.segment( idx, nNonLocalNodes ) * qp.J0xW * qp.weight * eta[idx];
+        for ( int i = 0; i < nNonLocalNodes; i++ )
+          LMM( sizeDoFU + idx + i ) += mK( i );
+      }
     }
   }
 

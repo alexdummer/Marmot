@@ -41,6 +41,8 @@ namespace Marmot::Materials {
    *  - \f$ \nu \f$ : Poisson's ratio
    *  - \f$ G_c \f$ : Critical fracture energy
    *  - \f$ l \f$   : Internal length scale
+   *  - \f$ \rho \f$ : Mass density (optional, mandatory for dynamic simulations)
+   *  - \f$ \eta \f$ : phase-field viscosity (optional, mandatory for dynamic simulations)
    */
   class AT2PhaseField : public MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 > {
 
@@ -55,6 +57,10 @@ namespace Marmot::Materials {
       stateLayout.add( "strain", 6 );
       stateLayout.finalize();
     }
+
+    double getDensity( const double* stateVars ) const override;
+
+    std::vector< double > getNonlocalViscosity( const double* stateVars ) const override;
 
   private:
     /// @brief Elastic stiffness tensor
