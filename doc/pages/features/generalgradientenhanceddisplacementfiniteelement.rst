@@ -10,17 +10,17 @@ In addition to the standard static equilibrium equation, one or multiple nonloca
 
 .. math::
 
-   \sigma_{ij,i} + f_j = 0
+   \nabla \sig + \boldsymbol f = \boldsymbol 0
 
-Here :math:`\sigma_{ij}` is the Cauchy stress tensor and :math:`f_j` the body force vector per unit volume.
+Here :math:`\sig` is the Cauchy stress tensor and :math:`\boldsymbol f` the body force vector per unit volume.
 Each nonlocal variable introduces an additional balance equation, which is solved simultaneously with the static equilibrium equation.
 The general balance equation for the i-th nonlocal variable :math:`\knl_i` is defined as
 
 .. math::
 
-   \knl_i - \nabla ( c( \knl_i )\, \nabla \knl_i ) = \sourceTerm_i (\boldsymbol \varepsilon,\, \knl_i )\, ,
+   \knl_i - \nabla ( c( \knl_i )\, \nabla \knl_i ) = \kl_i (\eps,\, \knl_i )\, ,
 
-where :math:`\knl` is the nonlocal variable, :math:`\kl` the local equivalent, :math:`c( \knl_i )` the gradient interaction parameter, and :math:`\sourceTerm_i` is the local
+where :math:`\knl` is the nonlocal variable, :math:`\kl` the local equivalent, :math:`c( \knl_i )` the gradient interaction parameter, and :math:`\kl_i` is the local
 driving variable for the nonlocal field.
 The element formulation supports a variable length scale parameter which can be used to model damage dependent interactions and may depend on the state of the
 nonlocal field: :math:`c = c(\knl)`.
@@ -29,20 +29,20 @@ Depending on the specific material model, this field is governed either by the s
 
 .. math::
 
-   \knl - c \, \knl_{,ii} = \kl\, ,
+   \knl - c \, \nabla^2 \knl = \kl(\eps)\, ,
 
 or by the phase field crack evolution equation:
 
 .. math::
 
-   d - l^2 \, d_{,ii} = \sourceTerm (d, \mathcal{Y})\, .
+   d - l^2 \, \nabla^2 d = s(d, \mathcal{Y})\, .
 
 For the screened Poisson equation :math:`\knl` is the nonlocal equivalent strain-like variable, :math:`\kl` the local equivalent, and :math:`c=l^2` the
 gradient length scale parameter.
-In the context of phase field models, :math:`d` represents the phase field variable, :math:`l` is the internal length scale, and :math:`\sourceTerm(d, \mathcal{Y})`
+In the context of phase field models, :math:`d` represents the phase field variable, :math:`l` is the internal length scale, and :math:`s(d, \mathcal{Y})`
 is a local source function driven by the thermodynamic driving force :math:`\mathcal{Y}`.
 Homogeneous Neumann boundary conditions are assumed for the nonlocal scalar fields on the element boundary, i.e.,
-:math:`\knl_{,i} \, n_i = 0` or :math:`d_{,i} \, n_i = 0`, where :math:`n_i` is the outward unit normal.
+:math:`(\nabla \knl \boldsymbol)^T\, n = 0` or :math:`(\nabla d)^T \, \boldsymbol n = 0`, where :math:`\boldsymbol n` is the outward unit normal.
 
 The nodal unknown vector uses a field wise structure:
 
@@ -105,7 +105,7 @@ evaluated using the following expressions:
 
 The derivative :math:`\partial c / \partial \knl` is only non-zero if a variable length scale is used, and the derivative
 :math:`\partial \kl / \partial \knl` is only required in phase field formulations where it represents the derivative of the
-source function with respect to the crack phase field :math:`\frac{\partial \sourceTerm (d, \mathcal{Y})}{\partial d}`.
+source function with respect to the crack phase field :math:`\frac{\partial s(d, \mathcal{Y})}{\partial d}`.
 
 The body-force vector is obtained using
 

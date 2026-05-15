@@ -34,18 +34,7 @@ namespace Marmot::Materials {
    *
    * Implements the simple AT2 phase-field fracture model
    * within the general gradient-enhanced hypoelastic framework.
-   *
-   * The phase-field evolution equation is:
-   * \f$ \varphi - l^2 \Delta\varphi = \frac{2l}{G_c}(1-\varphi) \mathcal{H}(\varepsilon) \f$
-   *
-   * where \f$\mathcal{H}\f$ is the crack driving force history variable
-   * (maximum elastic strain energy density encountered so far),
-   * \f$G_c\f$ is the fracture energy, and \f$l\f$ is the internal length scale.
-   *
-   * The degraded stress is:
-   * \f$ \boldsymbol{\sigma} = g(\varphi) \, \mathbb{C} : \boldsymbol{\varepsilon} \f$
-   *
-   * with the quadratic degradation function \f$ g(\varphi) = (1-\varphi)^2 \f$.
+   * See the documenetation for details on the theory.
    *
    * **Material properties** (in order):
    *  - \f$ E \f$   : Young's modulus

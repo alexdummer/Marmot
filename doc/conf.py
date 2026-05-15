@@ -48,7 +48,6 @@ mathjax3_config = {
             "DelNu": "\\mathbb{D}_\\nu",
             "PhiRate": "\\dot{\\Phi}",
             "JRate": "\\dot{J}",
-            "sourceTerm": "s",  # source term / right hand side of screened Poisson equation
             "kl": "\\kappa",  # local field variable
             "knl": "\\bar{\\kl}",  # nonlocal field variable
             "Nk": "\\mathbf{N}^{\\mathrm{\\knl}}",  # shape function vector for the nonlocal field variable

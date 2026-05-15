@@ -41,8 +41,8 @@ Theory
 ------
 
 The AT2 model couples a linear elastic material with a phase-field variable
-:math:`\varphi \in [0, 1]`, where :math:`\varphi = 0` represents intact material and
-:math:`\varphi = 1` represents fully fractured material.
+:math:`d \in [0, 1]`, where :math:`d = 0` represents intact material and
+:math:`d = 1` represents fully fractured material.
 
 Degraded Stress
 ^^^^^^^^^^^^^^^
@@ -50,20 +50,20 @@ Degraded Stress
 The stress is degraded by a quadratic degradation function :math:`g(\varphi)`:
 
 .. math::
-   \boldsymbol{\sigma} = g(\varphi)\, \mathbb{C} : \boldsymbol{\varepsilon}
+   \boldsymbol{\sigma} = g(d)\, \mathbb{C} : \boldsymbol{\varepsilon}
 
 with the isotropic elastic stiffness tensor :math:`\mathbb{C}` and the quadratic degradation function
 
 .. math::
-   g(\varphi) = (1 - \varphi)^2.
+   g(d) = (1 - d)^2.
 
 Phase-Field Evolution Equation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The phase-field variable :math:`\varphi` is governed by the balance equation
+The phase-field variable :math:`d` is governed by the balance equation
 
 .. math::
-   \varphi - l^2 \Delta\varphi = \frac{2l}{G_c}(1 - \varphi)\,\mathcal{H}(\boldsymbol{\varepsilon}),
+   d - l^2 \Delta d = -\frac{2l}{G_c}g'(d)\,\mathcal{H}(\boldsymbol{\varepsilon}),
 
 where :math:`\mathcal{H}` is the crack driving force history variable, defined as the
 maximum positive elastic strain energy density encountered up to the current time:
@@ -80,7 +80,7 @@ Implementation
 
 The model is implemented within the general gradient-enhanced hypoelastic framework
 (:cpp:class:`MarmotMaterialGeneralGradientEnhancedHypoElastic`), treating the phase-field
-variable :math:`\varphi` as the single nonlocal variable (:math:`\kappa_1 = \varphi`).
+variable :math:`d` as the single nonlocal variable (:math:`\bar\kappa = d`).
 The gradient enhancement coefficient is constant: :math:`c = l^2`.
 
 .. doxygenclass:: Marmot::Materials::AT2PhaseField
