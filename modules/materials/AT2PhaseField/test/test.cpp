@@ -224,7 +224,7 @@ void testTangentConsistency()
   auto [mat, stateVars]                  = makeMaterial( properties );
 
   const std::vector< double >
-    statsVarsOld = stateVars; // capture original state variables to reset after each perturbation
+    stateVarsOld = stateVars; // capture original state variables to reset after each perturbation
 
   const double phi = 0.3;
   const double dK  = 0.0;

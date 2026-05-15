@@ -351,7 +351,9 @@ namespace Marmot::Elements {
       const auto& qp = qps[qpNumber];
 
       if ( stateName == "sdv" ) {
-        std::cout << __PRETTY_FUNCTION__ << " on 'sdv' is discouraged and deprecated, please use precise state name";
+        MarmotJournal::warning() << __PRETTY_FUNCTION__
+                                 << " on 'sdv' is discouraged and deprecated, please use precise state name"
+                                 << std::endl;
         return { qp.managedStateVars->materialStateVars.data(),
                  static_cast< int >( qp.managedStateVars->materialStateVars.size() ) };
       }
@@ -608,7 +610,7 @@ namespace Marmot::Elements {
           kUU += B.transpose() * C * B * qp.J0xW;
 
           for ( int n = 0; n < nNonlocalVariables; n++ ) {
-            double idx = n * nNonLocalNodes;
+            Eigen::Index idx = n * nNonLocalNodes;
             fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
                                                    res.c( n ) * dNdX_K.transpose() * dNdX_K *
                                                      qK.segment( idx, nNonLocalNodes ) -
@@ -642,7 +644,7 @@ namespace Marmot::Elements {
             kUU += B.transpose() * tan.dStressddStrain * B * qp.J0xW;
 
             for ( int n = 0; n < nNonlocalVariables; n++ ) {
-              double idx = n * nNonLocalNodes;
+              Eigen::Index idx = n * nNonLocalNodes;
               fK.segment( idx, nNonLocalNodes ) -= ( N_K.transpose() * K( n ) +
                                                      res.c( n ) * dNdX_K.transpose() * dNdX_K *
                                                        qK.segment( idx, nNonLocalNodes ) -

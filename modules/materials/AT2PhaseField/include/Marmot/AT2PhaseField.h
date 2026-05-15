@@ -34,7 +34,7 @@ namespace Marmot::Materials {
    *
    * Implements the simple AT2 phase-field fracture model
    * within the general gradient-enhanced hypoelastic framework.
-   * See the documenetation for details on the theory.
+   * See the documentation for details on the theory.
    *
    * **Material properties** (in order):
    *  - \f$ E \f$   : Young's modulus
