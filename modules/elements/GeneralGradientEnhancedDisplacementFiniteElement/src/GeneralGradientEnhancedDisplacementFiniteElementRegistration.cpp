@@ -4,8 +4,6 @@
 
 namespace Marmot::Elements::Registration {
 
-#undef CONCAT
-
   template < class T,
              Marmot::FiniteElement::Quadrature::IntegrationTypes integrationType,
              typename T::SectionType                             sectionType >
@@ -50,27 +48,6 @@ namespace Marmot::Elements::Registration {
                      makeFactoryFunction< GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >,
                                           ReducedIntegration,
                                           GeneralGradientEnhancedDisplacementFiniteElement< 2, 8 >::PlaneStrain >() );
-
-  /* const static bool GGC3D4_isRegistered = MarmotLibrary::MarmotElementFactory:: */
-  /*   registerElement( "GGC3D4", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGC3D4, */
-  /*                    []( int elementID ) -> MarmotElement* { */
-  /*                      return new GeneralGradientEnhancedDisplacementFiniteElement< */
-  /*                        3, */
-  /*                        4 >( elementID, */
-  /*                             Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration, */
-  /*                             GeneralGradientEnhancedDisplacementFiniteElement< 3, 4 >::SectionType::Solid ); */
-  /*                    } ); */
-  /* const static bool GGC3D10_isRegistered = MarmotLibrary::MarmotElementFactory:: */
-  /*   registerElement( "GGC3D10", */
-  /*                    GeneralGradientEnhancedDisplacementFiniteElementCode::GGC3D10, */
-  /*                    []( int elementID ) -> MarmotElement* { */
-  /*                      return new GeneralGradientEnhancedDisplacementFiniteElement< */
-  /*                        3, */
-  /*                        10 >( elementID, */
-  /*                              Marmot::FiniteElement::Quadrature::IntegrationTypes::FullIntegration, */
-  /*                              GeneralGradientEnhancedDisplacementFiniteElement< 3, 10 >::SectionType::Solid ); */
-  /*                    } ); */
 
   const static bool GC3D8_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "GC3D8",
@@ -121,18 +98,6 @@ namespace Marmot::Elements::Registration {
                        FullIntegration,
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid >() );
 
-  // const static bool G2GC3D8R_isRegistered = MarmotLibrary::MarmotElementFactory::
-  //   registerElement( "G2GC3D8R",
-  //                    GeneralGradientEnhancedDisplacementFiniteElementCode::G2GC3D8R,
-  //                    []( int elementID ) -> MarmotElement* {
-  //                      return new GeneralGradientEnhancedDisplacementFiniteElement<
-  //                        3,
-  //                        8,
-  //                        2 >( elementID,
-  //                             Marmot::FiniteElement::Quadrature::IntegrationTypes::ReducedIntegration,
-  //                             GeneralGradientEnhancedDisplacementFiniteElement< 3, 8, 2 >::SectionType::Solid );
-  //                    } );
-
   const static bool G2GC3D20_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "G2GC3D20",
                      makeFactoryFunction<
@@ -182,14 +147,14 @@ namespace Marmot::Elements::Registration {
                        FullIntegration,
                        GeneralGradientEnhancedDisplacementFiniteElement< 2, 8, 6, 4 >::PlaneStress >() );
 
-  const static bool G6GC3D20R8_isRegistered = MarmotLibrary::MarmotElementFactory::
+  const static bool G6GC3D20RM_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "G6GC3D20RM",
                      makeFactoryFunction<
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >,
                        ReducedIntegration,
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >::SectionType::Solid >() );
 
-  const static bool G6GC3D208_isRegistered = MarmotLibrary::MarmotElementFactory::
+  const static bool G6GC3D20M_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "G6GC3D20M",
                      makeFactoryFunction<
                        GeneralGradientEnhancedDisplacementFiniteElement< 3, 20, 6, 8 >,

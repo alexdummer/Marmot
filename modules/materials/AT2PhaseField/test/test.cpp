@@ -40,13 +40,9 @@ using namespace Marmot;
 // Helper: create a fresh material + zero-initialised state variable vector.
 // Material properties: E, nu, Gc, l
 // ─────────────────────────────────────────────────────────────────────────────
-static std::pair< AT2PhaseField, std::vector< double > > makeMaterial( double E  = 20000.,
-                                                                       double nu = 0.25,
-                                                                       double Gc = 2.7,
-                                                                       double l  = 0.01 )
+static std::pair< AT2PhaseField, std::vector< double > > makeMaterial( const std::vector< double >& props )
 {
-  const static std::vector< double > props = { E, nu, Gc, l };
-  AT2PhaseField                      mat( props.data(), static_cast< int >( props.size() ), 1 );
+  AT2PhaseField mat( props.data(), static_cast< int >( props.size() ), 1 );
 
   int                   nStateVars = mat.getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVars, 0.0 );
@@ -65,9 +61,10 @@ using Inc1 = Mat1::increment;
 // ─────────────────────────────────────────────────────────────────────────────
 void testUndamagedElasticResponse()
 {
-  auto [mat, stateVars] = makeMaterial();
+  const double                E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const std::vector< double > properties = std::vector< double >{ E, nu, Gc, l };
+  auto [mat, stateVars]                  = makeMaterial( properties );
 
-  const double   E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
   const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
   // Apply a uniaxial strain increment, no phase-field
@@ -113,9 +110,11 @@ void testUndamagedElasticResponse()
 // ─────────────────────────────────────────────────────────────────────────────
 void testDegradedStress()
 {
-  auto [mat, stateVars] = makeMaterial();
 
-  const double   E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const double                E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const std::vector< double > properties = std::vector< double >{ E, nu, Gc, l };
+  auto [mat, stateVars]                  = makeMaterial( properties );
+
   const Matrix6d C = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu );
 
   Vector6d dEps = Vector6d::Zero();
@@ -158,7 +157,9 @@ void testDegradedStress()
 // ─────────────────────────────────────────────────────────────────────────────
 void testIrreversibility()
 {
-  auto [mat, stateVars] = makeMaterial();
+  const double                E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const std::vector< double > properties = std::vector< double >{ E, nu, Gc, l };
+  auto [mat, stateVars]                  = makeMaterial( properties );
 
   // Step 1: large strain
   Vector6d dEps1 = Vector6d::Zero();
@@ -218,7 +219,9 @@ void testIrreversibility()
 // ─────────────────────────────────────────────────────────────────────────────
 void testTangentConsistency()
 {
-  auto [mat, stateVars] = makeMaterial();
+  const double                E = 20000., nu = 0.25, Gc = 2.7, l = 0.01;
+  const std::vector< double > properties = std::vector< double >{ E, nu, Gc, l };
+  auto [mat, stateVars]                  = makeMaterial( properties );
 
   const std::vector< double >
     statsVarsOld = stateVars; // capture original state variables to reset after each perturbation

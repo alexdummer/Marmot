@@ -25,6 +25,7 @@
 #pragma once
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElastic.h"
 #include <cassert>
+#include <functional>
 #include <string>
 #include <unordered_map>
 

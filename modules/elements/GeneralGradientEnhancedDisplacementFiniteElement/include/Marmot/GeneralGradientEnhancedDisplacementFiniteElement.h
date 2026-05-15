@@ -616,7 +616,7 @@ namespace Marmot::Elements {
                                                  qp.J0xW;
             const auto dSdK         = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddK.col( n ) );
             const auto dK_Local_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt(
-              tan.dKLocalddStrain.row( n ) );
+              tan.dKLocalddStrain.row( n ).transpose() );
 
             kUK.block( 0, idx, sizeDoFU, nNonLocalNodes ) += B.transpose() * dSdK * N_K * qp.J0xW;
             kKU.block( idx, 0, nNonLocalNodes, sizeDoFU ) += N_K.transpose() * -dK_Local_dDE.transpose() * B * qp.J0xW;
@@ -741,6 +741,13 @@ namespace Marmot::Elements {
       }
       case MarmotElement::MarmotMaterialStateVars: {
         throw std::invalid_argument( "Please use initializeStateVars directly on material" );
+      }
+      case MarmotElement::MarmotMaterialInitialization: {
+        for ( QuadraturePoint& qp : qps ) {
+          qp.material->initializeYourself( qp.managedStateVars->materialStateVars.data(),
+                                           qp.managedStateVars->materialStateVars.size() );
+        }
+        break;
       }
       default: throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << ": invalid initial condition" );
       }
