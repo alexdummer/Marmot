@@ -49,7 +49,7 @@ namespace Marmot::Materials {
 
     void computeStress( response& res, tangents& tan, const increment& inc ) const override;
 
-    void initializeStateLayout() override
+    void initializeStateLayout()
     {
       stateLayout.add( "maxCrackDrivingForce", 1 );
       stateLayout.add( "strain", 6 );
