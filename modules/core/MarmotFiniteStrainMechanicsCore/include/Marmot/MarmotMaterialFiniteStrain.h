@@ -29,18 +29,28 @@
 #include "Marmot/MarmotStateHelpers.h"
 #include <Fastor/tensor/Tensor.h>
 
+/**
+ * @class MarmotMaterialFiniteStrain
+ * @brief Abstract base class for mechanical materials in the finite strain regime.
+ *
+ * Derived classes implement computeStress() to provide the constitutive response
+ * (Kirchhoff stress, density, elastic energy density) and the algorithmic tangent.
+ */
 class MarmotMaterialFiniteStrain {
 
-  /**
-   * @class MarmotMaterialFiniteStrain
-   * @brief Abstract basic class for mechanical materials in the finite strain regime
-   */
 protected:
-  const double* materialProperties;
-  const int     nMaterialProperties;
+  const double* materialProperties;  ///< Pointer to the array of material property values.
+  const int     nMaterialProperties; ///< Number of material property values.
 
 public:
-  const int materialNumber;
+  const int materialNumber; ///< Unique identifier for this material instance.
+
+  /**
+   * @brief Construct a MarmotMaterialFiniteStrain.
+   * @param[in] matProperties_       Pointer to the array of material property values.
+   * @param[in] nMaterialProperties_ Number of material property values.
+   * @param[in] materialNumber_      Unique identifier for this material instance.
+   */
   MarmotMaterialFiniteStrain( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : materialProperties( matProperties_ ),
       nMaterialProperties( nMaterialProperties_ ),
@@ -123,8 +133,8 @@ public:
    * */
   virtual void computeStress( ConstitutiveResponse< 3 >& response,
                               AlgorithmicModuli< 3 >&    tangents,
-                              const Deformation< 3 >&,
-                              const TimeIncrement& ) const = 0;
+                              const Deformation< 3 >&    deformation,
+                              const TimeIncrement&       timeIncrement ) const = 0;
 
   /**
    * @brief Computes the Kirchhoff stress given the deformation, time increment, and eigen deformation.
