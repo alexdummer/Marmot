@@ -200,6 +200,7 @@ public:
    * @brief Find the eigen deformation that corresponds to a given eigen stress.
    * @param initialGuess Initial guess for the eigen deformation.
    * @param eigenStress Target eigen stress.
+   * @param stateVars Pointer to the state variable array used during iteration.
    * @return Eigen deformation that corresponds to the given eigen stress.
    *
    * This function iteratively finds the eigen deformation that corresponds to a given eigen stress.

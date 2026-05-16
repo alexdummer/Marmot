@@ -48,8 +48,8 @@ namespace Marmot::Materials {
   template < typename BaseMaterialType >
   class MarmotMaterialFiniteStrainSubstepped : public MarmotMaterialFiniteStrain {
   protected:
-    std::unique_ptr< BaseMaterialType > baseMaterial;
-    int                                 nSubsteps;
+    std::unique_ptr< BaseMaterialType > baseMaterial; ///< Wrapped base material instance.
+    int                                 nSubsteps;    ///< Number of sub-steps for time substepping.
 
   public:
     /**
@@ -74,6 +74,14 @@ namespace Marmot::Materials {
       Eigen::MatrixXd dStress_dStateOld;
     };
 
+    /**
+     * @brief Construct a MarmotMaterialFiniteStrainSubstepped.
+     * @param[in] matProperties_       Pointer to the array of material property values.
+     *                                 The first entry is interpreted as the number of sub-steps;
+     *                                 the remaining entries are forwarded to the wrapped base material.
+     * @param[in] nMaterialProperties_ Total number of material property values (including nSubsteps).
+     * @param[in] materialNumber_      Unique identifier for this material instance.
+     */
     MarmotMaterialFiniteStrainSubstepped( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
       : MarmotMaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
     {
