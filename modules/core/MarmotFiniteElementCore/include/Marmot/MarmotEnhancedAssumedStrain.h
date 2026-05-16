@@ -41,13 +41,13 @@ namespace Marmot {
      * @brief Supported EAS enrichment types.
      */
     enum EASType {
-      DeBorstEAS2,     ///< De Borst 2-parameter EAS
-      DeBorstEAS2_P2,  ///< De Borst 2-parameter EAS, variant P2
-      EAS3,            ///< 3-parameter EAS
-      DeBorstEAS6b,    ///< De Borst 6-parameter EAS, variant b
-      DeBorstEAS9,     ///< De Borst 9-parameter EAS
-      SimoRifaiEAS5,   ///< Simo–Rifai 5-parameter EAS
-      SimoRifaiEAS4,   ///< Simo–Rifai 4-parameter EAS
+      DeBorstEAS2,    ///< De Borst 2-parameter EAS
+      DeBorstEAS2_P2, ///< De Borst 2-parameter EAS, variant P2
+      EAS3,           ///< 3-parameter EAS
+      DeBorstEAS6b,   ///< De Borst 6-parameter EAS, variant b
+      DeBorstEAS9,    ///< De Borst 9-parameter EAS
+      SimoRifaiEAS5,  ///< Simo–Rifai 5-parameter EAS
+      SimoRifaiEAS4,  ///< Simo–Rifai 4-parameter EAS
     };
 
     /**

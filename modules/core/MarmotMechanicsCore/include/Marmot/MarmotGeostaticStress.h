@@ -27,4 +27,4 @@ namespace Marmot::GeostaticStress {
   std::tuple< double, double, double > getGeostaticStressFromLinearDistribution( const double* geostaticStressDefintion,
                                                                                  double        coordinate_y );
 
-}
+} // namespace Marmot::GeostaticStress

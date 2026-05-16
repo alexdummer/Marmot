@@ -33,6 +33,6 @@ namespace Marmot::Materials {
   namespace VonMisesConstants {
     const double innerNewtonTol        = 1e-12; ///< Convergence tolerance for the inner Newton iteration.
     const int    nMaxInnerNewtonCycles = 15;    ///< Maximum number of inner Newton iterations.
-  } // namespace VonMisesConstants
+  }                                             // namespace VonMisesConstants
 
 } // namespace Marmot::Materials

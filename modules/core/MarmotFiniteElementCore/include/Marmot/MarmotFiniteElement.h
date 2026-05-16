@@ -136,24 +136,24 @@ namespace Marmot {
     namespace Spatial1D {
       namespace Bar2 {
 
-        constexpr int nNodes = 2; ///< Number of nodes for a Bar2 element.
-        using NSized     = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
+        constexpr int nNodes = 2;                                  ///< Number of nodes for a Bar2 element.
+        using NSized         = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
         using dNdXiSized = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function natural derivatives.
 
         /// @brief Evaluate Bar2 shape functions at natural coordinate @p xi.
-        NSized     N( double xi );
+        NSized N( double xi );
         /// @brief Evaluate Bar2 shape function derivatives at natural coordinate @p xi.
         dNdXiSized dNdXi( double xi );
       } // namespace Bar2
 
       namespace Bar3 {
 
-        constexpr int nNodes = 3; ///< Number of nodes for a Bar3 element.
-        using NSized     = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
+        constexpr int nNodes = 3;                                  ///< Number of nodes for a Bar3 element.
+        using NSized         = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function values.
         using dNdXiSized = Eigen::Matrix< double, 1, nNodes >; ///< Row vector of shape function natural derivatives.
 
         /// @brief Evaluate Bar3 shape functions at natural coordinate @p xi.
-        NSized     N( double xi );
+        NSized N( double xi );
         /// @brief Evaluate Bar3 shape function derivatives at natural coordinate @p xi.
         dNdXiSized dNdXi( double xi );
       } // namespace Bar3
@@ -238,14 +238,14 @@ namespace Marmot {
       }
 
       namespace Quad4 {
-        constexpr int nNodes = 4; ///< Number of nodes for a Quad4 element.
+        constexpr int nNodes = 4;                                          ///< Number of nodes for a Quad4 element.
 
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Quad4 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector2d& xi );
+        NSized N( const Eigen::Vector2d& xi );
         /// @brief Evaluate Quad4 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector2d& xi );
 
@@ -254,14 +254,14 @@ namespace Marmot {
       } // namespace Quad4
 
       namespace Quad8 {
-        constexpr int nNodes = 8; ///< Number of nodes for a Quad8 element.
+        constexpr int nNodes = 8;                                          ///< Number of nodes for a Quad8 element.
 
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Quad8 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector2d& xi );
+        NSized N( const Eigen::Vector2d& xi );
         /// @brief Evaluate Quad8 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector2d& xi );
 
@@ -272,7 +272,7 @@ namespace Marmot {
     }   // end of namespace Spatial2D
 
     namespace Spatial3D {
-      constexpr int nDim      = 3; ///< Number of spatial dimensions for 3-D elements.
+      constexpr int nDim = 3; ///< Number of spatial dimensions for 3-D elements.
       constexpr int voigtSize = 6; ///< Voigt vector size for 3-D elements (σ₁₁, σ₂₂, σ₃₃, σ₁₂, σ₁₃, σ₂₃).
 
       /**
@@ -424,13 +424,13 @@ namespace Marmot {
 
       namespace Tetra4 {
 
-        constexpr int nNodes  = 4; ///< Number of nodes for a Tetra4 element.
+        constexpr int nNodes  = 4;                                         ///< Number of nodes for a Tetra4 element.
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Tetra4 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector3d& xi );
+        NSized N( const Eigen::Vector3d& xi );
         /// @brief Evaluate Tetra4 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector3d& xi );
 
@@ -441,13 +441,13 @@ namespace Marmot {
 
       namespace Tetra10 {
 
-        constexpr int nNodes  = 10; ///< Number of nodes for a Tetra10 element.
+        constexpr int nNodes  = 10;                                        ///< Number of nodes for a Tetra10 element.
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Tetra10 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector3d& xi );
+        NSized N( const Eigen::Vector3d& xi );
         /// @brief Evaluate Tetra10 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector3d& xi );
 
@@ -457,13 +457,13 @@ namespace Marmot {
       } // namespace Tetra10
 
       namespace Hexa8 {
-        constexpr int nNodes  = 8; ///< Number of nodes for a Hexa8 element.
+        constexpr int nNodes  = 8;                                         ///< Number of nodes for a Hexa8 element.
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Hexa8 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector3d& xi );
+        NSized N( const Eigen::Vector3d& xi );
         /// @brief Evaluate Hexa8 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector3d& xi );
 
@@ -472,13 +472,13 @@ namespace Marmot {
       } // namespace Hexa8
 
       namespace Hexa20 {
-        constexpr int nNodes  = 20; ///< Number of nodes for a Hexa20 element.
+        constexpr int nNodes  = 20;                                        ///< Number of nodes for a Hexa20 element.
         using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
-        using NSized          = Eigen::Matrix< double, 1, nNodes >;         ///< Row vector of shape function values.
-        using dNdXiSized      = Eigen::Matrix< double, nDim, nNodes >;      ///< Matrix of shape function natural derivatives.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
 
         /// @brief Evaluate Hexa20 shape functions at natural coordinates @p xi.
-        NSized     N( const Eigen::Vector3d& xi );
+        NSized N( const Eigen::Vector3d& xi );
         /// @brief Evaluate Hexa20 shape function natural derivatives at @p xi.
         dNdXiSized dNdXi( const Eigen::Vector3d& xi );
 
@@ -499,20 +499,20 @@ namespace Marmot {
 
       /// @brief Internal data for a single quadrature point on the boundary face.
       struct BoundaryElementQuadraturePoint {
-        double          weight;      ///< Quadrature weight.
-        double          JxW;         ///< Jacobian determinant times quadrature weight.
-        Eigen::VectorXd xi;          ///< Natural coordinates of the quadrature point.
-        Eigen::VectorXd N;           ///< Shape function values at the quadrature point.
-        Eigen::MatrixXd dNdXi;       ///< Shape function natural derivatives.
-        Eigen::MatrixXd dx_dXi;      ///< Tangent vectors on the boundary (dx/dXi).
-        Eigen::VectorXd areaVector;  ///< Outward-normal area vector at the quadrature point.
+        double          weight;     ///< Quadrature weight.
+        double          JxW;        ///< Jacobian determinant times quadrature weight.
+        Eigen::VectorXd xi;         ///< Natural coordinates of the quadrature point.
+        Eigen::VectorXd N;          ///< Shape function values at the quadrature point.
+        Eigen::MatrixXd dNdXi;      ///< Shape function natural derivatives.
+        Eigen::MatrixXd dx_dXi;     ///< Tangent vectors on the boundary (dx/dXi).
+        Eigen::VectorXd areaVector; ///< Outward-normal area vector at the quadrature point.
       };
 
-      const int nDim;            ///< Number of spatial dimensions.
+      const int nDim;                                                 ///< Number of spatial dimensions.
 
-      ElementShapes boundaryShape;       ///< Shape of the boundary (face/edge) element.
-      int           nNodes;              ///< Number of nodes on the boundary element.
-      int           nParentCoordinates; ///< Total number of parent nodal coordinates.
+      ElementShapes boundaryShape;                                    ///< Shape of the boundary (face/edge) element.
+      int           nNodes;                                           ///< Number of nodes on the boundary element.
+      int           nParentCoordinates;                               ///< Total number of parent nodal coordinates.
 
       std::vector< BoundaryElementQuadraturePoint > quadraturePoints; ///< Quadrature points on the boundary.
 
@@ -553,32 +553,32 @@ namespace Marmot {
       /// @brief Extract the boundary-node entries from a parent scalar vector.
       Eigen::VectorXd condenseParentToBoundaryScalar( const Eigen::VectorXd& parentVector );
       /// @brief Assemble a boundary scalar vector into the parent scalar vector.
-      void            assembleIntoParentScalar( const Eigen::VectorXd&        boundaryVector,
-                                                Eigen::Ref< Eigen::VectorXd > ParentVector );
+      void assembleIntoParentScalar( const Eigen::VectorXd&        boundaryVector,
+                                     Eigen::Ref< Eigen::VectorXd > ParentVector );
       /// @brief Assemble a boundary scalar stiffness matrix into the parent stiffness matrix.
       void assembleIntoParentStiffnessScalar( const Eigen::MatrixXd& KBoundary, Eigen::Ref< Eigen::MatrixXd > KParent );
 
       /// @brief Extract the boundary-node entries from a parent vectorial vector.
       Eigen::VectorXd condenseParentToBoundaryVectorial( const Eigen::VectorXd& parentVector );
       /// @brief Assemble a boundary vectorial vector into the parent vectorial vector.
-      void            assembleIntoParentVectorial( const Eigen::VectorXd&        boundaryVector,
-                                                   Eigen::Ref< Eigen::VectorXd > ParentVector );
+      void assembleIntoParentVectorial( const Eigen::VectorXd&        boundaryVector,
+                                        Eigen::Ref< Eigen::VectorXd > ParentVector );
       /// @brief Assemble a boundary vectorial stiffness matrix into the parent stiffness matrix.
-      void            assembleIntoParentStiffnessVectorial( const Eigen::MatrixXd&        KBoundary,
-                                                            Eigen::Ref< Eigen::MatrixXd > KParent );
+      void assembleIntoParentStiffnessVectorial( const Eigen::MatrixXd&        KBoundary,
+                                                 Eigen::Ref< Eigen::MatrixXd > KParent );
     };
   } // namespace FiniteElement
 
   namespace FiniteElement::Quadrature {
     constexpr double gp2 = 0.577350269189625764509; ///< Gauss point abscissa for 2-point rule: @f$1/\sqrt{3}@f$.
-    constexpr double gp3 = 0.774596669241483;        ///< Gauss point abscissa for 3-point rule: @f$\sqrt{3/5}@f$.
+    constexpr double gp3 = 0.774596669241483;       ///< Gauss point abscissa for 3-point rule: @f$\sqrt{3/5}@f$.
 
     /**
      * @brief Gauss quadrature integration order options.
      */
     enum IntegrationTypes {
-      FullIntegration,    ///< Full (exact) Gauss integration.
-      ReducedIntegration  ///< Reduced integration (one order lower).
+      FullIntegration,   ///< Full (exact) Gauss integration.
+      ReducedIntegration ///< Reduced integration (one order lower).
     };
 
     /**

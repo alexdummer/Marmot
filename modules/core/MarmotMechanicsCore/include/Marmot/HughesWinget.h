@@ -70,7 +70,7 @@ namespace Marmot::NumericalAlgorithms {
     /// @brief Returns the objective symmetric strain increment in Voigt notation.
     Marmot::Vector6d getStrainIncrement();
     /// @brief Returns the incremental rotation matrix \f$\Delta\mathbf{R}\f$.
-    Eigen::Matrix3d  getRotationIncrement();
+    Eigen::Matrix3d getRotationIncrement();
     /**
      * @brief Rotates a Voigt stress (or strain) tensor with the incremental rotation.
      * @param tensor Input tensor in Voigt notation.

@@ -33,6 +33,6 @@
  * allowing access to the state data without copying it.
  */
 struct StateView {
-  double* stateLocation;  ///< Pointer to the first element of the state variable block.
-  int     stateSize;      ///< Number of `double` values in the state variable block.
+  double* stateLocation; ///< Pointer to the first element of the state variable block.
+  int     stateSize;     ///< Number of `double` values in the state variable block.
 };

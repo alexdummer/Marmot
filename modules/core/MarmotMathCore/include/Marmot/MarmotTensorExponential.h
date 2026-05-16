@@ -101,8 +101,10 @@ namespace Marmot {
 
       template < typename T, std::size_t tensorSize >
       struct TensorExponentialResult {
-        Fastor::Tensor< T, tensorSize, tensorSize >                         theExponential;           ///< The matrix exponential \f$\exp(\mathbf{A})\f$
-        Fastor::Tensor< T, tensorSize, tensorSize, tensorSize, tensorSize > theExponentialDerivative; ///< First-order derivative of the matrix exponential with respect to the input tensor
+        Fastor::Tensor< T, tensorSize, tensorSize > theExponential; ///< The matrix exponential \f$\exp(\mathbf{A})\f$
+        Fastor::Tensor< T, tensorSize, tensorSize, tensorSize, tensorSize >
+          theExponentialDerivative; ///< First-order derivative of the matrix exponential with respect to the input
+                                    ///< tensor
       };
 
       namespace FirstOrderDerived {

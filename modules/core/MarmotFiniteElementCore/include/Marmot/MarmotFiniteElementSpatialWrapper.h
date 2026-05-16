@@ -43,18 +43,19 @@
 class MarmotElementSpatialWrapper : public MarmotElement {
 
 public:
-  const int                                 nDim;           ///< Number of spatial dimensions of the ambient space.
-  const int                                 nDimChild;      ///< Number of spatial dimensions of the child element.
-  const int                                 nNodes;         ///< Number of nodes shared by parent and child element.
-  const int                                 nRhsChild;      ///< Size of the child element's right-hand-side vector.
-  const Eigen::Map< const Eigen::VectorXi > rhsIndicesToBeProjected; ///< Indices in the child RHS vector that need projection.
-  const int                                 projectedSize;   ///< Number of projected DOFs (child-element dimension).
-  const int                                 unprojectedSize; ///< Number of unprojected DOFs (ambient-space dimension).
+  const int nDim;                                ///< Number of spatial dimensions of the ambient space.
+  const int nDimChild;                           ///< Number of spatial dimensions of the child element.
+  const int nNodes;                              ///< Number of nodes shared by parent and child element.
+  const int nRhsChild;                           ///< Size of the child element's right-hand-side vector.
+  const Eigen::Map< const Eigen::VectorXi >
+            rhsIndicesToBeProjected;             ///< Indices in the child RHS vector that need projection.
+  const int projectedSize;                       ///< Number of projected DOFs (child-element dimension).
+  const int unprojectedSize;                     ///< Number of unprojected DOFs (ambient-space dimension).
 
-  std::unique_ptr< MarmotElement > childElement;       ///< Owned child element instance.
-  Eigen::MatrixXd                  T;                  ///< Coordinate transformation matrix from child to parent space.
-  Eigen::MatrixXd                  P;                  ///< Projection matrix mapping parent DOFs to child DOFs.
-  Eigen::MatrixXd                  projectedCoordinates;///< Nodal coordinates expressed in the child (local) frame.
+  std::unique_ptr< MarmotElement > childElement; ///< Owned child element instance.
+  Eigen::MatrixXd                  T;            ///< Coordinate transformation matrix from child to parent space.
+  Eigen::MatrixXd                  P;            ///< Projection matrix mapping parent DOFs to child DOFs.
+  Eigen::MatrixXd                  projectedCoordinates; ///< Nodal coordinates expressed in the child (local) frame.
 
   /**
    * @brief Construct the spatial wrapper.

@@ -54,9 +54,9 @@ namespace Marmot::NumericalAlgorithms {
     /// Matrix for describing the nonlinear equation system of the return mapping algorithm
     typedef Eigen::Matrix< double, materialTangentSize, materialTangentSize > TangentSizedMatrix;
     /// Auxiliary matrix relating material-state columns to strain columns (materialTangentSize × 6)
-    typedef Eigen::Matrix< double, materialTangentSize, 6 >                   MatrixStateStrain;
+    typedef Eigen::Matrix< double, materialTangentSize, 6 > MatrixStateStrain;
     /// Vector to carry the internal state of a material
-    typedef Eigen::Matrix< double, nIntegrationDependentStateVars, 1 >        IntegrationStateVector;
+    typedef Eigen::Matrix< double, nIntegrationDependentStateVars, 1 > IntegrationStateVector;
 
     /**
      * @brief Construct an AdaptiveSubstepperExplicit.

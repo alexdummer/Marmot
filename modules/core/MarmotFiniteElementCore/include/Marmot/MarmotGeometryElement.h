@@ -56,14 +56,15 @@ public:
   static constexpr Marmot::ContinuumMechanics::VoigtNotation::VoigtSize
     voigtSize = Marmot::ContinuumMechanics::VoigtNotation::voigtSizeFromDimension( nDim );
 
-  typedef Eigen::Matrix< double, nDim, 1 >                  XiSized;            ///< Natural-coordinate vector.
-  typedef Eigen::Matrix< double, nDim * nNodes, 1 >         CoordinateVector;   ///< Flat nodal-coordinate vector.
-  typedef Eigen::Matrix< double, nDim, nDim >               JacobianSized;      ///< Square Jacobian matrix.
-  typedef Eigen::Matrix< double, 1, nNodes >                NSized;             ///< Row vector of shape function values.
-  typedef Eigen::Matrix< double, nDim, nNodes * nDim >      NBSized;            ///< Expanded interpolation operator N_B.
-  typedef Eigen::Matrix< double, nDim, nNodes >             dNdXiSized;         ///< Matrix of shape function natural derivatives.
-  typedef Eigen::Matrix< double, voigtSize, nNodes * nDim > BSized;             ///< Standard B-operator matrix.
-  typedef Eigen::Matrix< double, 4, nNodes * nDim >         BSizedAxisymmetric; ///< Axisymmetric B-operator matrix (4 Voigt components).
+  typedef Eigen::Matrix< double, nDim, 1 >             XiSized;          ///< Natural-coordinate vector.
+  typedef Eigen::Matrix< double, nDim * nNodes, 1 >    CoordinateVector; ///< Flat nodal-coordinate vector.
+  typedef Eigen::Matrix< double, nDim, nDim >          JacobianSized;    ///< Square Jacobian matrix.
+  typedef Eigen::Matrix< double, 1, nNodes >           NSized;           ///< Row vector of shape function values.
+  typedef Eigen::Matrix< double, nDim, nNodes * nDim > NBSized;          ///< Expanded interpolation operator N_B.
+  typedef Eigen::Matrix< double, nDim, nNodes >        dNdXiSized;  ///< Matrix of shape function natural derivatives.
+  typedef Eigen::Matrix< double, voigtSize, nNodes * nDim > BSized; ///< Standard B-operator matrix.
+  typedef Eigen::Matrix< double, 4, nNodes * nDim >
+    BSizedAxisymmetric; ///< Axisymmetric B-operator matrix (4 Voigt components).
 
   /*Properties*/
   Eigen::Map< const CoordinateVector >       coordinates; ///< Map into the externally-owned nodal-coordinate array.
@@ -102,17 +103,17 @@ public:
    *partially specialized templates)
    * */
   /// @brief Evaluate the shape function row vector at natural coordinates @p xi.
-  NSized     N( const XiSized& xi ) const;
+  NSized N( const XiSized& xi ) const;
   /// @brief Evaluate the matrix of shape function natural derivatives at @p xi.
   dNdXiSized dNdXi( const XiSized& xi ) const;
   /// @brief Compute the standard B-operator from physical derivatives @p dNdX.
-  BSized     B( const dNdXiSized& dNdX ) const;
+  BSized B( const dNdXiSized& dNdX ) const;
   /// @brief Compute the axisymmetric B-operator (4 components).
   BSizedAxisymmetric B_axisymmetric( const dNdXiSized& dNdX, const NSized& N, const XiSized& x_gauss ) const;
   /// @brief Compute the B̄-operator using the B-bar selective-reduced-integration method.
-  BSized             B_bar( const dNdXiSized& dNdX, const dNdXiSized& dNdX0 ) const;
+  BSized B_bar( const dNdXiSized& dNdX, const dNdXiSized& dNdX0 ) const;
   /// @brief Compute the Green–Lagrange strain operator for deformation gradient @p F.
-  BSized             BGreen( const dNdXiSized& dNdX, const JacobianSized& F ) const;
+  BSized BGreen( const dNdXiSized& dNdX, const JacobianSized& F ) const;
 
   /*These functions are equal for each element and independent of node number and  nDimension*/
   /// @brief Compute the expanded interpolation operator N_B from shape function values @p N.

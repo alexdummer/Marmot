@@ -81,14 +81,14 @@ namespace Marmot::NumericalAlgorithms {
      * @brief Accumulate the consistent tangent for an elastic sub-step.
      * @param CelT  Elastic stiffness matrix (6×6) at the current (end-of-sub-step) time.
      */
-    void     extendConsistentTangent( const Matrix6d& CelT );
+    void extendConsistentTangent( const Matrix6d& CelT );
 
     /**
      * @brief Accumulate the consistent tangent for an elastoplastic sub-step.
      * @param CelT        Elastic stiffness matrix (6×6) at the current time.
      * @param matTangent  Inverse algorithmic tangent (`TangentSizedMatrix`); left-applied to the current accumulation.
      */
-    void     extendConsistentTangent( const Matrix6d& CelT, const TangentSizedMatrix& matTangent );
+    void extendConsistentTangent( const Matrix6d& CelT, const TangentSizedMatrix& matTangent );
 
     /**
      * @brief Return the assembled consistent algorithmic stiffness after all sub-steps are finished.

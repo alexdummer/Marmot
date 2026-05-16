@@ -132,9 +132,9 @@ public:
    * @brief Describes a single named state variable registered in the layout.
    */
   struct VarInfo {
-    std::string name;    ///< Unique name of the state variable.
-    std::size_t size;    ///< Number of `double` values occupied by this variable.
-    std::size_t offset;  ///< Byte-offset (in units of `double`) from the beginning of the state vector.
+    std::string name;   ///< Unique name of the state variable.
+    std::size_t size;   ///< Number of `double` values occupied by this variable.
+    std::size_t offset; ///< Byte-offset (in units of `double`) from the beginning of the state vector.
   };
 
   /**

@@ -37,7 +37,7 @@
  */
 class MakeString {
 public:
-  std::stringstream stream;  ///< Internal string stream used for building the output string.
+  std::stringstream stream; ///< Internal string stream used for building the output string.
 
   /// Convert the accumulated stream content to a `std::string`.
   operator std::string() const { return stream.str(); }
