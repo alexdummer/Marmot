@@ -60,12 +60,12 @@ protected:
   const int     nMaterialProperties; ///< Number of material properties
 
 public:
-  const int materialNumber; ///< Unique integer identifier for this material instance
+  const int materialNumber; ///< Integer identifier for this material instance
   /**
    * @brief Constructs the material with a given set of material properties and an identifier.
    * @param[in] matProperties_       Pointer to the array of material properties.
    * @param[in] nMaterialProperties_ Number of entries in @p matProperties_.
-   * @param[in] materialNumber_      Unique integer identifying this material instance.
+   * @param[in] materialNumber_      Integer identifying this material instance.
    */
   MarmotMaterialHypoElastic( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : materialProperties( matProperties_ ),
