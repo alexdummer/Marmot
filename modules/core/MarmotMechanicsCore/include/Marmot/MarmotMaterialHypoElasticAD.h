@@ -35,6 +35,7 @@
 class MarmotMaterialHypoElasticAD : public MarmotMaterialHypoElastic {
 
 public:
+  /// @brief Inherits the base-class constructor; see MarmotMaterialHypoElastic::MarmotMaterialHypoElastic().
   using MarmotMaterialHypoElastic::MarmotMaterialHypoElastic;
 
   /// @brief Structure holding the material state for 3D using dual numbers (for automatic differentiation).

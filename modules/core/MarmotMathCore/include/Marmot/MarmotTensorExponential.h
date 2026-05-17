@@ -99,6 +99,7 @@ namespace Marmot {
         return theExponential;
       }
 
+      /// @brief Result aggregate returned by the first-order-derived tensor exponential.
       template < typename T, std::size_t tensorSize >
       struct TensorExponentialResult {
         Fastor::Tensor< T, tensorSize, tensorSize > theExponential; ///< The matrix exponential \f$\exp(\mathbf{A})\f$
@@ -169,6 +170,6 @@ namespace Marmot {
           return theResult;
         }
       } // namespace FirstOrderDerived
-    }   // namespace TensorExponential
-  }     // namespace ContinuumMechanics::TensorUtility
+    } // namespace TensorExponential
+  } // namespace ContinuumMechanics::TensorUtility
 } // namespace Marmot
