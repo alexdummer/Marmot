@@ -28,11 +28,16 @@
 #pragma once
 #include "Marmot/MarmotMaterialHypoElastic.h"
 
+/**
+ * @brief Derived class of MarmotMaterialHypoElastic providing automatic differentiation support
+ *        for computing the algorithmic tangent via dual numbers.
+ */
 class MarmotMaterialHypoElasticAD : public MarmotMaterialHypoElastic {
 
 public:
   using MarmotMaterialHypoElastic::MarmotMaterialHypoElastic;
 
+  /// @brief Structure holding the material state for 3D using dual numbers (for automatic differentiation).
   struct state3DAD {
     Marmot::Vector6dual stress;              ///< Cauchy stress tensor in Voigt notation
     double              strainEnergyDensity; ///< Strain energy density

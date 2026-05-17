@@ -34,7 +34,7 @@
 namespace MarmotLibrary {
 
   /**
-   * @class MarmotMaterialFactory
+   * @class MarmotMaterialHypoElasticFactory
    * @brief Factory class for creating material instances.
    *
    * This class provides a mechanism to register materials by their code and name,

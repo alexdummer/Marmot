@@ -82,6 +82,7 @@ public:
   };
 
   // Structure to hold the material state at a material point for 2D plane stress
+  /// @brief Structure holding the material state at a material point for 2D plane stress.
   struct state2D {
     Marmot::Vector3d stress;              ///< 2D Cauchy stress tensor in Voigt notation
     double           strainEnergyDensity; ///< Strain energy density
@@ -89,12 +90,14 @@ public:
   };
 
   // Structure to hold the material state at a material point for 1D uniaxial stress
+  /// @brief Structure holding the material state at a material point for 1D uniaxial stress.
   struct state1D {
     double  stress;              ///< 1D Cauchy stress
     double  strainEnergyDensity; ///< Strain energy density
     double* stateVars;           ///< Pointer to array of state variables
   };
 
+  /// @brief Structure carrying (pseudo-)time information passed to the material routines.
   struct timeInfo {
     double time; ///< Current (pseudo-)time
     double dT;   ///< (Pseudo-)time increment from the old (pseudo-)time to the current (pseudo-)time
