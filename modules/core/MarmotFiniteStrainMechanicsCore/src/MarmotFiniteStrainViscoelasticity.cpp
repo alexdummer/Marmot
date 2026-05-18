@@ -44,7 +44,7 @@ namespace Marmot {
       stress  = stress * ( 1.0 - maxwellProperties.sumGamma );
       tangent = tangent * ( 1.0 - maxwellProperties.sumGamma );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
@@ -104,7 +104,7 @@ namespace Marmot {
       stress  = stress * ( 1.0 - maxwellProperties.sumGamma );
       tangent = tangent * ( 1.0 - maxwellProperties.sumGamma );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 

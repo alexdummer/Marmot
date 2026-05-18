@@ -34,7 +34,7 @@ namespace Marmot {
      * @brief Struct to hold properties of a generalized maxwell model
      */
     struct MaxwellProperties {
-      size_t                nMaxwell; ///< Number of maxwell elements
+      int                   nMaxwell; ///< Number of maxwell elements
       std::vector< double > gamma;    ///< Weighting factors of maxwell elements
       double                sumGamma; ///< Sum of weighting factors
       std::vector< double > tau;      ///< Relaxation times of maxwell elements
@@ -118,7 +118,7 @@ namespace Marmot {
       // scale equilibrium stress contribution
       stress = multiplyFastorTensorWithScalar( stress, T( 1.0 - maxwellProperties.sumGamma ) );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
