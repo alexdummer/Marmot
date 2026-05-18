@@ -56,7 +56,7 @@ namespace Marmot {
      *
      * @details This update function uses the approach in:
      * Liu et al. 2021, A continuum and computational framework for viscoelastodynamics: I. Finite deformation linear
-     * models, Computer Methods Appl. Mech. Engrg. 385, 114059
+     * models, Comput. Meth. Appl. Mech. Engrg. 385, 114059
      */
     void evaluateGeneralizedMaxwellModel( FastorStandardTensors::Tensor33d&           stress,
                                           FastorStandardTensors::Tensor3333d&         tangent,
@@ -152,6 +152,22 @@ namespace Marmot {
       }
     }
 
+    /**
+     * @brief Evaluate generalized maxwell model contribution to stress without tangent update
+     * @param[in,out] stress             Stress tensor to be updated (input is the instantaneous hyperelastic stress)
+     * tangent)
+     * @param[in]  tangent               Tangent tensor to be used for stress update
+     * @param[in]  initialCompliance     Initial compliance tensor
+     * @param[in]  dStress               Increment of the initial stress tensor
+     * @param[in]  dT                    Time increment
+     * @param[in]  maxwellProperties     Properties of the generalized maxwell model
+     * @param[in,out] stateVars          State variables array (size: nMaxwell * 9)
+     *
+     * @details This update function uses the approach in:
+     * Liu et al. 2021, A continuum and computational framework for viscoelastodynamics: I. Finite deformation linear
+     * models, Comput. Meth. Appl. Mech. Engrg. 385, 114059
+     */
+
     template < typename T = double >
     void evaluateGeneralizedMaxwellModel( FastorStandardTensors::Tensor33t< T >&         stress,
                                           const FastorStandardTensors::Tensor3333t< T >& tangent,
@@ -172,7 +188,7 @@ namespace Marmot {
       // scale equilibrium stress contribution
       stress = stress * ( 1.0 - maxwellProperties.sumGamma );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
