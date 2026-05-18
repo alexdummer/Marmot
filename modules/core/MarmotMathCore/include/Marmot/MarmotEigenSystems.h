@@ -152,12 +152,14 @@ namespace Marmot {
     {
       using namespace FastorStandardTensors;
 
-      T p1 = -trace( A );
-      T p2 = 0.5 * ( trace( A ) * trace( A ) - trace( A % A ) );
-      T p3 = -det( A );
+      const T trA = trace( A );
 
-      T a = p2 - ( p1 * p1 ) / 3.0;
-      T b = ( 2.0 * p1 * p1 * p1 ) / 27.0 - ( p1 * p2 ) / 3.0 + p3;
+      const T p1 = -trA;
+      const T p2 = 0.5 * ( trA * trA - trace( A % A ) );
+      const T p3 = -det( A );
+
+      const T a = p2 - ( p1 * p1 ) / 3.0;
+      const T b = ( 2.0 * p1 * p1 * p1 ) / 27.0 - ( p1 * p2 ) / 3.0 + p3;
 
       Tensor3t< T > eigenvalues;
 

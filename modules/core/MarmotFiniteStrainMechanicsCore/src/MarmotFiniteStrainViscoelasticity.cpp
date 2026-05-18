@@ -5,6 +5,10 @@ namespace Marmot {
 
     MaxwellProperties createMaxwellProperties( int nMaxwell, const double* gammaTauPairVector )
     {
+      if ( nMaxwell < 0 )
+        throw std::invalid_argument( "Number of Maxwell elements cannot be negative." );
+      if ( nMaxwell == 0 )
+        return MaxwellProperties( 0, {}, 0.0, {} );
 
       std::vector< double > gamma( nMaxwell );
       std::vector< double > tau( nMaxwell );

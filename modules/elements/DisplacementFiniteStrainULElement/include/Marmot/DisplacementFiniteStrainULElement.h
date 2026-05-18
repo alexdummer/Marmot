@@ -131,6 +131,7 @@ namespace Marmot::Elements {
         /// @brief Layout of the state variable vector at the quadrature point
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 9 },
+          { .name = "F", .length = 9 },
           { .name = "F0 XX", .length = 1 },
           { .name = "F0 YY", .length = 1 },
           { .name = "F0 ZZ", .length = 1 },
@@ -139,6 +140,7 @@ namespace Marmot::Elements {
 
       public:
         Eigen::Map< Marmot::Vector9d > stress; /**< Stress tensor at the quadrature point */
+        Eigen::Map< Marmot::Vector9d > F;      /**< Deformation gradient at the quadrature point */
         double& F0_XX; /**< Deformation gradient component XX for prescribing an initial deformation state*/
         double& F0_YY; /**< Deformation gradient component YY for prescribing an initial deformation state*/
         double& F0_ZZ; /**< Deformation gradient component ZZ for prescribing an initial deformation state*/
@@ -155,6 +157,7 @@ namespace Marmot::Elements {
         QPStateVarManager( double* theStateVarVector, int nStateVars )
           : MarmotStateVarVectorManager( theStateVarVector, layout ),
             stress( &find( "stress" ) ),
+            F( &find( "F" ) ),
             F0_XX( find( "F0 XX" ) ),
             F0_YY( find( "F0 YY" ) ),
             F0_ZZ( find( "F0 ZZ" ) ),
@@ -581,6 +584,7 @@ namespace Marmot::Elements {
             };
 
             qp.managedStateVars->stress = Marmot::mapEigenToFastor( response3D.tau ).reshaped();
+            qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation3D.F ).reshaped();
           }
         }
         else {
@@ -593,6 +597,7 @@ namespace Marmot::Elements {
 
           // implicit conversion to col major
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
+          qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation.F ).reshaped();
         }
       }
       catch ( const std::runtime_error& ) {

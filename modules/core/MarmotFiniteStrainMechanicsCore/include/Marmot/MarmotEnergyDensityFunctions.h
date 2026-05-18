@@ -311,6 +311,75 @@ namespace Marmot::ContinuumMechanics {
         return { psi, dPsi_dC, d2Psi_dCdC };
       }
 
+      template < typename T >
+      std::tuple< T, FastorStandardTensors::Tensor33t< T >, FastorStandardTensors::Tensor3333t< T > > standardNeoHooke(
+        const FastorStandardTensors::Tensor33t< T >& C,
+        const double&                                K,
+        const double&                                G )
+      {
+        const double lambda = K - 2.0 / 3.0 * G;
+
+        /*
+         * we use the potential in terms of C
+         * Psi = G/2 ( tr(C) - 3 - 2 ln(J) ) + lambda/2 ( 0.5 ( J^2 - 1 ) - ln(J) )
+         * where J = sqrt( det(C) ) and ln(J) = 0.5 ln( det(C) )
+         *
+         * we can the rewrite as
+         * Psi = G/2 ( tr(C) - 3 - ln(det(C)) ) + lambda/2 ( 0.5 ( det(C) - 1 ) - 0.5 ln(det(C)) )
+         *
+         */
+
+        const T trC    = trace( C );
+        const T detC   = determinant( C );
+        const T lnDetC = log( detC );
+        // energy density
+        const T psi = G / 2 * ( trC - 3.0 - lnDetC ) + lambda / 4 * ( detC - 1.0 - lnDetC );
+
+        // first derivative quantities
+        const Tensor33t< T >& dTrC_dC    = makeOtherScalarType< T >( Spatial3D::I );
+        const Tensor33t< T >  invCt      = transpose( inverse( C ) );
+        const Tensor33t< T >  dDetC_dC   = multiplyFastorTensorWithScalar( invCt, detC );
+        const Tensor33t< T >& dLnDetC_dC = invCt;
+
+        // first derivative with respect to C
+        const Tensor33t< T > dPsi_dC = G / 2 * ( dTrC_dC - dLnDetC_dC ) + lambda / 4 * ( dDetC_dC - dLnDetC_dC );
+
+        // second derivative quantities
+        using namespace FastorIndices;
+        using lj                          = Index< l_, j_ >;
+        using li                          = Index< l_, i_ >;
+        const Tensor3333t< T > dInvCt_dC  = -0.5 * ( einsum< ik, lj, to_ijkl >( invCt, invCt ) +
+                                                    einsum< jk, li, to_ijkl >( invCt, invCt ) );
+        const Tensor3333t< T > d2DetC_dC2 = multiplyFastorTensorWithScalar( dInvCt_dC, detC ) +
+                                            einsum< ij, kl, to_ijkl >( invCt, dDetC_dC );
+        const Tensor3333t< T >& d2LnDetC_dC2 = dInvCt_dC;
+
+        // second derivative with respect to C
+        const Tensor3333t< T > d2Psi_dC2 = lambda / 4.0 * d2DetC_dC2 - ( G / 2.0 + lambda / 4.0 ) * d2LnDetC_dC2;
+        return { psi, dPsi_dC, d2Psi_dC2 };
+      }
+
+      template < typename T >
+      std::tuple< T, FastorStandardTensors::Tensor33t< T >, FastorStandardTensors::Tensor3333t< T > > BiotNeoHooke(
+        const FastorStandardTensors::Tensor33t< T >& U,
+        const double&                                K,
+        const double&                                G )
+      {
+        using namespace FastorIndices;
+        Tensor3333t< T > I4       = makeOtherScalarType< T >( Spatial3D::I4 );
+        Tensor33t< T >   C        = U % U;
+        Tensor3333t< T > dC_dU    = 2 * einsum< iL, ijkl >( U, I4 );
+        Tensor3333t< T > d2C_dUdU = 2 * I4;
+
+        auto [psi, dPsi_dC, d2Psi_dCdC] = standardNeoHooke< T >( C, K, G );
+
+        Tensor33t< T >   dPsi_dU    = einsum< kl, klmn >( dPsi_dC, dC_dU );
+        Tensor3333t< T > d2Psi_dUdU = einsum< ijkl, klmn >( einsum< ijkl, ijmn >( dC_dU, d2Psi_dCdC ), dC_dU ) +
+                                      einsum< jL, ijkl >( dPsi_dC, d2C_dUdU );
+
+        return { psi, dPsi_dU, d2Psi_dUdU };
+      }
+
     } // namespace SecondOrderDerived
 
     namespace ThirdOrderDerived {
