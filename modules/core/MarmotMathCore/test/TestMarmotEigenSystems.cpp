@@ -427,6 +427,16 @@ void testCardano_automatic_differentiation()
   expected2( 2, 2 ) = 1.0;
   throwExceptionOnFailure( checkIfEqual< double >( dlambda2_dA, expected2, 1e-10 ),
                            MakeString() << __PRETTY_FUNCTION__ << " gradient of λ₂ w.r.t. A failed" );
+
+  std::function< dual( const Tensor33t< dual >& ) > f1 = []( const Tensor33t< dual >& A_d ) {
+    return computeEigenSystemWithCardano< dual >( A_d ).first( 1 );
+  };
+  Tensor33d dlambda1_dA = df_dT( f1, A_double );
+
+  Tensor33d expected1( 0.0 );
+  expected1( 1, 1 ) = 1.0;
+  throwExceptionOnFailure( checkIfEqual< double >( dlambda1_dA, expected1, 1e-10 ),
+                           MakeString() << __PRETTY_FUNCTION__ << " gradient of λ₁ w.r.t. A failed" );
 }
 
 int main()
