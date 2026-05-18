@@ -96,13 +96,14 @@ namespace Marmot::Materials {
       baseMaterial = std::make_unique< BaseMaterialType >( matProperties_ + 1,
                                                            nMaterialProperties_ - 1,
                                                            materialNumber_ );
-
       initializeStateLayout();
     }
 
     virtual ~MarmotMaterialFiniteStrainSubstepped() = default;
 
-    void initializeStateLayout() override
+    double getDensity( const double* stateVars ) const override { return baseMaterial->getDensity( stateVars ); }
+
+    void initializeStateLayout()
     {
 
       // Add our state variable: Deformation Gradient at start of GLOBAL step (F_n)

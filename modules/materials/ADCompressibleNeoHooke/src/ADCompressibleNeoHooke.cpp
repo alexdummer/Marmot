@@ -21,7 +21,7 @@ namespace Marmot::Materials {
                                                   int           materialLabel )
     : MarmotMaterialFiniteStrainAD( materialProperties, nMaterialProperties, materialLabel )
   {
-    initializeStateLayout();
+    stateLayout.finalize();
   }
 
   void ADCompressibleNeoHooke::computeStressAD( ConstitutiveResponseAD< 3 >& response,

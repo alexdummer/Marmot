@@ -8,8 +8,6 @@
 #include <Fastor/tensor/Tensor.h>
 #include <Fastor/tensor_algebra/einsum_explicit.h>
 #include <Fastor/tensor_algebra/indicial.h>
-#include <autodiff/forward/dual/dual.hpp>
-#include <map>
 
 namespace Marmot::Materials {
 
@@ -23,7 +21,7 @@ namespace Marmot::Materials {
                                               int           materialLabel )
     : MarmotMaterialFiniteStrain( materialProperties, nMaterialProperties, materialLabel )
   {
-    initializeStateLayout();
+    stateLayout.finalize();
   }
 
   void CompressibleNeoHooke::computeStress( ConstitutiveResponse< 3 >& response,

@@ -2,6 +2,7 @@
 #include "Marmot/ADVonMisesConstants.h"
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElasticity.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
@@ -16,6 +17,17 @@ namespace Marmot::Materials {
   using namespace Eigen;
   using namespace ContinuumMechanics::Elasticity;
 
+  double ADVonMises::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties < 7 ) {
+      throw std::runtime_error( MakeString()
+                                << __PRETTY_FUNCTION__ << ": Density not provided in material properties array!" );
+    }
+    else {
+      return materialProperties[6];
+    }
+  }
+
   ADVonMises::ADVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber )
     : MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD( materialProperties,
                                                                 nMaterialProperties,
@@ -28,8 +40,8 @@ namespace Marmot::Materials {
       delta( materialProperties[5] ),
       G( E / ( 2. * ( 1. + nu ) ) )
   {
-    assert( nMaterialProperties == 6 );
-    initializeStateLayout();
+    stateLayout.add( "kappa", 1 );
+    stateLayout.finalize();
   }
 
   void ADVonMises::computeStressAD( state3DAD&                 state,
@@ -62,7 +74,7 @@ namespace Marmot::Materials {
       while ( abs( g( (double)rhoTrial, kappa, (double)dKappa ) ) > ADVonMisesConstants::innerNewtonTol ) {
 
         if ( counter == ADVonMisesConstants::nMaxInnerNewtonCycles ) {
-          throw std::runtime_error( MakeString()
+          throw StressUpdateFailed( MakeString()
                                     << __PRETTY_FUNCTION__
                                     << ": Return mapping did not converge within maximum number of iterations!" );
         }

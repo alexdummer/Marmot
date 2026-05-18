@@ -137,6 +137,23 @@ public:
                               const TimeIncrement&       timeIncrement ) const = 0;
 
   /**
+   * @brief Explicit version of computeStress for use in explicit time integration schemes.
+   * @param[inout] response ConstitutiveResponse instance
+   * @param[in] deformation Deformation instance
+   * @param[in] timeIncrement TimeIncrement instance
+   *
+   * @note The default implementation calls computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( ConstitutiveResponse< 3 >& response,
+                                      const Deformation< 3 >&    deformation,
+                                      const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > tangents;
+    computeStress( response, tangents, deformation, timeIncrement );
+  }
+
+  /**
    * @brief Computes the Kirchhoff stress given the deformation, time increment, and eigen deformation.
    * @param[inout] response ConstitutiveResponse instance
    * @param[out] tangents AlgorithmicModuli instance
@@ -165,6 +182,19 @@ public:
                                    AlgorithmicModuli< 3 >&    algorithmicModuli,
                                    const Deformation< 3 >&    deformation,
                                    const TimeIncrement&       timeIncrement ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >& response,
+                                           const Deformation< 3 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement );
+  }
+
   /**
    * @brief Compute stress under plane strain conditions with eigen deformation.
    * @param[inout] response ConstitutiveResponse instance
@@ -181,6 +211,20 @@ public:
                                    const Deformation< 3 >&                     deformation,
                                    const TimeIncrement&                        timeIncrement,
                                    const std::tuple< double, double, double >& eigenDeformation ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain with eigen deformation for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >&                  response,
+                                           const Deformation< 3 >&                     deformation,
+                                           const TimeIncrement&                        timeIncrement,
+                                           const std::tuple< double, double, double >& eigenDeformation ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement, eigenDeformation );
+  }
+
   /**
    * @brief Compute stress under plane stress conditions.
    * @param[inout] response ConstitutiveResponse instance
@@ -197,6 +241,18 @@ public:
                                    const TimeIncrement&       timeIncrement ) const;
 
   /**
+   * @brief Explicit version of computePlaneStress for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStress and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStressExplicit( ConstitutiveResponse< 2 >& response,
+                                           const Deformation< 2 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 2 > algorithmicModuli;
+    computePlaneStress( response, algorithmicModuli, deformation, timeIncrement );
+  }
+
+  /**
    * @brief Find the eigen deformation that corresponds to a given eigen stress.
    * @param initialGuess Initial guess for the eigen deformation.
    * @param eigenStress Target eigen stress.
@@ -210,14 +266,6 @@ public:
     const std::tuple< double, double, double >& initialGuess,
     const std::tuple< double, double, double >& eigenStress,
     double*                                     stateVars ) const;
-
-  /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
 
   /**
    * @brief Get a view to the state variables.
@@ -248,4 +296,11 @@ public:
       stateVars[i] = 0.0;
     }
   }
+
+  /**
+   * @brief Get the mass density of the material.
+   * @param[in] stateVars Pointer to the state variable array
+   * @return Mass density
+   */
+  virtual double getDensity( const double* stateVars ) const = 0;
 };
