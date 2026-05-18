@@ -120,6 +120,7 @@ namespace Marmot::Elements {
        */
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
+        /// \hideinitializer
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 6 },
           { .name = "strain", .length = 6 },

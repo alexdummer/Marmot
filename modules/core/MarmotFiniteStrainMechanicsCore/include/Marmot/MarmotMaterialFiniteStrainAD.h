@@ -42,6 +42,12 @@
 class MarmotMaterialFiniteStrainAD : public MarmotMaterialFiniteStrain {
 
 public:
+  /**
+   * @brief Construct a MarmotMaterialFiniteStrainAD.
+   * @param[in] matProperties_       Pointer to the array of material property values.
+   * @param[in] nMaterialProperties_ Number of material property values.
+   * @param[in] materialNumber_      Unique identifier for this material instance.
+   */
   MarmotMaterialFiniteStrainAD( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : MarmotMaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
   {

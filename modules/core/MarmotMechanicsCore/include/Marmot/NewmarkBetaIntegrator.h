@@ -35,7 +35,7 @@ namespace Marmot::TimeIntegration {
   //! This function implements the Newmark-Beta time integration method for
   //! linear dynamic problems. It updates the velocity and acceleration
   //! vectors based on the displacement increment and the time step.
-  //! \param nDim Number of dimensions (2D or 3D)
+  //! \tparam nDim Number of dimensions (2D or 3D)
   //! \param du Displacement increment vector
   //! \param v Velocity vector
   //! \param a Acceleration vector

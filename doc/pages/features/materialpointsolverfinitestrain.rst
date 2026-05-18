@@ -112,4 +112,5 @@ The history can be exported to CSV. The columns are formatted as follows:
 - **SV[N]**: Internal state variables (SV1, SV2, ...).
 
 .. doxygenclass:: MarmotMaterialPointSolverFiniteStrain
+   :project: MarmotFiniteStrainMechanicsCore
    :allow-dot-graphs:

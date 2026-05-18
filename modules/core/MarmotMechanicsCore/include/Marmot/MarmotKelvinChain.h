@@ -85,6 +85,10 @@ namespace Marmot::Materials {
     struct Factorial {
       enum { value = N * Factorial< N - 1 >::value };
     };
+    /// \cond DOXYGEN_SKIP
+    // Specialisation Factorial<0> is hidden from Doxygen: both the primary
+    // template and this specialisation would get the same documentation ID,
+    // causing a CRITICAL "Duplicate ID" error during the Sphinx build.
     /**
      * @brief Template specialization of Factorial for 0.
      *
@@ -94,6 +98,7 @@ namespace Marmot::Materials {
     struct Factorial< 0 > {
       enum { value = 1 };
     };
+    /// \endcond
     /**
      * @brief Evaluates the Post–Widder inversion formula to approximate the discrete retardance function
      * \f$L_k(\tau)\f$.
@@ -225,9 +230,9 @@ namespace Marmot::Materials {
      * @param[in] retardationTimes vector containing the retardation time for each Kelvin unit in the Kelvin chain.
      * @param[in,out] stateVars the \f$[6\times \mu]\f$ matrix that contains the viscoelastic strain update for each
      * unit of the Kelvin chain.
-     * @param[in] dStress the \f$[6\times 1]\f$ vector of the total stress increment.
-     * @param[in] unitComplianceMatrix the [6\times 6] compliance matrix of the material with unit compliance and given
-     * Poisson coeffiscient.
+     * @param[in] dStress the \f$[6 \times 1]\f$ vector of the total stress increment.
+     * @param[in] unitComplianceMatrix the \f$[6\times 6]\f$ compliance matrix of the material with unit compliance and
+     * given Poisson coeffiscient.
      */
 
     void updateStateVarMatrix( const double                 dT,

@@ -369,7 +369,7 @@ namespace Marmot {
   /**
    * @brief Reduce a 3D Fastor tensor to a 2D Fastor tensor
    * @tparam dims a pack of DimensionType specifying the conversion from 3D to 2D
-   * @param T scalar type
+   * @tparam T scalar type
    * @tparam dims3D a pack of sizes specifying the dimensions of the 3D tensor
    * @param theTensor3D a 3D input tensor
    * @return the reduced 2D tensor
@@ -416,7 +416,7 @@ namespace Marmot {
   /**
    * @brief Expand a 2D Fastor tensor to a 3D Fastor tensor
    * @tparam dims a pack of DimensionType specifying the conversion from 2D to 3D
-   * @param T scalar type
+   * @tparam T scalar type
    * @tparam dims2D a pack of sizes specifying the dimensions of the 2D Tensor
    * @param theTensor2D a 2D input tensor
    * @return the expanded 3D tensor
@@ -507,7 +507,7 @@ namespace Marmot {
   /**
    * @brief Construct a arbitrary type Fastor tensor from a Fastor double tensor
    * @tparam T target scalar type
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor of type double
    * @return a Fastor tensor of type T
    *
@@ -530,7 +530,7 @@ namespace Marmot {
   /**
    * @brief Construct a arbitrary type Fastor tensor from a Fastor double tensor map
    * @tparam T target scalar type
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor map of type double
    * @return a Fastor tensor of type T
    *
@@ -553,7 +553,7 @@ namespace Marmot {
   /**
    * @brief Extract the real part of a Fastor tensor of arbitrary type
    * @tparam T source scalar type
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor of type T
    * @return a Fastor tensor of type double
    *
@@ -575,7 +575,7 @@ namespace Marmot {
   /**
    * @brief Construct a Fastor tensor of autodiff::dual from a Fastor tensor of arbitrary type
    * @tparam T source scalar type
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor of type T
    * @return a Fastor tensor of type autodiff::dual
    *
@@ -597,7 +597,7 @@ namespace Marmot {
   /**
    * @brief Construct a Fastor tensor of autodiff::HigherOrderDual from a Fastor double tensor
    * @tparam order order of the HigherOrderDual
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor of type double
    * @return a Fastor tensor of type autodiff::HigherOrderDual
    *

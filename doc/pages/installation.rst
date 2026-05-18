@@ -5,7 +5,7 @@ Requirements
 ************
 
 Marmot itself requires the `Eigen <https://eigen.tuxfamily.org/>`_ library,
-autodiff `autodiff <github.com/autodiff/autodiff>`_,
+`autodiff <https://github.com/autodiff/autodiff>`_,
 and `Fastor <https://github.com/romeric/Fastor>`_.
 
 These are header-only libraries, so no compilation is required.
