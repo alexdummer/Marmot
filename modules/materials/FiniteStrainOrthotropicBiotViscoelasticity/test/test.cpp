@@ -52,9 +52,6 @@ static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&     
                                                        matProps.data(),
                                                        static_cast< int >( matProps.size() ),
                                                        solveropts );
-  if ( !initialStateVars.empty() ) {
-    solver.setInitialState( initialStress, initialStateVars );
-  }
   return solver;
 }
 
@@ -501,9 +498,14 @@ void testSubsteppedVariantConsistency()
   solverRegular.solve();
   Tensor33d stressRegular = solverRegular.getHistory().back().stress;
 
+  std::vector< double > matPropsSub;
+  matPropsSub.push_back( 1.0 ); // one substep
+  for ( auto& val : matProps ) {
+    matPropsSub.push_back( val );
+  }
   // Substepped variant
   std::string matNameSub = "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY_SUBSTEPPED";
-  auto        solverSub  = makeSolver( matNameSub, matProps );
+  auto        solverSub  = makeSolver( matNameSub, matPropsSub );
   solverSub.addStep( createStep() );
   solverSub.solve();
   Tensor33d stressSub = solverSub.getHistory().back().stress;

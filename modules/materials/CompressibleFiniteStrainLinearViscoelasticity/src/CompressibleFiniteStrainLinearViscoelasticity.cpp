@@ -19,6 +19,18 @@ namespace Marmot::Materials {
   using namespace FastorIndices;
   using namespace FastorStandardTensors;
 
+  double CompressibleFiniteStrainLinearViscoelasticity::getDensity( const double* stateVars ) const
+  {
+
+    if ( nMaterialProperties <
+         ( 2 + nElasticPropertiesMap.at( hyperelasticBase ) + 1 + maxwellProperties.nMaxwell * 2 ) ) {
+      throw std::runtime_error(
+        "CompressibleFiniteStrainLinearViscoelasticity::getDensity: Not enough material properties provided." );
+    }
+    else
+      return materialProperties[nMaterialProperties - 1];
+  }
+
   std::tuple< double,
               FastorStandardTensors::Tensor33d,
               FastorStandardTensors::Tensor3333d,

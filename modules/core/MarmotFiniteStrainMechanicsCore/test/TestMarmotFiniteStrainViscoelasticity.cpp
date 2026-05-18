@@ -474,7 +474,7 @@ static Tensor3333d makeIsotropicCompliance( double K, double G )
 {
   const double lambda = K - 2.0 / 3.0 * G;
   const double mu     = G;
-  return evaluate( ( 1.0 / mu ) * Spatial3D::ISymm -
+  return evaluate( ( 1.0 / 2 / mu ) * Spatial3D::ISymm -
                    ( lambda / ( 2.0 * mu * ( 3.0 * lambda + 2.0 * mu ) ) ) * Spatial3D::IHyd );
 }
 

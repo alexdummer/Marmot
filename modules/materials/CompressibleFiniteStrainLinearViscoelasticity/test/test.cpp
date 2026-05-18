@@ -29,14 +29,13 @@ static std::vector< double > getViscoelasticNeoHookeProps()
 }
 
 // Helper to create a single-step deformation solver
-static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string&     matName,
-                                                         std::vector< double >& matProps )
+static MarmotMaterialPointSolverFiniteStrain makeSolver( const std::string& matName, std::vector< double >& matProps )
 {
   auto solveropts = MarmotMaterialPointSolverFiniteStrain::SolverOptions();
   return MarmotMaterialPointSolverFiniteStrain( matName,
-                                               matProps.data(),
-                                               static_cast< int >( matProps.size() ),
-                                               solveropts );
+                                                matProps.data(),
+                                                static_cast< int >( matProps.size() ),
+                                                solveropts );
 }
 
 // Apply a single displacement-controlled step
@@ -72,9 +71,9 @@ void testUndeformedResponse()
   solver.solve();
 
   Tensor33d stressTarget( 0.0 );
-  throwExceptionOnFailure(
-    checkIfEqual( solver.getHistory().back().stress, stressTarget, 1e-10 ),
-    "I-1: Undeformed configuration - stress should be zero in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( solver.getHistory().back().stress, stressTarget, 1e-10 ),
+                           "I-1: Undeformed configuration - stress should be zero in " +
+                             std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-2: Uniaxial stretch F_11=1.1 matches NeoHooke reference (elastic, nMaxwell=0)
@@ -99,9 +98,8 @@ void testUniaxialElasticResponse()
   stressTarget( 1, 1 ) = 262.5;
   stressTarget( 2, 2 ) = 262.5;
 
-  throwExceptionOnFailure(
-    checkIfEqual( finalStress, stressTarget, 1e-4 ),
-    "I-2: Uniaxial elastic response failed in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( finalStress, stressTarget, 1e-4 ),
+                           "I-2: Uniaxial elastic response failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-3: Kirchhoff stress tensor is symmetric for arbitrary deformation
@@ -125,9 +123,8 @@ void testStressTensorSymmetry()
   solver.solve();
 
   auto tau = solver.getHistory().back().stress;
-  throwExceptionOnFailure(
-    checkIfEqual( tau, Fastor::transpose( tau ), 1e-10 ),
-    "I-3: Stress symmetry failed in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( tau, Fastor::transpose( tau ), 1e-10 ),
+                           "I-3: Stress symmetry failed in " + std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-4: Pure rotation gives zero Kirchhoff stress
@@ -150,10 +147,9 @@ void testPureRotationZeroStress()
     solver.addStep( makeStep( F - Spatial3D::I, 0.0, 1.0, 1.0 ) );
     solver.solve();
 
-    throwExceptionOnFailure(
-      checkIfEqual( solver.getHistory().back().stress, Tensor33d( 0.0 ), 1e-10 ),
-      "I-4: Pure rotation (phi=" + std::to_string( phi_deg ) + ") should give zero stress in " +
-        std::string( __PRETTY_FUNCTION__ ) );
+    throwExceptionOnFailure( checkIfEqual( solver.getHistory().back().stress, Tensor33d( 0.0 ), 1e-10 ),
+                             "I-4: Pure rotation (phi=" + std::to_string( phi_deg ) + ") should give zero stress in " +
+                               std::string( __PRETTY_FUNCTION__ ) );
   }
 }
 
@@ -189,8 +185,8 @@ void testObjectivity()
     Q( 1, 1 ) = cos( phi );
     Q( 2, 2 ) = 1.0;
 
-    Tensor33d F_rot      = einsum< ik, kj, to_ij >( Q, F );
-    auto      solver     = makeSolver( matName, matProps );
+    Tensor33d F_rot  = einsum< ik, kj, to_ij >( Q, F );
+    auto      solver = makeSolver( matName, matProps );
     solver.addStep( makeStep( F_rot - Spatial3D::I, 0.0, 1.0, 1.0 ) );
     solver.solve();
     Tensor33d tauRot = solver.getHistory().back().stress;
@@ -198,10 +194,9 @@ void testObjectivity()
     // Expected: tau_rot = Q * tau_ref * Q^T
     Tensor33d tauExpected = einsum< iI, IJ, jJ, to_ij >( Q, tauRef, Q );
 
-    throwExceptionOnFailure(
-      checkIfEqual( tauRot, tauExpected, 1e-8 ),
-      "I-5: Objectivity failed for phi=" + std::to_string( phi_deg ) + " in " +
-        std::string( __PRETTY_FUNCTION__ ) );
+    throwExceptionOnFailure( checkIfEqual( tauRot, tauExpected, 1e-8 ),
+                             "I-5: Objectivity failed for phi=" + std::to_string( phi_deg ) + " in " +
+                               std::string( __PRETTY_FUNCTION__ ) );
   }
 }
 
@@ -234,9 +229,9 @@ void testViscoelasticRelaxation()
   stressTarget( 1, 1 ) = longTermFac * 262.5;
   stressTarget( 2, 2 ) = longTermFac * 262.5;
 
-  throwExceptionOnFailure(
-    checkIfEqual( stressRelaxed, stressTarget, 1.0 ),
-    "I-6: Viscoelastic relaxation - long-term stress wrong in " + std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( stressRelaxed, stressTarget, 1.0 ),
+                           "I-6: Viscoelastic relaxation - long-term stress wrong in " +
+                             std::string( __PRETTY_FUNCTION__ ) );
 }
 
 // Test I-7: Substepped variant gives the same result as the regular variant
@@ -258,27 +253,31 @@ void testSubsteppedConsistency()
   Tensor33d stressRegular = solverRegular.getHistory().back().stress;
 
   // Substepped variant
-  auto solverSub = makeSolver( "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED", matPropsElas );
+  std::vector< double > matPropsSub;
+  matPropsSub.push_back( 1.0 ); // one substep
+  for ( auto& prop : matPropsElas ) {
+    matPropsSub.push_back( prop );
+  }
+  auto solverSub = makeSolver( "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED", matPropsSub );
   solverSub.addStep( step );
   solverSub.solve();
   Tensor33d stressSub = solverSub.getHistory().back().stress;
 
-  throwExceptionOnFailure(
-    checkIfEqual( stressRegular, stressSub, 1e-8 ),
-    "I-7: Substepped variant gives different result than regular variant in " +
-      std::string( __PRETTY_FUNCTION__ ) );
+  throwExceptionOnFailure( checkIfEqual( stressRegular, stressSub, 1e-8 ),
+                           "I-7: Substepped variant gives different result than regular variant in " +
+                             std::string( __PRETTY_FUNCTION__ ) );
 }
 
 int main()
 {
   auto tests = std::vector< std::function< void() > >{
-    testUndeformedResponse,       // I-1: F=I gives zero stress
-    testUniaxialElasticResponse,  // I-2: Uniaxial elastic stretch reference values
-    testStressTensorSymmetry,     // I-3: Kirchhoff stress symmetry
-    testPureRotationZeroStress,   // I-4: Pure rotation gives zero stress
-    testObjectivity,              // I-5: Objectivity tau(Q*F) = Q*tau(F)*Q^T
-    testViscoelasticRelaxation,   // I-6: Viscoelastic relaxation
-    testSubsteppedConsistency,    // I-7: Substepped == regular
+    testUndeformedResponse,      // I-1: F=I gives zero stress
+    testUniaxialElasticResponse, // I-2: Uniaxial elastic stretch reference values
+    testStressTensorSymmetry,    // I-3: Kirchhoff stress symmetry
+    testPureRotationZeroStress,  // I-4: Pure rotation gives zero stress
+    testObjectivity,             // I-5: Objectivity tau(Q*F) = Q*tau(F)*Q^T
+    testViscoelasticRelaxation,  // I-6: Viscoelastic relaxation
+    testSubsteppedConsistency,   // I-7: Substepped == regular
   };
 
   executeTestsAndCollectExceptions( tests );

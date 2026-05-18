@@ -12,9 +12,9 @@ using namespace Marmot::Solvers;
 using namespace Fastor;
 using namespace FastorStandardTensors;
 
-MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( std::string&         materialName,
-                                                                              double*              materialProperties,
-                                                                              int                  nMaterialProperties,
+MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( const std::string&   materialName,
+                                                                              const double*        materialProperties,
+                                                                              const int            nMaterialProperties,
                                                                               const SolverOptions& options )
   : options( options )
 {
@@ -235,7 +235,7 @@ void MarmotMaterialPointSolverFiniteStrain::solveIncrement( const Increment& inc
   // copy back updated state variables
   stateVars = stateVarsTemp;
   history.push_back(
-    HistoryEntry{ increment.timeOld + increment.dT, stress, Spatial3D::I + gradU, dTau_dF, stateVars } );
+    HistoryEntry( increment.timeOld + increment.dT, stress, Spatial3D::I + gradU, dTau_dF, stateVars ) );
 }
 
 Tensor9d MarmotMaterialPointSolverFiniteStrain::computeResidual( const Tensor9d&  stressIncrement,

@@ -54,6 +54,8 @@ namespace Marmot::Materials {
                           const DeformationAD< 3 >&,
                           const TimeIncrement& ) const override;
 
+    double getDensity( const double* stateVars ) const override;
+
   protected:
     const double E1;
     const double E2;
@@ -71,7 +73,7 @@ namespace Marmot::Materials {
 
     FastorStandardTensors::Tensor3333d dBiotStress_dU = FastorStandardTensors::Tensor3333d( 0 );
 
-    void initializeStateLayout() override
+    void initializeStateLayout()
     {
       stateLayout.add( "S0_old", 9 );
       stateLayout.add( "creepStateVars", maxwellProperties.nMaxwell * 9 ); // plastic deformation gradient
