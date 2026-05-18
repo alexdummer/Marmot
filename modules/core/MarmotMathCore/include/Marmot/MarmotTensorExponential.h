@@ -170,6 +170,6 @@ namespace Marmot {
           return theResult;
         }
       } // namespace FirstOrderDerived
-    } // namespace TensorExponential
-  } // namespace ContinuumMechanics::TensorUtility
+    }   // namespace TensorExponential
+  }     // namespace ContinuumMechanics::TensorUtility
 } // namespace Marmot
