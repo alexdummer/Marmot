@@ -36,7 +36,7 @@ namespace Marmot {
     /**
      * \brief Generalized failure criterion proposed by Menétrey and Willam
      *
-     * Implementation of the generalized failure criterion proposed by Menétrey and Willam \cite MenetreyWillam1995
+     * Implementation of the generalized failure criterion proposed by Menétrey and Willam
      *
      * \f[
      *  f(\xi,\rho,\theta) = \left(A_f\,\rho\right)^2+m\left(B_f\,\rho\,r(\theta,e)+C_f\,\xi\right) - 1
@@ -45,9 +45,6 @@ namespace Marmot {
      * with the Haigh-Westergaard coordinates \f$\xi,\,\rho,\,\theta\f$ and the parameters \f$A_f,\,B_f,\,C_f,\,m,\,e\f$
      * which are automatically evaluated dependent on the desired formulation (supported types see \ref
      * MenetreyWillamType).
-     *
-     * \image html yieldSurfaceDeviatoric_MenetreyWillam.png width=75%
-     * \image latex yieldSurfaceDeviatoric_MenetreyWillam.png width=75%
      *
      * # Example
      *
@@ -93,9 +90,9 @@ namespace Marmot {
         double e;  /**< Eccentricity parameter \f$e\f$; to obtain a smooth and
                       convex surface $e$ has to be in the range of \f$0.5\leq e
                       \leq 1\f$ */
-      } param;
+      } param;     ///< Menetrey Willam parameters
 
-      // Reduction of the generalized failure criterion to a specific type.
+      /// @brief Reduction of the generalized failure criterion to a specific type.
       enum class MenetreyWillamType {
         Mises,         /**< von-Mises failure criterion; only the tensile strength @ref
                           ft has to be specified. */
@@ -220,6 +217,13 @@ namespace Marmot {
         return { r, dRdTheta };
       }
 
+      /**
+       * @brief Compute the polar radius and its first and second derivative with respect to the Lode angle
+       * @tparam T scalar type
+       * @param theta Lode angle
+       * @param e eccentricity parameter
+       * @return tuple of polar radius, its first and second derivative with respect to the Lode angle
+       */
       template < typename T >
       static std::tuple< T, T, T > d2PolarRadius_dTheta2( const T& theta, const double& e )
       {

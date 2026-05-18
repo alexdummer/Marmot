@@ -230,9 +230,9 @@ namespace Marmot::Materials {
      * @param[in] retardationTimes vector containing the retardation time for each Kelvin unit in the Kelvin chain.
      * @param[in,out] stateVars the \f$[6\times \mu]\f$ matrix that contains the viscoelastic strain update for each
      * unit of the Kelvin chain.
-     * @param[in] dStress the \f$[6\times 1]\f$ vector of the total stress increment.
-     * @param[in] unitComplianceMatrix the [6\times 6] compliance matrix of the material with unit compliance and given
-     * Poisson coeffiscient.
+     * @param[in] dStress the \f$[6 \times 1]\f$ vector of the total stress increment.
+     * @param[in] unitComplianceMatrix the \f$[6\times 6]\f$ compliance matrix of the material with unit compliance and
+     * given Poisson coeffiscient.
      */
 
     void updateStateVarMatrix( const double                 dT,
