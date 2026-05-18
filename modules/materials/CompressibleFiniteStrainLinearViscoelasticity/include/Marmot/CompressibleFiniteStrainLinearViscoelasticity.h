@@ -73,6 +73,8 @@ namespace Marmot::Materials {
                         const Deformation< 3 >&,
                         const TimeIncrement& ) const override;
 
+    double getDensity( const double* stateVars ) const override;
+
   protected:
     /// @brief Enum for hyperelastic base
     enum HyperelasticBase { NeoHooke = 0, Yeoh = 1, MooneyRivlin = 2, PenceGouNeoHooke = 3 };
@@ -100,7 +102,7 @@ namespace Marmot::Materials {
     /// @brief Initial compliance tensor
     FastorStandardTensors::Tensor3333d initialCompliance;
 
-    void initializeStateLayout() override
+    void initializeStateLayout()
     {
       stateLayout.add( "S0_old", 9 );
       stateLayout.add( "creepStateVars", maxwellProperties.nMaxwell * 9 ); // plastic deformation gradient

@@ -26,58 +26,62 @@
  */
 
 #pragma once
-#include "Marmot/MarmotFiniteStrainViscoelasticity.h"
 #include "Marmot/MarmotMaterialFiniteStrainAD.h"
 
 namespace Marmot::Materials {
 
   /**
-   * @class Marmot::Materials::FiniteStrainOrthotropicBiotViscoelasticity
-   * @brief Linear Viscoelastic Biot hyperelastic material model
-   * considering orthotropic elasticity and linear viscoelasticity in the Biot stress, i.e. the stress is computed as
+   * @class Marmot::Materials::ADCompressibleNeoHooke
+   * @brief Compressible Neo-Hookean hyperelastic material model (Pence–Gou potential, variant B).
+   *
+   * @par Material parameters
+   * - @b K - bulk modulus
+   * - @b G - shear modulus
+   *
+   * @par State variables
+   * - No state variables required.
+   *
+   * @ingroup materials_hyperelastic
    */
-  class FiniteStrainOrthotropicBiotViscoelasticity : public MarmotMaterialFiniteStrainAD {
+
+  class ADCompressibleNeoHooke : public MarmotMaterialFiniteStrainAD {
   public:
     using MarmotMaterialFiniteStrainAD::MarmotMaterialFiniteStrainAD;
 
     /**
-     * @brief Construct a FiniteStrainOrthotropicBiotViscoelasticity material.
-     * @param materialProperties Pointer to the material properties vector.
+     * @brief Construct a ADCompressibleNeoHooke material.
+     * @param materialProperties Expects @c K at index 0 and @c G at index 1.
      * @param nMaterialProperties Length of @c materialProperties.
      * @param materialLabel Material label.
      */
-    FiniteStrainOrthotropicBiotViscoelasticity( const double* materialProperties,
-                                                int           nMaterialProperties,
-                                                int           materialLabel );
+    ADCompressibleNeoHooke( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
+    /**
+     * @brief Compute the Kirchhoff stress with dual numbers.
+     *
+     * @param[in,out] response
+     *   - @c tau - Kirchhoff stress tensor @f$\boldsymbol{\tau}@f$.
+     *   - @c elasticEnergyDensity - elastic energy density  @f$\psi@f$.
+     *   - @c rho - density (unused here).
+     * @param[in]  deformation
+     *   - @c F - deformation gradient @f$\boldsymbol{F}@f$.
+     * @param[in]  timeIncrement
+     *   - @c t - old (pseudo-)time.
+     *   - @c dT - (pseudo-)time increment.
+     *
+     * Template parameter @c <3> indicates 3D.
+     */
     void computeStressAD( ConstitutiveResponseAD< 3 >&,
                           const DeformationAD< 3 >&,
                           const TimeIncrement& ) const override;
 
-    double getDensity( const double* stateVars ) const override;
-
-  protected:
-    const double E1;
-    const double E2;
-    const double E3;
-
-    const double nu12;
-    const double nu13;
-    const double nu23;
-
-    const double G12;
-    const double G13;
-    const double G23;
-
-    const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
-
-    FastorStandardTensors::Tensor3333d dBiotStress_dU = FastorStandardTensors::Tensor3333d( 0 );
-
-    void initializeStateLayout()
+    double getDensity( const double* stateVars ) const override
     {
-      stateLayout.add( "S0_old", 9 );
-      stateLayout.add( "creepStateVars", maxwellProperties.nMaxwell * 9 ); // plastic deformation gradient
-      stateLayout.finalize();
+      if ( this->nMaterialProperties < 3 ) {
+        throw std::runtime_error(
+          std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 3." ) );
+      }
+      return this->materialProperties[2];
     }
   };
 

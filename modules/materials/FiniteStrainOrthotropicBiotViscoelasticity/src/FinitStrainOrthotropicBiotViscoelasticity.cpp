@@ -20,6 +20,14 @@ namespace Marmot::Materials {
   using namespace FastorIndices;
   using namespace FastorStandardTensors;
 
+  double FiniteStrainOrthotropicBiotViscoelasticity::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties < ( 9 + 1 + maxwellProperties.nMaxwell * 2 ) ) {
+      throw std::runtime_error( "Not enough material properties provided to compute density." );
+    }
+    return materialProperties[nMaterialProperties - 1];
+  }
+
   FiniteStrainOrthotropicBiotViscoelasticity::FiniteStrainOrthotropicBiotViscoelasticity(
     const double* materialProperties,
     int           nMaterialProperties,

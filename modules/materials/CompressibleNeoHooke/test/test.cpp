@@ -21,18 +21,18 @@ void testSetup( const std::string& testName,
 
   // idx 0 - Bulk modulus K, idx 1 - Shear modulus G
   std::array< double, 2 > materialProperties_ = { 3500, 1500 };
-  const double            nMaterialProperties = 2;
+  const int               nMaterialProperties = 2;
   const int               elLabel             = 1;
 
   // Create material instance
   const CompressibleNeoHooke mat = CompressibleNeoHooke( &materialProperties_[0], nMaterialProperties, elLabel );
 
   // Create deformation, time increment, response and tangent objects required for stress computation
-  CompressibleNeoHooke::Deformation< 3 > def;
+  CompressibleNeoHooke::Deformation< 3 > def     = { Tensor33d( 0.0 ) };
   CompressibleNeoHooke::TimeIncrement    timeInc = { 0, 0.1 };
 
-  CompressibleNeoHooke::ConstitutiveResponse< 3 > response;
-  CompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent;
+  CompressibleNeoHooke::ConstitutiveResponse< 3 > response = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
+  CompressibleNeoHooke::AlgorithmicModuli< 3 >    tangent  = { Tensor3333d( 0.0 ) };
 
   // Prescribe a deformation gradient tensor F for the considered load case
   def.F = inputF;

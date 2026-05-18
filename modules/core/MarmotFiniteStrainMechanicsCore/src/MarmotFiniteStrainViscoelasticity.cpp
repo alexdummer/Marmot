@@ -1,4 +1,7 @@
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
+#include <algorithm>
+#include <cstring>
+#include <vector>
 
 namespace Marmot {
   namespace ContinuumMechanics::FiniteStrain::Viscoelasticity {
@@ -45,7 +48,7 @@ namespace Marmot {
       stress  = stress * ( 1.0 - maxwellProperties.sumGamma );
       tangent = tangent * ( 1.0 - maxwellProperties.sumGamma );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
@@ -79,7 +82,7 @@ namespace Marmot {
         tangent += einsum< ij, ijklmn >( H_np, dTangent_dDeformation );
 
         // update state variables
-        memcpy( stateVars + i * 9, &Q_np, 9 * sizeof( double ) );
+        memcpy( stateVars + i * 9, Q_np.data(), 9 * sizeof( double ) );
       }
     }
 
@@ -105,7 +108,7 @@ namespace Marmot {
       stress  = stress * ( 1.0 - maxwellProperties.sumGamma );
       tangent = tangent * ( 1.0 - maxwellProperties.sumGamma );
 
-      for ( size_t i = 0; i < maxwellProperties.nMaxwell; ++i ) {
+      for ( int i = 0; i < maxwellProperties.nMaxwell; ++i ) {
         // get old  maxewell element stress from state variables
         const Tensor33d& Q_n = Tensor33d( stateVars + i * 9 );
 
