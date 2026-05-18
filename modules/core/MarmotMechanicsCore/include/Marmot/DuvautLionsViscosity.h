@@ -43,8 +43,11 @@ namespace Marmot {
       const double viscosity;
 
     public:
-      typedef Eigen::Matrix< double, nMatTangentSize, nMatTangentSize > TangentSizedMatrix;
+      typedef Eigen::Matrix< double, nMatTangentSize, nMatTangentSize >
+        TangentSizedMatrix; ///< Square matrix type sized to the material tangent dimension
 
+      /// @brief Constructs the viscosity model with the given viscosity parameter.
+      /// @param viscosity Viscosity parameter \f$\eta\f$ for the Duvaut-Lions regularisation.
       DuvautLionsViscosity( double viscosity );
 
       /**
