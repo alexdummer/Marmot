@@ -27,6 +27,7 @@
 #pragma once
 #include "Eigen/Core"
 #include "Fastor/Fastor.h"
+#include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotTensor.h"
 #include <autodiff/forward/dual/dual.hpp>
 
@@ -674,4 +675,17 @@ namespace Marmot {
     const FastorStandardTensors::Tensor33t< T > dev   = t - 1. / 3 * multiplyFastorTensorWithScalar( I, trace( t ) );
     return dev;
   }
+
+  /**
+   * @brief Compute the inverse of a minor symmetric fourth order 3D Fastor tensor
+   * @tparam T scalar type
+   * @param C a minor symmetric fourth order Fastor tensor
+   * @return the inverse of the input tensor
+   * @note A minor symmetric fourth order tensor is a fourth order tensor that is symmetric with respect to the first
+   * and second pair of indices, i.e. \f$ C_{ijkl} = C_{jikl} = C_{ijlk} \f$. It actually computes \f$ C^{-1}_{ijkl} \f$
+   * such that \f$ C^{-1}_{ijmn} C_{mnkl} = \delta_{ik}\delta_{jl} \f$ using Mandel notation and Fastor's inverse
+   * function for second order tensors.
+   */
+  FastorStandardTensors::Tensor3333d invertMinorSymmetricFourthOrderTensor(
+    const FastorStandardTensors::Tensor3333d& C );
 } // namespace Marmot

@@ -112,6 +112,7 @@ namespace Marmot::Materials {
     const Tensor33t< scalar > tau = StressMeasures::KirchhoffStressFromPK2( PK2, F );
     response.tau                  = tau;
     response.rho                  = 1.0;
-    response.elasticEnergyDensity = 0.5 * einsum< ij, ij >( makeReal( S_biot ), makeReal( U ) - I ).toscalar();
+    response.elasticEnergyDensity = 0.5 *
+                                    einsum< ij, ij >( makeReal( S_biot ), makeReal( evaluate( U - I ) ) ).toscalar();
   }
 } // namespace Marmot::Materials
