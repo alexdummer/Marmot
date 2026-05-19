@@ -2,6 +2,7 @@
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStressMeasures.h"
 #include <Fastor/expressions/linalg_ops/unary_trans_op.h>
 #include <Fastor/tensor/Tensor.h>

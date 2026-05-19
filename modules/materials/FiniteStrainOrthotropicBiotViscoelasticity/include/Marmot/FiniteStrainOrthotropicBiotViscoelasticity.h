@@ -71,7 +71,7 @@ namespace Marmot::Materials {
 
     const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
 
-    FastorStandardTensors::Tensor3333d dBiotStress_dU = FastorStandardTensors::Tensor3333d( 0 );
+    const FastorStandardTensors::Tensor3333t< autodiff::dual > dBiotStress_dU;
 
     void initializeStateLayout()
     {

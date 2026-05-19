@@ -26,7 +26,8 @@
  */
 
 #pragma once
-#include "MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotMath.h"
 #include <algorithm>
 #include <cmath>
 #include <utility>

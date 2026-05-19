@@ -1,4 +1,5 @@
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
+#include "Marmot/MarmotMath.h"
 #include <algorithm>
 #include <cstring>
 #include <vector>

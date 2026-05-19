@@ -26,6 +26,7 @@
  */
 #pragma once
 #include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotMath.h"
 
 namespace Marmot {
   namespace ContinuumMechanics::FiniteStrain::Viscoelasticity {

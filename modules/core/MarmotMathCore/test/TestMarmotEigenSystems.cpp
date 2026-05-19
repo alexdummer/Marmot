@@ -1,5 +1,6 @@
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotEigenSystems.h"
+#include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTesting.h"
 
 using namespace Marmot::Testing;
