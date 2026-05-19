@@ -6,7 +6,6 @@ This section contains the ready to use available material models.
 .. toctree::
   :maxdepth: 1
 
-  adcompressibleneohooke
   b4
   compressibleneohooke
   compressiblefinitestrainlinearviscoelasticity
