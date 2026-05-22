@@ -516,8 +516,8 @@ namespace Marmot::Elements {
 
     for ( QuadraturePoint& qp : qps ) {
 
-      const BSized& B = qp.B;
-      dE              = B * dQ;
+      const BSized& B            = qp.B;
+      dE                         = B * dQ;
       double strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
       if constexpr ( nDim == 1 ) {
@@ -599,8 +599,8 @@ namespace Marmot::Elements {
           }
           qp.managedStateVars->stress = state.stress;
 
-          S = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
-          C = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 );
+          S                   = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
+          C                   = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 );
           strainEnergyDensity = state.strainEnergyDensity;
         }
       }
@@ -660,8 +660,8 @@ namespace Marmot::Elements {
 
     for ( QuadraturePoint& qp : qps ) {
 
-      const BSized& B = qp.B;
-      dE              = B * dQ;
+      const BSized& B            = qp.B;
+      dE                         = B * dQ;
       double strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
       if constexpr ( nDim == 1 ) {
@@ -722,7 +722,7 @@ namespace Marmot::Elements {
           }
           qp.managedStateVars->stress = state.stress;
 
-          S = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
+          S                   = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
           strainEnergyDensity = state.strainEnergyDensity;
         }
       }

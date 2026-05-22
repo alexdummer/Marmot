@@ -319,14 +319,8 @@ public:
     Deformation< 3 > deformationPlus{ FPlus };
     Deformation< 3 > deformationMinus{ FMinus };
 
-    ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
-                                            -1.0,
-                                            0.0,
-                                            stateVarsPlus.data() };
-    ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
-                                             -1.0,
-                                             0.0,
-                                             stateVarsMinus.data() };
+    ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsPlus.data() };
+    ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsMinus.data() };
 
     const TimeIncrement timeIncrement{ 0.0, 1.0 };
 

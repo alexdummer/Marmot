@@ -123,10 +123,10 @@ namespace Marmot::Elements {
       const XiSized xi;     /**< Local coordinates of the quadrature point */
       const double  weight; /**< Weight of the quadrature point */
 
-      dNdXiSized dNdX;      /**< Shape function derivatives w.r.t. material (undeformed) coordinates evaluated at the
-                               quadrature point */
-      double detJ;          /**< Determinant of the undeformed Jacobian */
-      double J0xW;          /**< Determinant of the undeformed Jacobian times quadrature weight */
+      dNdXiSized dNdX; /**< Shape function derivatives w.r.t. material (undeformed) coordinates evaluated at the
+                          quadrature point */
+      double detJ;     /**< Determinant of the undeformed Jacobian */
+      double J0xW;     /**< Determinant of the undeformed Jacobian times quadrature weight */
 
       /// @class QPStateVarManager
       /// @brief Manager class for handling state variables at the quadrature point
@@ -143,8 +143,8 @@ namespace Marmot::Elements {
         } );
 
       public:
-        Eigen::Map< Marmot::Vector9d > stress; /**< Stress tensor at the quadrature point */
-        double& strainEnergy; /**< Integrated strain energy at the quadrature point */
+        Eigen::Map< Marmot::Vector9d > stress;       /**< Stress tensor at the quadrature point */
+        double&                        strainEnergy; /**< Integrated strain energy at the quadrature point */
         double& F0_XX; /**< Deformation gradient component XX for prescribing an initial deformation state*/
         double& F0_YY; /**< Deformation gradient component YY for prescribing an initial deformation state*/
         double& F0_ZZ; /**< Deformation gradient component ZZ for prescribing an initial deformation state*/
@@ -533,7 +533,7 @@ namespace Marmot::Elements {
       const JacobianSized J    = this->Jacobian( dNdXi_ );
       const JacobianSized JInv = J.inverse();
       const double        detJ = J.determinant();
-      qp.detJ                 = detJ;
+      qp.detJ                  = detJ;
 
       qp.dNdX = this->dNdX( dNdXi_, JInv );
 
@@ -590,8 +590,8 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
-      Material::AlgorithmicModuli< nDim >    tangents = { 0 };
+      Material::ConstitutiveResponse< nDim > response               = { 0, 0, 0, nullptr };
+      Material::AlgorithmicModuli< nDim >    tangents               = { 0 };
       double                                 integratedStrainEnergy = qp.managedStateVars->strainEnergy;
       try {
         if constexpr ( nDim == 2 ) {
@@ -625,10 +625,10 @@ namespace Marmot::Elements {
             else
               qp.material->computePlaneStrain( response3D, algorithmicModuli3D, deformation3D, timeIncrement );
 
-            response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
-                         response3D.elasticEnergyDensity,
-                         qp.managedStateVars->materialStateVars.data() };
+            response               = { reduceTo2D< U, U >( response3D.tau ),
+                                       response3D.rho,
+                                       response3D.elasticEnergyDensity,
+                                       qp.managedStateVars->materialStateVars.data() };
             integratedStrainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
 
             tangents = {
@@ -656,7 +656,7 @@ namespace Marmot::Elements {
         return;
       }
       qp.managedStateVars->strainEnergy = integratedStrainEnergy;
-      const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
+      const auto dNdx                   = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
       const double& J0xW = qp.J0xW;
 
@@ -723,7 +723,7 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
+      Material::ConstitutiveResponse< nDim > response               = { 0, 0, 0, nullptr };
       double                                 integratedStrainEnergy = qp.managedStateVars->strainEnergy;
       try {
         if constexpr ( nDim == 2 ) {
@@ -754,10 +754,10 @@ namespace Marmot::Elements {
             else
               qp.material->computePlaneStrainExplicit( response3D, deformation3D, timeIncrement );
 
-            response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
-                         response3D.elasticEnergyDensity,
-                         qp.managedStateVars->materialStateVars.data() };
+            response               = { reduceTo2D< U, U >( response3D.tau ),
+                                       response3D.rho,
+                                       response3D.elasticEnergyDensity,
+                                       qp.managedStateVars->materialStateVars.data() };
             integratedStrainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
 
             qp.managedStateVars->stress = Marmot::mapEigenToFastor( response3D.tau ).reshaped();
@@ -781,7 +781,7 @@ namespace Marmot::Elements {
         return;
       }
       qp.managedStateVars->strainEnergy = integratedStrainEnergy;
-      const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
+      const auto dNdx                   = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
       const double& J0xW = qp.J0xW;
 
@@ -1135,7 +1135,7 @@ namespace Marmot::Elements {
 
       const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
-      const double J0xWxRx2Pi = qp.J0xW * 2 * Constants::Pi * r;
+      const double J0xWxRx2Pi           = qp.J0xW * 2 * Constants::Pi * r;
       qp.managedStateVars->strainEnergy = response3D.elasticEnergyDensity * J0xWxRx2Pi;
 
       const auto& tau = response.tau;
@@ -1276,7 +1276,7 @@ namespace Marmot::Elements {
 
       const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
-      const double J0xWxRx2Pi = qp.J0xW * 2 * Constants::Pi * r;
+      const double J0xWxRx2Pi           = qp.J0xW * 2 * Constants::Pi * r;
       qp.managedStateVars->strainEnergy = response3D.elasticEnergyDensity * J0xWxRx2Pi;
 
       const auto& tau = response.tau;
