@@ -273,26 +273,12 @@ public:
   virtual double getDensity( const double* stateVars ) const = 0;
 
   /**
-   * @breif Get the bulk modulus of the material.
-   * @param stateVars Pointer to the array of state variables
+   * @brief Get the bulk modulus of the material for the current response state.
+   * @param currentResponse Current response state
    * @return Bulk modulus of the material
-   * This method must be implemented in derived classes to return the bulk modulus of the material, which is required
-   * for dynamic analyses.
+   * @details Must be implemented in derived classes and can use stress/nonlocal response quantities.
    */
-  virtual double getBulkModulus( const double* stateVars ) const = 0;
-
-  /**
-   * @brief Get the bulk modulus of the material for a given total strain state.
-   * @param stateVars Pointer to the array of state variables
-   * @param totalStrain Current total strain in 3D Voigt notation
-   * @return Bulk modulus of the material
-   * @details The default implementation delegates to @ref getBulkModulus(const double*).
-   */
-  virtual double getBulkModulus( const double* stateVars, const Marmot::Vector6d& totalStrain ) const
-  {
-    (void)totalStrain;
-    return getBulkModulus( stateVars );
-  }
+  virtual double getBulkModulus( const response& currentResponse ) const = 0;
 
   /**
    * @brief Get the nonlocal viscosity of the material.

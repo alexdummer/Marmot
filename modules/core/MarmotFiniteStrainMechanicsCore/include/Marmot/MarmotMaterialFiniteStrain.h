@@ -290,22 +290,6 @@ public:
   }
 
   /**
-   * @brief Get the bulk modulus of the material.
-   * @param[in] stateVars Pointer to the state variable array
-   * @return Bulk modulus
-   * @details The default implementation uses a centered finite difference around
-   * an identity deformation gradient.
-   */
-  virtual double getBulkModulus( const double* stateVars ) const
-  {
-    Fastor::Tensor< double, 3, 3 > F( 0.0 );
-    for ( int i = 0; i < 3; i++ ) {
-      F( i, i ) = 1.0;
-    }
-    return getBulkModulus( stateVars, F );
-  }
-
-  /**
    * @brief Get the bulk modulus of the material for a given deformation gradient.
    * @param[in] stateVars Pointer to the state variable array
    * @param[in] deformationGradient Current deformation gradient used as perturbation reference

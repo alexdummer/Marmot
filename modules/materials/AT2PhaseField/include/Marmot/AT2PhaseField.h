@@ -62,7 +62,7 @@ namespace Marmot::Materials {
 
     std::vector< double > getNonlocalViscosity( const double* stateVars ) const override;
 
-    double getBulkModulus( const double* stateVars ) const override;
+    double getBulkModulus( const response& currentResponse ) const override;
 
   private:
     /// @brief Elastic stiffness tensor

@@ -897,7 +897,7 @@ namespace Marmot::Elements {
   void DisplacementFiniteElement< nDim, nNodes >::computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep,
                                                                                               const double* QTotal )
   {
-    using namespace ContinuumMechanics::VoigtNotation;
+    (void)QTotal;
 
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
@@ -909,24 +909,13 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 1 )
         characteristicElementLength = 2 * qp.detJ;
 
-      Marmot::Vector6d totalStrain = qp.managedStateVars->strain;
-      if ( QTotal != nullptr ) {
-        Map< const RhsSized > qTotal( QTotal );
-        const auto            strainAtQp = qp.B * qTotal;
-        if constexpr ( nDim == 3 ) {
-          totalStrain = strainAtQp;
-        }
-        if constexpr ( nDim == 2 ) {
-          totalStrain = planeVoigtToVoigt( strainAtQp );
-        }
-        if constexpr ( nDim == 1 ) {
-          totalStrain.setZero();
-          totalStrain( 0 ) = strainAtQp( 0 );
-        }
-      }
+      MarmotMaterialHypoElastic::state3D state;
+      state.stress              = qp.managedStateVars->stress;
+      state.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
+      state.stateVars           = qp.managedStateVars->materialStateVars.data();
 
       const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(), totalStrain );
+      const double K   = qp.material->getBulkModulus( state );
       const double c   = std::sqrt( K / rho );
       const double dt  = characteristicElementLength / c;
       if ( dt < criticalTimeStep )

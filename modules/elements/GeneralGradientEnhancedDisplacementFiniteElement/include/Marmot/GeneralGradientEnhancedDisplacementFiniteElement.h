@@ -931,7 +931,8 @@ namespace Marmot::Elements {
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
   {
-    using namespace ContinuumMechanics::VoigtNotation;
+    (void)QTotal;
+    using response = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
 
     // TODO: current implementation ignores nonlocal variables
     criticalTimeStep = std::numeric_limits< double >::max();
@@ -943,25 +944,15 @@ namespace Marmot::Elements {
         characteristicElementLength = std::sqrt( 4 * qp.detJ );
       if constexpr ( nDim == 1 )
         characteristicElementLength = ( 2 * qp.detJ );
-      Marmot::Vector6d totalStrain = qp.managedStateVars->strain;
-      if ( QTotal != nullptr ) {
-        Map< const RhsSized >           qTotal( QTotal );
-        const Ref< const USizedVector > qU( qTotal.head( sizeDoFU ) );
-        const auto                      strainAtQp = qp.B * qU;
-        if constexpr ( nDim == 3 ) {
-          totalStrain = strainAtQp;
-        }
-        if constexpr ( nDim == 2 ) {
-          totalStrain = planeVoigtToVoigt( strainAtQp );
-        }
-        if constexpr ( nDim == 1 ) {
-          totalStrain.setZero();
-          totalStrain( 0 ) = strainAtQp( 0 );
-        }
-      }
+      response bulkModulusResponse;
+      bulkModulusResponse.stress = qp.managedStateVars->stress;
+      bulkModulusResponse.KLocal.setZero();
+      bulkModulusResponse.c.setZero();
+      bulkModulusResponse.stateVars           = qp.managedStateVars->materialStateVars.data();
+      bulkModulusResponse.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
       const double  rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double  K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(), totalStrain );
+      const double  K   = qp.material->getBulkModulus( bulkModulusResponse );
       const double  c   = std::sqrt( K / rho ); // dilatational wave speed
       const double& l   = characteristicElementLength;
       double        dt  = l / c;
