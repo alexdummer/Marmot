@@ -43,7 +43,7 @@ namespace Marmot::Materials {
    * - @b nu12, @b nu13, @b nu23 - Poisson ratios
    * - @b G12, @b G13, @b G23 - shear moduli
    * - @b n_Maxwell - number of Maxwell elements
-   * - @b tau_i, beta_i - Maxwell retardation times and relative weights
+   * - @b tau[i], beta[i] (i = 1..n_Maxwell) - Maxwell retardation times and relative weights
    * - @b rho - density (optional; read from the last material property entry)
    *
    * @par State variables

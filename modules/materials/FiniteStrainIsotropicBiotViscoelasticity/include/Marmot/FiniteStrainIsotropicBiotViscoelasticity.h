@@ -42,7 +42,7 @@ namespace Marmot::Materials {
    * - @b K - bulk modulus
    * - @b G - shear modulus
    * - @b n_Maxwell - number of Maxwell elements
-   * - @b tau_i, beta_i - Maxwell retardation times and relative weights
+   * - @b tau[i], beta[i] (i = 1..n_Maxwell) - Maxwell retardation times and relative weights
    * - @b rho - density (optional; read from the last material property entry)
    *
    * @par State variables
