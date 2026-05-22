@@ -282,7 +282,7 @@ public:
   virtual double getBulkModulus( const double* stateVars ) const = 0;
 
   /**
-   * @breif Get the bulk modulus of the material for a given total strain state.
+   * @brief Get the bulk modulus of the material for a given total strain state.
    * @param stateVars Pointer to the array of state variables
    * @param totalStrain Current total strain in 3D Voigt notation
    * @return Bulk modulus of the material
