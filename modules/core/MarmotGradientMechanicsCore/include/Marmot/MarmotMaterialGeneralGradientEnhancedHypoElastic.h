@@ -282,6 +282,19 @@ public:
   virtual double getBulkModulus( const double* stateVars ) const = 0;
 
   /**
+   * @breif Get the bulk modulus of the material for a given total strain state.
+   * @param stateVars Pointer to the array of state variables
+   * @param totalStrain Current total strain in 3D Voigt notation
+   * @return Bulk modulus of the material
+   * @details The default implementation delegates to @ref getBulkModulus(const double*).
+   */
+  virtual double getBulkModulus( const double* stateVars, const Marmot::Vector6d& totalStrain ) const
+  {
+    (void)totalStrain;
+    return getBulkModulus( stateVars );
+  }
+
+  /**
    * @brief Get the nonlocal viscosity of the material.
    * @param stateVars Pointer to the array of state variables
    * @return Vector containing the nonlocal viscosity values for each nonlocal variable

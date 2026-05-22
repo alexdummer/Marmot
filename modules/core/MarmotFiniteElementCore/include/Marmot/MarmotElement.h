@@ -224,7 +224,7 @@ public:
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
-  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep )
+  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };

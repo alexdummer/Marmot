@@ -221,6 +221,19 @@ public:
   }
 
   /**
+   * @brief Get the bulk modulus of the material for a given total strain state.
+   * @param[in] stateVars Pointer to the state variable array
+   * @param[in] totalStrain Current total strain in 3D Voigt notation
+   * @return Bulk modulus
+   * @details The default implementation delegates to @ref getBulkModulus(const double*).
+   */
+  virtual double getBulkModulus( const double* stateVars, const Marmot::Vector6d& totalStrain ) const
+  {
+    (void)totalStrain;
+    return getBulkModulus( stateVars );
+  }
+
+  /**
    * @brief Returns the mass density of the material.
    * @note Must be overriden in each specific material.
    */

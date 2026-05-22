@@ -294,9 +294,27 @@ public:
    * @param[in] stateVars Pointer to the state variable array
    * @return Bulk modulus
    * @details The default implementation uses a centered finite difference around
-   * a hydrostatic perturbation of the deformation gradient.
+   * an identity deformation gradient.
    */
   virtual double getBulkModulus( const double* stateVars ) const
+  {
+    Fastor::Tensor< double, 3, 3 > F( 0.0 );
+    for ( int i = 0; i < 3; i++ ) {
+      F( i, i ) = 1.0;
+    }
+    return getBulkModulus( stateVars, F );
+  }
+
+  /**
+   * @brief Get the bulk modulus of the material for a given deformation gradient.
+   * @param[in] stateVars Pointer to the state variable array
+   * @param[in] deformationGradient Current deformation gradient used as perturbation reference
+   * @return Bulk modulus
+   * @details The default implementation uses a centered finite difference around
+   * an isotropic volumetric perturbation of the passed deformation gradient.
+   */
+  virtual double getBulkModulus( const double*                         stateVars,
+                                 const Fastor::Tensor< double, 3, 3 >& deformationGradient ) const
   {
     constexpr double dVol = 1e-6;
 
@@ -312,8 +330,10 @@ public:
     Fastor::Tensor< double, 3, 3 > FPlus( 0.0 );
     Fastor::Tensor< double, 3, 3 > FMinus( 0.0 );
     for ( int i = 0; i < 3; i++ ) {
-      FPlus( i, i )  = 1.0 + dVol;
-      FMinus( i, i ) = 1.0 - dVol;
+      for ( int j = 0; j < 3; j++ ) {
+        FPlus( i, j )  = ( 1.0 + dVol ) * deformationGradient( i, j );
+        FMinus( i, j ) = ( 1.0 - dVol ) * deformationGradient( i, j );
+      }
     }
 
     Deformation< 3 > deformationPlus{ FPlus };

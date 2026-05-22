@@ -330,7 +330,7 @@ namespace Marmot::Elements {
      * @brief Compute the critical time step for explicit dynamics.
      * @param criticalTimeStep Output parameter for the computed critical time step.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
 
     /**
      * @brief Compute the internal energy of the element.
@@ -894,8 +894,11 @@ namespace Marmot::Elements {
   }
 
   template < int nDim, int nNodes >
-  void DisplacementFiniteElement< nDim, nNodes >::computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep )
+  void DisplacementFiniteElement< nDim, nNodes >::computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep,
+                                                                                              const double* QTotal )
   {
+    using namespace ContinuumMechanics::VoigtNotation;
+
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
       double characteristicElementLength = 0.0;
@@ -906,8 +909,24 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 1 )
         characteristicElementLength = 2 * qp.detJ;
 
+      Marmot::Vector6d totalStrain = qp.managedStateVars->strain;
+      if ( QTotal != nullptr ) {
+        Map< const RhsSized > qTotal( QTotal );
+        const auto            strainAtQp = qp.B * qTotal;
+        if constexpr ( nDim == 3 ) {
+          totalStrain = strainAtQp;
+        }
+        if constexpr ( nDim == 2 ) {
+          totalStrain = planeVoigtToVoigt( strainAtQp );
+        }
+        if constexpr ( nDim == 1 ) {
+          totalStrain.setZero();
+          totalStrain( 0 ) = strainAtQp( 0 );
+        }
+      }
+
       const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data() );
+      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(), totalStrain );
       const double c   = std::sqrt( K / rho );
       const double dt  = characteristicElementLength / c;
       if ( dt < criticalTimeStep )

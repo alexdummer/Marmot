@@ -123,10 +123,10 @@ namespace Marmot::Elements {
       const XiSized xi;     /**< Local coordinates of the quadrature point */
       const double  weight; /**< Weight of the quadrature point */
 
-      dNdXiSized dNdX; /**< Shape function derivatives w.r.t. material (undeformed) coordinates evaluated at the
-                          quadrature point */
-      double detJ;     /**< Determinant of the undeformed Jacobian */
-      double J0xW;     /**< Determinant of the undeformed Jacobian times quadrature weight */
+      dNdXiSized dNdX;      /**< Shape function derivatives w.r.t. material (undeformed) coordinates evaluated at the
+                               quadrature point */
+      double detJ;          /**< Determinant of the undeformed Jacobian */
+      double J0xW;          /**< Determinant of the undeformed Jacobian times quadrature weight */
 
       /// @class QPStateVarManager
       /// @brief Manager class for handling state variables at the quadrature point
@@ -389,7 +389,7 @@ namespace Marmot::Elements {
      * @brief Compute the critical time step for explicit dynamics.
      * @param criticalTimeStep Output parameter for the computed critical time step.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
 
     /**
      * @brief Compute the internal energy of the element.
@@ -959,8 +959,23 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes >
   void DisplacementFiniteStrainULElement< nDim, nNodes >::computeCriticalTimeStepForExplicitDynamics(
-    double& criticalTimeStep )
+    double&       criticalTimeStep,
+    const double* qTotal )
   {
+    using namespace Fastor;
+
+    const static Tensor< double, nDim, nDim > I(
+      ( Eigen::Matrix< double, nDim, nDim >() << Eigen::Matrix< double, nDim, nDim >::Identity() ).finished().data() );
+
+    const bool                     hasQTotal = qTotal != nullptr;
+    Tensor< double, nNodes, nDim > qU_np( 0.0 );
+    if ( hasQTotal ) {
+      qU_np = TensorMap< const double, nNodes, nDim >( qTotal );
+    }
+
+    const auto identity3x3 = FastorStandardTensors::Tensor33d(
+      ( Eigen::Matrix3d() << Eigen::Matrix3d::Identity() ).finished().data() );
+
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
       double characteristicElementLength = 0.0;
@@ -971,8 +986,22 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 1 )
         characteristicElementLength = 2 * qp.detJ;
 
+      auto deformationGradientForBulkModulus = identity3x3;
+      if ( hasQTotal ) {
+        const auto dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );
+        const auto F_np = evaluate( einsum< Ai, jA >( qU_np, dNdX ) + I );
+        if constexpr ( nDim == 3 ) {
+          deformationGradientForBulkModulus = F_np;
+        }
+        if constexpr ( nDim == 2 ) {
+          deformationGradientForBulkModulus         = expandTo3D( F_np );
+          deformationGradientForBulkModulus( 2, 2 ) = 1.0;
+        }
+      }
+
       const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data() );
+      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(),
+                                                    deformationGradientForBulkModulus );
       const double c   = std::sqrt( K / rho );
       const double dt  = characteristicElementLength / c;
       if ( dt < criticalTimeStep )

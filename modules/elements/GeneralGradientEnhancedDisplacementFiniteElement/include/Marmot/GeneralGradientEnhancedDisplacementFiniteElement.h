@@ -396,7 +396,7 @@ namespace Marmot::Elements {
      * is the dilatational wave speed computed from the material properties at the quadrature points.
      * The minimum time step across all quadrature points is returned.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
 
     /**
      * @brief Compute the internal energy of the element by summing the strain energy contributions from all quadrature
@@ -929,8 +929,9 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep )
+    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
   {
+    using namespace ContinuumMechanics::VoigtNotation;
 
     // TODO: current implementation ignores nonlocal variables
     criticalTimeStep = std::numeric_limits< double >::max();
@@ -942,8 +943,25 @@ namespace Marmot::Elements {
         characteristicElementLength = std::sqrt( 4 * qp.detJ );
       if constexpr ( nDim == 1 )
         characteristicElementLength = ( 2 * qp.detJ );
+      Marmot::Vector6d totalStrain = qp.managedStateVars->strain;
+      if ( QTotal != nullptr ) {
+        Map< const RhsSized >           qTotal( QTotal );
+        const Ref< const USizedVector > qU( qTotal.head( sizeDoFU ) );
+        const auto                      strainAtQp = qp.B * qU;
+        if constexpr ( nDim == 3 ) {
+          totalStrain = strainAtQp;
+        }
+        if constexpr ( nDim == 2 ) {
+          totalStrain = planeVoigtToVoigt( strainAtQp );
+        }
+        if constexpr ( nDim == 1 ) {
+          totalStrain.setZero();
+          totalStrain( 0 ) = strainAtQp( 0 );
+        }
+      }
+
       const double  rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double  K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data() );
+      const double  K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(), totalStrain );
       const double  c   = std::sqrt( K / rho ); // dilatational wave speed
       const double& l   = characteristicElementLength;
       double        dt  = l / c;
