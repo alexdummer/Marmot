@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -92,6 +89,7 @@ public:
     Eigen::Vector< double, nNonlocalVariables > KLocal;    ///< Local driving variables at the current increment
     Eigen::Vector< double, nNonlocalVariables > c;         ///< Nonlocal interaction parameters at the current increment
     double*                                     stateVars; ///< Pointer to the array of state variables
+    double                                      strainEnergyDensity; ///< Strain energy density at the current increment
   };
 
   /// @brief Struct to hold the algorithmic tangent matrices for the material model.
@@ -123,7 +121,7 @@ public:
   MarmotStateLayoutDynamic stateLayout;
 
   /**
-   * @brief Compute the stress response of the material model.
+   * @brief Compute the stress response of the material model including the algorithmic tangents.
    * @param[in,out] res Reference to the response struct to be filled with the computed stress and other response
    * variables.
    * @param[in,out] tan Reference to the tangents struct to be filled with the computed algorithmic tangent matrices.
@@ -134,6 +132,23 @@ public:
    * model.
    */
   virtual void computeStress( response& res, tangents& tan, const increment& inc ) const = 0;
+
+  /**
+   * @brief Compute the stress response of the material model.
+   * @param[in,out] res Reference to the response struct to be filled with the computed stress and other response
+   * variables.
+   * @param[in] inc Reference to the increment struct containing the strain increment, nonlocal variable increments, and
+   * time information.
+   *
+   * This method can be used when only the stress response is needed without the tangents, e.g., for explicit dynamics.
+   * The default implementation calls the `computeStress` method and ignores the tangents, which can be computationally
+   * expensive to compute.
+   */
+  virtual void computeStressExplicit( response& res, const increment& inc ) const
+  {
+    tangents tan;
+    computeStress( res, tan, inc );
+  }
 
   /**
    * @brief Compute the plane stress response of the material model.
@@ -157,9 +172,8 @@ public:
     Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );
 
     VectorXd  stateVarsOld = stateVars;
-    response  resTemp      = { res.stress, res.KLocal, res.c, res.stateVars };
+    response  resTemp      = { res.stress, res.KLocal, res.c, res.stateVars, res.strainEnergyDensity };
     increment incTemp      = { inc.dStrain, inc.K, inc.dK, inc.time, inc.dT };
-    // assumption of isochoric deformation for initial guess
 
     double residual          = 1;
     double tangentCompliance = 1.;
@@ -171,7 +185,7 @@ public:
     while ( true ) {
 
       // set old response
-      resTemp = { res.stress, res.KLocal, res.c, res.stateVars };
+      resTemp = { res.stress, res.KLocal, res.c, res.stateVars, res.strainEnergyDensity };
       // set old state variables
       stateVars = stateVarsOld;
       // compute stress
@@ -198,7 +212,24 @@ public:
       }
     }
 
-    res = { resTemp.stress, resTemp.KLocal, resTemp.c, resTemp.stateVars };
+    res = { resTemp.stress, resTemp.KLocal, resTemp.c, resTemp.stateVars, resTemp.strainEnergyDensity };
+  }
+
+  /**
+   * @brief Compute the plane stress response of the material model without computing tangents.
+   * @param[in,out] res Reference to the response struct to be filled with the computed plane stress and other response
+   * variables.
+   * @param[in] inc Reference to the increment struct containing the strain increment, nonlocal variable increments, and
+   * time information.
+   *
+   * This method can be used when only the plane stress response is needed without the tangents, e.g., for explicit
+   * dynamics. The default implementation calls the `computePlaneStress` method ignoring the tangents.
+   * This method maybe overridden in derived classes if a different approach for plane stress computation is desired.
+   */
+  virtual void computePlaneStressExplicit( response& res, const increment& inc ) const
+  {
+    tangents tan;
+    computePlaneStress( res, tan, inc );
   }
 
   /**
@@ -233,6 +264,7 @@ public:
   }
   /**
    * @brief Get the density of the material.
+   * @param stateVars Pointer to the array of state variables
    * @return Density of the material
    *
    * This method must be implemented in derived classes to return the density of the material, which is required for
@@ -241,7 +273,17 @@ public:
   virtual double getDensity( const double* stateVars ) const = 0;
 
   /**
+   * @breif Get the bulk modulus of the material.
+   * @param stateVars Pointer to the array of state variables
+   * @return Bulk modulus of the material
+   * This method must be implemented in derived classes to return the bulk modulus of the material, which is required
+   * for dynamic analyses.
+   */
+  virtual double getBulkModulus( const double* stateVars ) const = 0;
+
+  /**
    * @brief Get the nonlocal viscosity of the material.
+   * @param stateVars Pointer to the array of state variables
    * @return Vector containing the nonlocal viscosity values for each nonlocal variable
    *
    * This method must be implemented in derived classes to return the nonlocal viscosity values, which are required for

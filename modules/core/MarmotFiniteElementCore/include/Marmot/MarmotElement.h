@@ -224,6 +224,16 @@ public:
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
+  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep )
+  {
+    throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
+  };
+
+  virtual void computeInternalEnergy( double& internalEnergy )
+  {
+    throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
+  };
+
   /**
    * @brief Access element state at a quadrature point.
    * @param[in] stateName Name of the state variable.

@@ -61,6 +61,20 @@ struct StateMapper< double& > {
 };
 
 /**
+ * @struct StateMapper<double>
+ * @brief Specialization of StateMapper for single double values.
+ * This allows mapping a raw double pointer and size to a single double reference.
+ */
+template <>
+struct StateMapper< const double& > {
+  static const double& map( const double* ptr, std::size_t n )
+  {
+    if ( n != 1 )
+      throw std::runtime_error( "Size mismatch for double." );
+    return *ptr;
+  }
+};
+/**
  * @struct StateMapper<Fastor::Tensor<double,3,3>>
  * @brief Specialization of StateMapper for Fastor::Tensor<double,3,3>.
  * This allows mapping a raw double pointer and size to a Fastor 3x3 tensor.
@@ -185,6 +199,15 @@ public:
     return StateMapper< View >::map( base + v.offset, v.size, std::forward< Args >( args )... );
   }
 
+  template < class View, class... Args >
+  View getAs( const double* base, const std::string& name, Args&&... args ) const
+  {
+    if ( !finalized )
+      throw std::runtime_error( "State layout not finalized." );
+
+    const auto& v = getInfo( name );
+    return StateMapper< View >::map( base + v.offset, v.size, std::forward< Args >( args )... );
+  }
   int totalSize() const { return total_sz; }
 
   bool isFinalized() const { return finalized; }
