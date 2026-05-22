@@ -562,7 +562,7 @@ namespace Marmot::Elements {
   {
     using namespace Fastor;
 
-    const static Tensor< double, nDim, nDim > I(
+    static const Tensor< double, nDim, nDim > I(
       ( Eigen::Matrix< double, nDim, nDim >() << Eigen::Matrix< double, nDim, nDim >::Identity() ).finished().data() );
 
     // in  ...
@@ -973,7 +973,7 @@ namespace Marmot::Elements {
       qU_np = TensorMap< const double, nNodes, nDim >( qTotal );
     }
 
-    const auto identity3x3 = FastorStandardTensors::Tensor33d(
+    static const auto identity3x3 = FastorStandardTensors::Tensor33d(
       ( Eigen::Matrix3d() << Eigen::Matrix3d::Identity() ).finished().data() );
 
     criticalTimeStep = std::numeric_limits< double >::max();
