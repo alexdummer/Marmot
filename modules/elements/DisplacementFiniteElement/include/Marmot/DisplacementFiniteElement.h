@@ -904,7 +904,7 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 2 )
         characteristicElementLength = std::sqrt( 4 * qp.detJ );
       if constexpr ( nDim == 1 )
-        characteristicElementLength = ( 2 * qp.detJ );
+        characteristicElementLength = 2 * qp.detJ;
 
       const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data() );
