@@ -29,6 +29,8 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <vector>
 
 /**
  *
@@ -188,6 +190,34 @@ public:
     for ( int i = 0; i < nStateVars; ++i ) {
       stateVars[i] = 0.0;
     }
+  }
+
+  /**
+   * @brief Get the bulk modulus of the material.
+   * @param[in] stateVars Pointer to the state variable array
+   * @return Bulk modulus
+   * @details The default implementation computes an effective bulk modulus from the 3D algorithmic tangent.
+   */
+  virtual double getBulkModulus( const double* stateVars ) const
+  {
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    std::vector< double > stateVarsCopy( nStateVars, 0.0 );
+    if ( stateVars != nullptr && nStateVars > 0 ) {
+      std::copy_n( stateVars, nStateVars, stateVarsCopy.begin() );
+    }
+
+    state3D state{ Marmot::Vector6d::Zero(), 0.0, stateVarsCopy.data() };
+
+    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
+    const auto       dStrain         = Marmot::Vector6d::Zero();
+    const timeInfo   timeInfo{ 0.0, 1.0 };
+
+    computeStress( state, dStress_dStrain, dStrain, timeInfo );
+
+    return ( dStress_dStrain( 0, 0 ) + dStress_dStrain( 1, 1 ) + dStress_dStrain( 2, 2 ) +
+             2.0 * ( dStress_dStrain( 0, 1 ) + dStress_dStrain( 0, 2 ) + dStress_dStrain( 1, 2 ) ) ) /
+           9.0;
   }
 
   /**

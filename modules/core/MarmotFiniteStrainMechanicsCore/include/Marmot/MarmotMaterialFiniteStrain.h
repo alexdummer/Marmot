@@ -28,6 +28,9 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include <Fastor/tensor/Tensor.h>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 class MarmotMaterialFiniteStrain {
 
@@ -284,6 +287,59 @@ public:
     for ( int i = 0; i < nStateVars; ++i ) {
       stateVars[i] = 0.0;
     }
+  }
+
+  /**
+   * @brief Get the bulk modulus of the material.
+   * @param[in] stateVars Pointer to the state variable array
+   * @return Bulk modulus
+   * @details The default implementation uses a centered finite difference around
+   * a hydrostatic perturbation of the deformation gradient.
+   */
+  virtual double getBulkModulus( const double* stateVars ) const
+  {
+    constexpr double dVol = 1e-6;
+
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    std::vector< double > stateVarsPlus( nStateVars, 0.0 );
+    std::vector< double > stateVarsMinus( nStateVars, 0.0 );
+    if ( stateVars != nullptr && nStateVars > 0 ) {
+      std::copy_n( stateVars, nStateVars, stateVarsPlus.begin() );
+      std::copy_n( stateVars, nStateVars, stateVarsMinus.begin() );
+    }
+
+    Fastor::Tensor< double, 3, 3 > FPlus( 0.0 );
+    Fastor::Tensor< double, 3, 3 > FMinus( 0.0 );
+    for ( int i = 0; i < 3; i++ ) {
+      FPlus( i, i )  = 1.0 + dVol;
+      FMinus( i, i ) = 1.0 - dVol;
+    }
+
+    Deformation< 3 > deformationPlus{ FPlus };
+    Deformation< 3 > deformationMinus{ FMinus };
+
+    ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
+                                            -1.0,
+                                            0.0,
+                                            stateVarsPlus.data() };
+    ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
+                                             -1.0,
+                                             0.0,
+                                             stateVarsMinus.data() };
+
+    const TimeIncrement timeIncrement{ 0.0, 1.0 };
+
+    computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
+    computeStressExplicit( responseMinus, deformationMinus, timeIncrement );
+
+    const double pPlus  = ( responsePlus.tau( 0, 0 ) + responsePlus.tau( 1, 1 ) + responsePlus.tau( 2, 2 ) ) / 3.0;
+    const double pMinus = ( responseMinus.tau( 0, 0 ) + responseMinus.tau( 1, 1 ) + responseMinus.tau( 2, 2 ) ) / 3.0;
+
+    const double lnJPlus  = 3.0 * std::log( 1.0 + dVol );
+    const double lnJMinus = 3.0 * std::log( 1.0 - dVol );
+
+    return ( pPlus - pMinus ) / ( lnJPlus - lnJMinus );
   }
 
   /**
