@@ -43,7 +43,7 @@ namespace Marmot::Materials {
    * - @b baseModel - hyperelastic base identifier (@c NeoHooke, @c Yeoh, @c MooneyRivlin, @c PenceGouNeoHooke)
    * - @b onlyShearCreep - flag to restrict viscoelastic evolution to the deviatoric part
    * - @b elasticProperties - coefficients required by the selected base model
-   * - @b nMaxwell - number of Maxwell elements
+   * - @b n_Maxwell - number of Maxwell elements
    * - @b tau_i, beta_i - Maxwell retardation times and relative weights
    * - @b rho - density (optional; read from the last material property entry)
    *
