@@ -592,7 +592,7 @@ namespace Marmot::Elements {
 
       Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
       Material::AlgorithmicModuli< nDim >    tangents = { 0 };
-      double                                 strainEnergy = qp.managedStateVars->strainEnergy;
+      double                                 integratedStrainEnergy = qp.managedStateVars->strainEnergy;
       try {
         if constexpr ( nDim == 2 ) {
 
@@ -629,7 +629,7 @@ namespace Marmot::Elements {
                          response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
-            strainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
+            integratedStrainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
 
             tangents = {
               reduceTo2D< U, U, U, U >( algorithmicModuli3D.dTau_dF ),
@@ -645,7 +645,7 @@ namespace Marmot::Elements {
                        qp.managedStateVars->materialStateVars.data() };
 
           qp.material->computeStress( response, tangents, deformation, timeIncrement );
-          strainEnergy = response.elasticEnergyDensity * qp.J0xW;
+          integratedStrainEnergy = response.elasticEnergyDensity * qp.J0xW;
 
           // implicit conversion to col major
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
@@ -655,7 +655,7 @@ namespace Marmot::Elements {
         pNewDT = 0.25;
         return;
       }
-      qp.managedStateVars->strainEnergy = strainEnergy;
+      qp.managedStateVars->strainEnergy = integratedStrainEnergy;
       const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
       const double& J0xW = qp.J0xW;
@@ -724,7 +724,7 @@ namespace Marmot::Elements {
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
       Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
-      double                                 strainEnergy = qp.managedStateVars->strainEnergy;
+      double                                 integratedStrainEnergy = qp.managedStateVars->strainEnergy;
       try {
         if constexpr ( nDim == 2 ) {
 
@@ -758,7 +758,7 @@ namespace Marmot::Elements {
                          response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
-            strainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
+            integratedStrainEnergy = response3D.elasticEnergyDensity * qp.J0xW;
 
             qp.managedStateVars->stress = Marmot::mapEigenToFastor( response3D.tau ).reshaped();
           }
@@ -770,7 +770,7 @@ namespace Marmot::Elements {
                        qp.managedStateVars->materialStateVars.data() };
 
           qp.material->computeStressExplicit( response, deformation, timeIncrement );
-          strainEnergy = response.elasticEnergyDensity * qp.J0xW;
+          integratedStrainEnergy = response.elasticEnergyDensity * qp.J0xW;
 
           // implicit conversion to col major
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
@@ -780,7 +780,7 @@ namespace Marmot::Elements {
         pNewDT = 0.25;
         return;
       }
-      qp.managedStateVars->strainEnergy = strainEnergy;
+      qp.managedStateVars->strainEnergy = integratedStrainEnergy;
       const auto dNdx = evaluate( einsum< ji, jA >( inv( F_np ), dNdX ) );
 
       const double& J0xW = qp.J0xW;

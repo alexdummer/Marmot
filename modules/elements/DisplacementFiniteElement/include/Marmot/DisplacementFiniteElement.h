@@ -518,7 +518,7 @@ namespace Marmot::Elements {
 
       const BSized& B = qp.B;
       dE              = B * dQ;
-      double strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
+      double strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
       if constexpr ( nDim == 1 ) {
 
@@ -662,7 +662,7 @@ namespace Marmot::Elements {
 
       const BSized& B = qp.B;
       dE              = B * dQ;
-      double strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
+      double strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
       if constexpr ( nDim == 1 ) {
 
