@@ -329,12 +329,8 @@ public:
 
     Fastor::Tensor< double, 3, 3 > FPlus( 0.0 );
     Fastor::Tensor< double, 3, 3 > FMinus( 0.0 );
-    for ( int i = 0; i < 3; i++ ) {
-      for ( int j = 0; j < 3; j++ ) {
-        FPlus( i, j )  = ( 1.0 + dVol ) * deformationGradient( i, j );
-        FMinus( i, j ) = ( 1.0 - dVol ) * deformationGradient( i, j );
-      }
-    }
+    FPlus  = ( 1.0 + dVol ) * deformationGradient;
+    FMinus = ( 1.0 - dVol ) * deformationGradient;
 
     Deformation< 3 > deformationPlus{ FPlus };
     Deformation< 3 > deformationMinus{ FMinus };
