@@ -28,6 +28,8 @@
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <vector>
 
 /**
  * @brief Base class for general gradient-enhanced hypoelastic material models.
@@ -276,9 +278,34 @@ public:
    * @brief Get the bulk modulus of the material for the current response state.
    * @param currentResponse Current response state
    * @return Bulk modulus of the material
-   * @details Must be implemented in derived classes and can use stress/nonlocal response quantities.
+   * @details The default implementation computes an effective bulk modulus from the 3D algorithmic tangent.
    */
-  virtual double getBulkModulus( const response& currentResponse ) const = 0;
+  virtual double getBulkModulus( const response& currentResponse ) const
+  {
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    std::vector< double > stateVarsCopy( nStateVars, 0.0 );
+    if ( currentResponse.stateVars != nullptr && nStateVars > 0 ) {
+      std::copy_n( currentResponse.stateVars, nStateVars, stateVarsCopy.begin() );
+    }
+
+    response responseCopy  = currentResponse;
+    responseCopy.stateVars = stateVarsCopy.data();
+
+    tangents  tan;
+    increment inc;
+    inc.dStrain = Marmot::Vector6d::Zero();
+    inc.K       = Eigen::Vector< double, nNonlocalVariables >::Zero();
+    inc.dK      = Eigen::Vector< double, nNonlocalVariables >::Zero();
+    inc.time    = 0.0;
+    inc.dT      = 1.0;
+
+    computeStress( responseCopy, tan, inc );
+
+    return ( tan.dStressddStrain( 0, 0 ) + tan.dStressddStrain( 1, 1 ) + tan.dStressddStrain( 2, 2 ) +
+             2.0 * ( tan.dStressddStrain( 0, 1 ) + tan.dStressddStrain( 0, 2 ) + tan.dStressddStrain( 1, 2 ) ) ) /
+           9.0;
+  }
 
   /**
    * @brief Get the nonlocal viscosity of the material.

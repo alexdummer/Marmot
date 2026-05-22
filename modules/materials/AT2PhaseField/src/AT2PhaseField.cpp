@@ -28,17 +28,6 @@ namespace Marmot::Materials {
       throw std::runtime_error( "Viscosity not provided in material properties for AT2PhaseField." );
     return { materialProperties[5] };
   }
-  double AT2PhaseField::getBulkModulus( const response& currentResponse ) const
-  {
-    const double E  = this->materialProperties[0]; // idx 0
-    const double nu = this->materialProperties[1]; // idx 1
-    // get damage from state variables
-    const double& H           = stateLayout.getAs< const double& >( currentResponse.stateVars, "maxCrackDrivingForce" );
-    auto          g           = PhaseField::EnergyDegradationFunctions::quadratic( H );
-    double        bulkModulus = g * E * ( 1 - nu ) / ( ( 1 + nu ) * ( 1 - 2 * nu ) );
-    return bulkModulus;
-  }
-
   void AT2PhaseField::computeStress( response& res, tangents& tan, const increment& inc ) const
   {
     // material properties
