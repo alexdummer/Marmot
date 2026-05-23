@@ -442,6 +442,6 @@ namespace Marmot::ContinuumMechanics {
         const double&                           K,
         const double&                           G );
     } // namespace ThirdOrderDerived
-  } // namespace EnergyDensityFunctions
+  }   // namespace EnergyDensityFunctions
 
 } // namespace Marmot::ContinuumMechanics
