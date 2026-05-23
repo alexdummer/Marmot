@@ -33,8 +33,21 @@ namespace Marmot::Materials {
 
   /**
    * @class Marmot::Materials::FiniteStrainIsotropicBiotViscoelasticity
-   * @brief Linear Viscoelastic Biot hyperelastic material model
-   * considering orthotropic elasticity and linear viscoelasticity in the Biot stress, i.e. the stress is computed as
+   * @brief Finite-strain isotropic Biot-viscoelastic material model.
+   *
+   * @details The model combines isotropic Biot-type hyperelasticity with a generalized Maxwell evolution
+   * in Biot stress space.
+   *
+   * @par Material parameters
+   * - @b K - bulk modulus
+   * - @b G - shear modulus
+   * - @b n_Maxwell - number of Maxwell elements
+   * - @b tau[i], beta[i] (i = 1..n_Maxwell) - Maxwell retardation times and relative weights
+   * - @b rho - density (optional; read from the last material property entry)
+   *
+   * @par State variables
+   * - @c S0_old - Biot stress from the previous increment
+   * - @c creepStateVars - internal variables for the generalized Maxwell chain
    */
   class FiniteStrainIsotropicBiotViscoelasticity : public MarmotMaterialFiniteStrainAD {
   public:
@@ -50,20 +63,37 @@ namespace Marmot::Materials {
                                               int           nMaterialProperties,
                                               int           materialLabel );
 
+    /**
+     * @brief Compute Kirchhoff stress using automatic differentiation.
+     *
+     * @param[in,out] response Constitutive response including stress, energy density and state variables.
+     * @param[in] deformation Deformation information with deformation gradient @f$\mathbf{F}@f$.
+     * @param[in] timeIncrement Time increment information.
+     */
     void computeStressAD( ConstitutiveResponseAD< 3 >&,
                           const DeformationAD< 3 >&,
                           const TimeIncrement& ) const override;
 
+    /**
+     * @brief Get the material density.
+     * @param[in] stateVars Pointer to state variables (unused).
+     * @return Density from the last entry in @c materialProperties.
+     */
     double getDensity( const double* stateVars ) const override;
 
   protected:
-    const double K; // bulk modulus
-    const double G; // shear modulus
+    /// @brief Bulk modulus.
+    const double K;
+    /// @brief Shear modulus.
+    const double G;
 
+    /// @brief Generalized Maxwell model parameters.
     const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
 
+    /// @brief Initial compliance tensor used for viscoelastic stress update.
     FastorStandardTensors::Tensor3333t< autodiff::dual > initialCompliance;
 
+    /// @brief Define the layout of persistent state variables.
     void initializeStateLayout()
     {
       stateLayout.add( "S0_old", 9 );

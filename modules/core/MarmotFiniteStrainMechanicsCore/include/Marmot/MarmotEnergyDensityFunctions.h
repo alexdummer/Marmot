@@ -155,6 +155,24 @@ namespace Marmot::ContinuumMechanics {
       return res;
     }
 
+    /** @brief Yeoh hyperelastic energy density function.
+     *
+     *  The energy density function is given as
+     *  \f[
+     *    W = C_1 (\bar{I}_1 - 3) + C_2 (\bar{I}_1 - 3)^2 + C_3 (\bar{I}_1 - 3)^3 + \frac{1}{D_1}\left(
+     *    \frac{J^2 - 1}{2} - \ln J \right)
+     *  \f]
+     *  where \f$\bar{I}_1 = I_1 J^{-2/3}\f$, \f$I_1 = \mathrm{tr}(\boldsymbol{C})\f$, and
+     *  \f$J = \sqrt{\det(\boldsymbol{C})}\f$.
+     *
+     * @tparam T Scalar type, e.g. double, float, autodiff scalar.
+     * @param C Right Cauchy-Green tensor.
+     * @param C1 Yeoh material parameter.
+     * @param C2 Yeoh material parameter.
+     * @param C3 Yeoh material parameter.
+     * @param D1 Volumetric penalty parameter.
+     * @return Energy density.
+     */
     template < typename T >
     T YeohPotential( const Tensor33t< T >& C, const double C1, const double C2, const double C3, const double D1 )
     {
@@ -167,6 +185,14 @@ namespace Marmot::ContinuumMechanics {
       return res;
     }
 
+    /** @brief Standard compressible Neo-Hooke energy density function in terms of \f$\boldsymbol{C}\f$.
+     *
+     * @tparam T Scalar type, e.g. double, float, autodiff scalar.
+     * @param C Right Cauchy-Green tensor.
+     * @param K Bulk modulus.
+     * @param G Shear modulus.
+     * @return Energy density.
+     */
     template < typename T >
     T standardNeoHooke( const Tensor33t< T >& C, const double K, const double G )
     {
@@ -311,6 +337,15 @@ namespace Marmot::ContinuumMechanics {
         return { psi, dPsi_dC, d2Psi_dCdC };
       }
 
+      /** @brief Standard compressible Neo-Hooke energy density and first/second derivatives w.r.t.
+       * \f$\boldsymbol{C}\f$.
+       *
+       * @tparam T Scalar type, e.g. double, float, autodiff scalar.
+       * @param C Right Cauchy-Green tensor.
+       * @param K Bulk modulus.
+       * @param G Shear modulus.
+       * @return Tuple of energy density, first derivative and second derivative w.r.t. \f$\boldsymbol{C}\f$.
+       */
       template < typename T >
       std::tuple< T, FastorStandardTensors::Tensor33t< T >, FastorStandardTensors::Tensor3333t< T > > standardNeoHooke(
         const FastorStandardTensors::Tensor33t< T >& C,
@@ -359,6 +394,17 @@ namespace Marmot::ContinuumMechanics {
         return { psi, dPsi_dC, d2Psi_dC2 };
       }
 
+      /** @brief Isotropic Biot-Neo-Hooke energy density and derivatives w.r.t. right stretch \f$\boldsymbol{U}\f$.
+       *
+       * @details Internally evaluates the standard Neo-Hooke potential in terms of
+       * \f$\boldsymbol{C}=\boldsymbol{U}\boldsymbol{U}\f$ and applies chain-rule transformations.
+       *
+       * @tparam T Scalar type, e.g. double, float, autodiff scalar.
+       * @param U Right stretch tensor.
+       * @param K Bulk modulus.
+       * @param G Shear modulus.
+       * @return Tuple of energy density, first derivative and second derivative w.r.t. \f$\boldsymbol{U}\f$.
+       */
       template < typename T >
       std::tuple< T, FastorStandardTensors::Tensor33t< T >, FastorStandardTensors::Tensor3333t< T > > BiotNeoHooke(
         const FastorStandardTensors::Tensor33t< T >& U,
@@ -383,11 +429,19 @@ namespace Marmot::ContinuumMechanics {
     } // namespace SecondOrderDerived
 
     namespace ThirdOrderDerived {
+      /** @brief Standard compressible Neo-Hooke energy density and first/second/third derivatives w.r.t.
+       * \f$\boldsymbol{C}\f$.
+       *
+       * @param C Right Cauchy-Green tensor.
+       * @param K Bulk modulus.
+       * @param G Shear modulus.
+       * @return Tuple of energy density, first derivative, second derivative and third derivative.
+       */
       std::tuple< double, FastorStandardTensors::Tensor33d, FastorStandardTensors::Tensor3333d, FastorStandardTensors::Tensor333333d > standardNeoHooke(
         const FastorStandardTensors::Tensor33d& C,
         const double&                           K,
         const double&                           G );
-    }
-  } // namespace EnergyDensityFunctions
+    } // namespace ThirdOrderDerived
+  }   // namespace EnergyDensityFunctions
 
 } // namespace Marmot::ContinuumMechanics
