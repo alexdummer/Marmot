@@ -137,7 +137,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -178,7 +177,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -294,7 +292,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -341,7 +338,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -456,7 +452,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -503,7 +498,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -618,7 +612,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -665,7 +658,6 @@ namespace Marmot::Materials {
       std::tie( response.tau,
                 dTau_dPK2,
                 dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
