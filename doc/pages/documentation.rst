@@ -6,6 +6,7 @@ Code documentation
 
   codedocumentation/finiteelementcore
   codedocumentation/finitestrainmechanicscore
+  codedocumentation/gradientmechanicscore
   codedocumentation/mathcore
   codedocumentation/mechanicscore
   codedocumentation/utilitiescore
