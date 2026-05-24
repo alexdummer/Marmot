@@ -252,7 +252,7 @@ namespace Marmot::Materials {
       double dt_sub = timeIncrement.dT / static_cast< double >( nSubsteps );
       double t_curr = timeIncrement.time;
 
-      ConstitutiveResponse< 3 > subResponse = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
+      ConstitutiveResponse< 3 > subResponse = { Tensor33d( 0.0 ), 0.0, nullptr };
       subResponse.stateVars                 = this->stateLayout.getPtr( response.stateVars, "materialstate" );
 
       AlgorithmicModuli< 3 > subTangents      = { Tensor3333d( 0.0 ) };
@@ -296,7 +296,6 @@ namespace Marmot::Materials {
       // set final response
       response.tau                  = subResponse.tau;
       response.elasticEnergyDensity = subResponse.elasticEnergyDensity;
-      response.rho                  = subResponse.rho;
 
       // Update stored F_n to F_n1
       Fn_ref = deformation.F;

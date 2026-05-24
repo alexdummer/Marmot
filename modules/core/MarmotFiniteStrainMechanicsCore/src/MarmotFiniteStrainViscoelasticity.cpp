@@ -14,8 +14,7 @@ namespace Marmot {
       if ( nMaxwell == 0 )
         return MaxwellProperties( 0, {}, 0.0, {} );
       if ( gammaTauPairVector == nullptr )
-        throw std::invalid_argument(
-          "gammaTauPairVector cannot be null when number of Maxwell elements is positive." );
+        throw std::invalid_argument( "gammaTauPairVector cannot be null when number of Maxwell elements is positive." );
 
       std::vector< double > gamma( nMaxwell );
       std::vector< double > tau( nMaxwell );

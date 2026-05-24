@@ -574,7 +574,7 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
+      Material::ConstitutiveResponse< nDim > response = { 0, 0, nullptr };
       Material::AlgorithmicModuli< nDim >    tangents = { 0 };
       try {
         if constexpr ( nDim == 2 ) {
@@ -585,7 +585,6 @@ namespace Marmot::Elements {
 
             Material::ConstitutiveResponse< 3 >
               response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
-                          -1.0,
                           -1.0,
                           qp.managedStateVars->materialStateVars.data() };
 
@@ -609,7 +608,6 @@ namespace Marmot::Elements {
               qp.material->computePlaneStrain( response3D, algorithmicModuli3D, deformation3D, timeIncrement );
 
             response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
 
@@ -623,7 +621,6 @@ namespace Marmot::Elements {
         }
         else {
           response = { Marmot::FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), ColumnMajor ),
-                       -1.0,
                        -1.0,
                        qp.managedStateVars->materialStateVars.data() };
 
@@ -705,7 +702,7 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
+      Material::ConstitutiveResponse< nDim > response = { 0, 0, nullptr };
       try {
         if constexpr ( nDim == 2 ) {
 
@@ -715,7 +712,6 @@ namespace Marmot::Elements {
 
             Material::ConstitutiveResponse< 3 >
               response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
-                          -1.0,
                           -1.0,
                           qp.managedStateVars->materialStateVars.data() };
 
@@ -736,7 +732,6 @@ namespace Marmot::Elements {
               qp.material->computePlaneStrainExplicit( response3D, deformation3D, timeIncrement );
 
             response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
 
@@ -745,7 +740,6 @@ namespace Marmot::Elements {
         }
         else {
           response = { Marmot::FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), ColumnMajor ),
-                       -1.0,
                        -1.0,
                        qp.managedStateVars->materialStateVars.data() };
 
@@ -1052,7 +1046,6 @@ namespace Marmot::Elements {
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
                     -1.0,
-                    -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 
       Material::AlgorithmicModuli< 3 > algorithmicModuli3D;
@@ -1069,7 +1062,6 @@ namespace Marmot::Elements {
         return;
       }
       response = { reduceTo2D< U, U >( response3D.tau ),
-                   response3D.rho,
                    response3D.elasticEnergyDensity,
                    qp.managedStateVars->materialStateVars.data() };
 
@@ -1198,7 +1190,6 @@ namespace Marmot::Elements {
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
                     -1.0,
-                    -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 
       Material::Deformation< 3 > deformation3D{ expandTo3D( deformation.F ) };
@@ -1213,7 +1204,6 @@ namespace Marmot::Elements {
         return;
       }
       response = { reduceTo2D< U, U >( response3D.tau ),
-                   response3D.rho,
                    response3D.elasticEnergyDensity,
                    qp.managedStateVars->materialStateVars.data() };
 
