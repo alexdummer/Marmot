@@ -328,8 +328,8 @@ namespace Marmot {
      * @brief Converts a stiffness matrix in Voigt notation (\f$ 6 \times 6 \f$ matrix) to a 4th-order stiffness tensor
      * (\f$ 3 \times 3 \times 3 \times 3 \f$ tensor).
      * @param voigtStiffness The \f$ 6 \times 6 \f$ matrix representing the stiffness in Voigt notation.
-     * return An Fastor::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
-     *        The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
+     * @return a Fastor::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
+     *         The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
      */
     Marmot::FastorStandardTensors::Tensor3333d voigtToStiffnessFastor( const Marmot::Matrix6d& voigtStiffness );
 

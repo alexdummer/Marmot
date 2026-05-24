@@ -13,14 +13,22 @@ namespace Marmot {
         throw std::invalid_argument( "Number of Maxwell elements cannot be negative." );
       if ( nMaxwell == 0 )
         return MaxwellProperties( 0, {}, 0.0, {} );
+      if ( gammaTauPairVector == nullptr )
+        throw std::invalid_argument(
+          "gammaTauPairVector cannot be null when number of Maxwell elements is positive." );
 
       std::vector< double > gamma( nMaxwell );
       std::vector< double > tau( nMaxwell );
       double                sumGamma = 0.0;
       for ( int i = 0; i < nMaxwell; ++i ) {
-        gamma[i] = gammaTauPairVector[i * 2];
-        tau[i]   = gammaTauPairVector[i * 2 + 1];
-        sumGamma += gamma[i];
+        const double gammaValue = gammaTauPairVector[i * 2];
+        const double tauValue   = gammaTauPairVector[i * 2 + 1];
+        if ( tauValue <= 0.0 )
+          throw std::invalid_argument( "Relaxation times of Maxwell elements must be positive." );
+
+        gamma[i] = gammaValue;
+        tau[i]   = tauValue;
+        sumGamma += gammaValue;
       }
       return MaxwellProperties( nMaxwell, gamma, sumGamma, tau );
     }
@@ -138,7 +146,7 @@ namespace Marmot {
         tangent += beta * initialTangent;
 
         // update state variables
-        memcpy( stateVars + i * 9, &Q_np, 9 * sizeof( double ) );
+        memcpy( stateVars + i * 9, Q_np.data(), 9 * sizeof( double ) );
       }
     }
 

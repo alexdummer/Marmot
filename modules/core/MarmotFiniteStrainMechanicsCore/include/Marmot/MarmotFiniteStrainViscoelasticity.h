@@ -149,7 +149,7 @@ namespace Marmot {
         const Tensor33d Q_np_real = makeReal( Q_np );
 
         // update state variables
-        memcpy( stateVars + i * 9, &Q_np_real, 9 * sizeof( double ) );
+        memcpy( stateVars + i * 9, Q_np_real.data(), 9 * sizeof( double ) );
       }
     }
 
