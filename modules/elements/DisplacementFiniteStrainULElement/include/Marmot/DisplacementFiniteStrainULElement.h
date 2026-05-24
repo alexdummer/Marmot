@@ -132,10 +132,10 @@ namespace Marmot::Elements {
         /// @brief Layout of the state variable vector at the quadrature point
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 9 },
-          { .name = "F", .length = 9 },
           { .name = "F0 XX", .length = 1 },
           { .name = "F0 YY", .length = 1 },
           { .name = "F0 ZZ", .length = 1 },
+          { .name = "F", .length = 9 },
           { .name = "begin of material state", .length = 0 },
         } );
 
