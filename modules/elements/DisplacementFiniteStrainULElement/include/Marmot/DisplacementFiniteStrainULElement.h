@@ -986,6 +986,7 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 1 )
         characteristicElementLength = 2 * qp.detJ;
 
+      using namespace Marmot::FastorIndices;
       auto deformationGradientForBulkModulus = identity3x3;
       if ( hasQTotal ) {
         const auto dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );

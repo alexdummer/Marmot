@@ -302,9 +302,8 @@ public:
 
     computeStress( responseCopy, tan, inc );
 
-    return ( tan.dStressddStrain( 0, 0 ) + tan.dStressddStrain( 1, 1 ) + tan.dStressddStrain( 2, 2 ) +
-             2.0 * ( tan.dStressddStrain( 0, 1 ) + tan.dStressddStrain( 0, 2 ) + tan.dStressddStrain( 1, 2 ) ) ) /
-           9.0;
+    return std::max( tan.dStressddStrain( 0, 0 ),
+                     std::max( tan.dStressddStrain( 1, 1 ), tan.dStressddStrain( 2, 2 ) ) );
   }
 
   /**

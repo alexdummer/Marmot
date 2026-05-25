@@ -154,7 +154,7 @@ namespace Marmot::Elements {
       public:
         mVector6d                     stress;
         mVector6d                     strain;
-        double                        strainEnergy;
+        double&                       strainEnergy;
         Eigen::Map< Eigen::VectorXd > materialStateVars;
 
         static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
@@ -967,8 +967,8 @@ namespace Marmot::Elements {
   {
     internalEnergy = 0.0;
     for ( const auto& qp : qps ) {
-      // internalEnergy += qp.managedStateVars->strainEnergy;
-      internalEnergy += 0.5 * qp.managedStateVars->stress.dot( qp.managedStateVars->strain ) * qp.J0xW;
+      internalEnergy += qp.managedStateVars->strainEnergy;
+      // internalEnergy += 0.5 * qp.managedStateVars->stress.dot( qp.managedStateVars->strain ) * qp.J0xW;
     }
   }
 
