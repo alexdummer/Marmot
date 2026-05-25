@@ -41,6 +41,8 @@
  * consistent set of names (e.g. @c Marmot::Vector6d, @c Marmot::Matrix6d).
  */
 
+#define VOIGTFROMDIM( x ) ( ( ( x * x ) + x ) >> 1 )
+
 namespace Marmot {
   typedef Eigen::Matrix< double, 6, 6 > Matrix6d;              ///< 6×6 double matrix (Voigt tangent)
   typedef Eigen::Matrix< double, 6, 9 > Matrix69d;             ///< 6×9 double matrix
