@@ -74,7 +74,6 @@ public:
   template < int nDim >
   struct ConstitutiveResponse {
     Fastor::Tensor< double, nDim, nDim > tau;                  ///< Kirchhoff stress
-    double                               rho;                  ///< mass density
     double                               elasticEnergyDensity; ///< elastic energy per unit volume
     double*                              stateVars;            ///< pointer to state variables
   };

@@ -136,11 +136,13 @@ namespace Marmot::Elements {
           { .name = "F0 XX", .length = 1 },
           { .name = "F0 YY", .length = 1 },
           { .name = "F0 ZZ", .length = 1 },
+          { .name = "F", .length = 9 },
           { .name = "begin of material state", .length = 0 },
         } );
 
       public:
         Eigen::Map< Marmot::Vector9d > stress; /**< Stress tensor at the quadrature point */
+        Eigen::Map< Marmot::Vector9d > F;      /**< Deformation gradient at the quadrature point */
         double& F0_XX; /**< Deformation gradient component XX for prescribing an initial deformation state*/
         double& F0_YY; /**< Deformation gradient component YY for prescribing an initial deformation state*/
         double& F0_ZZ; /**< Deformation gradient component ZZ for prescribing an initial deformation state*/
@@ -157,6 +159,7 @@ namespace Marmot::Elements {
         QPStateVarManager( double* theStateVarVector, int nStateVars )
           : MarmotStateVarVectorManager( theStateVarVector, layout ),
             stress( &find( "stress" ) ),
+            F( &find( "F" ) ),
             F0_XX( find( "F0 XX" ) ),
             F0_YY( find( "F0 YY" ) ),
             F0_ZZ( find( "F0 ZZ" ) ),
@@ -572,7 +575,7 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
+      Material::ConstitutiveResponse< nDim > response = { 0, 0, nullptr };
       Material::AlgorithmicModuli< nDim >    tangents = { 0 };
       try {
         if constexpr ( nDim == 2 ) {
@@ -583,7 +586,6 @@ namespace Marmot::Elements {
 
             Material::ConstitutiveResponse< 3 >
               response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
-                          -1.0,
                           -1.0,
                           qp.managedStateVars->materialStateVars.data() };
 
@@ -607,7 +609,6 @@ namespace Marmot::Elements {
               qp.material->computePlaneStrain( response3D, algorithmicModuli3D, deformation3D, timeIncrement );
 
             response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
 
@@ -616,11 +617,11 @@ namespace Marmot::Elements {
             };
 
             qp.managedStateVars->stress = Marmot::mapEigenToFastor( response3D.tau ).reshaped();
+            qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation3D.F ).reshaped();
           }
         }
         else {
           response = { Marmot::FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), ColumnMajor ),
-                       -1.0,
                        -1.0,
                        qp.managedStateVars->materialStateVars.data() };
 
@@ -628,6 +629,7 @@ namespace Marmot::Elements {
 
           // implicit conversion to col major
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
+          qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation.F ).reshaped();
         }
       }
       catch ( const Marmot::StressUpdateFailed& ) {
@@ -701,7 +703,7 @@ namespace Marmot::Elements {
 
       const Material::TimeIncrement timeIncrement{ time[1], dT };
 
-      Material::ConstitutiveResponse< nDim > response = { 0, 0, 0, nullptr };
+      Material::ConstitutiveResponse< nDim > response = { 0, 0, nullptr };
       try {
         if constexpr ( nDim == 2 ) {
 
@@ -711,7 +713,6 @@ namespace Marmot::Elements {
 
             Material::ConstitutiveResponse< 3 >
               response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
-                          -1.0,
                           -1.0,
                           qp.managedStateVars->materialStateVars.data() };
 
@@ -732,7 +733,6 @@ namespace Marmot::Elements {
               qp.material->computePlaneStrainExplicit( response3D, deformation3D, timeIncrement );
 
             response = { reduceTo2D< U, U >( response3D.tau ),
-                         response3D.rho,
                          response3D.elasticEnergyDensity,
                          qp.managedStateVars->materialStateVars.data() };
 
@@ -741,7 +741,6 @@ namespace Marmot::Elements {
         }
         else {
           response = { Marmot::FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), ColumnMajor ),
-                       -1.0,
                        -1.0,
                        qp.managedStateVars->materialStateVars.data() };
 
@@ -1048,7 +1047,6 @@ namespace Marmot::Elements {
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
                     -1.0,
-                    -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 
       Material::AlgorithmicModuli< 3 > algorithmicModuli3D;
@@ -1065,7 +1063,6 @@ namespace Marmot::Elements {
         return;
       }
       response = { reduceTo2D< U, U >( response3D.tau ),
-                   response3D.rho,
                    response3D.elasticEnergyDensity,
                    qp.managedStateVars->materialStateVars.data() };
 
@@ -1194,7 +1191,6 @@ namespace Marmot::Elements {
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
                     -1.0,
-                    -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 
       Material::Deformation< 3 > deformation3D{ expandTo3D( deformation.F ) };
@@ -1209,7 +1205,6 @@ namespace Marmot::Elements {
         return;
       }
       response = { reduceTo2D< U, U >( response3D.tau ),
-                   response3D.rho,
                    response3D.elasticEnergyDensity,
                    qp.managedStateVars->materialStateVars.data() };
 

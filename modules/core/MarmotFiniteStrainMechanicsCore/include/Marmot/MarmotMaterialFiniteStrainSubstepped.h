@@ -162,7 +162,7 @@ namespace Marmot::Materials {
       sensitivities.dState_dStateOld.resize( nState, nState );
       sensitivities.dStress_dStateOld.resize( 9, nState );
 
-      auto func_dState_dF = [&]( const VectorXd& F_vec ) -> VectorXd {
+      auto func_dStressAndState_dF = [&]( const VectorXd& F_vec ) -> VectorXd {
         Deformation< 3 > defPerturbed;
         std::memcpy( defPerturbed.F.data(), F_vec.data(), 9 * sizeof( double ) );
 
@@ -174,7 +174,12 @@ namespace Marmot::Materials {
 
         baseMaterial->computeStress( respPert, tanPert, defPerturbed, timeIncrement );
 
-        Map< VectorXd > res( respPert.stateVars, nState );
+        // return [stress; state_new] as a single vector
+        VectorXd res( 9 + nState );
+        // Fill Stress part
+        std::memcpy( res.data(), respPert.tau.data(), 9 * sizeof( double ) );
+        // Fill State_new part
+        std::memcpy( res.data() + 9, respPert.stateVars, nState * sizeof( double ) );
         return res;
       };
 
@@ -200,7 +205,18 @@ namespace Marmot::Materials {
       };
 
       // Compute dState/dF_new
-      sensitivities.dState_dF = forwardDifference( func_dState_dF, Map< const VectorXd >( deformation.F.data(), 9 ) );
+      const MatrixXd dStressAndState_dF = forwardDifference( func_dStressAndState_dF,
+                                                             Map< const VectorXd >( deformation.F.data(), 9 ) );
+
+      // Extract dStress/dF_new
+      MatrixXd dStress_dF_flat = dStressAndState_dF.block( 0, 0, 9, 9 );
+
+      // possibiblity to take fd tangent directly
+      tangents.dTau_dF = reshape< 3, 3, 3, 3 >(
+        Fastor::transpose( FastorStandardTensors::Tensor99d( dStress_dF_flat.data() ) ) );
+
+      // Extract dState/dF_new
+      sensitivities.dState_dF = dStressAndState_dF.block( 9, 0, nState, 9 );
 
       // Compute [dStress/dStateOld; dState/dStateOld]
       const MatrixXd dStressAndState_dStateOld = forwardDifference( func_dStressAndState_dStateOld,
@@ -244,7 +260,7 @@ namespace Marmot::Materials {
       double dt_sub = timeIncrement.dT / static_cast< double >( nSubsteps );
       double t_curr = timeIncrement.time;
 
-      ConstitutiveResponse< 3 > subResponse = { Tensor33d( 0.0 ), 0.0, 0.0, nullptr };
+      ConstitutiveResponse< 3 > subResponse = { Tensor33d( 0.0 ), 0.0, nullptr };
       subResponse.stateVars                 = this->stateLayout.getPtr( response.stateVars, "materialstate" );
 
       AlgorithmicModuli< 3 > subTangents      = { Tensor3333d( 0.0 ) };
@@ -288,7 +304,6 @@ namespace Marmot::Materials {
       // set final response
       response.tau                  = subResponse.tau;
       response.elasticEnergyDensity = subResponse.elasticEnergyDensity;
-      response.rho                  = subResponse.rho;
 
       // Update stored F_n to F_n1
       Fn_ref = deformation.F;
