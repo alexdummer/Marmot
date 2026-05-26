@@ -290,50 +290,55 @@ public:
   }
 
   /**
-   * @brief Get the bulk modulus of the material for a given deformation gradient.
+   * @brief Get the maximum wave speed of the material for a given deformation gradient.
    * @param[in] stateVars Pointer to the state variable array
    * @param[in] deformationGradient Current deformation gradient used as perturbation reference
-   * @return Bulk modulus
-   * @details The default implementation uses a centered finite difference around
-   * an isotropic volumetric perturbation of the passed deformation gradient.
+   * @return Maximum wave speed
+   * @details The default implementation computes diagonal Voigt tangent entries by centered
+   * finite differences and returns `sqrt(max(C_ii) / rho)`.
    */
-  virtual double getBulkModulus( const double*                         stateVars,
-                                 const Fastor::Tensor< double, 3, 3 >& deformationGradient ) const
+  virtual double getMaximumWaveSpeed( const double*                         stateVars,
+                                      const Fastor::Tensor< double, 3, 3 >& deformationGradient ) const
   {
-    constexpr double dVol = 1e-6;
+    constexpr double dEps = 1e-6;
 
     const int nStateVars = getNumberOfRequiredStateVars();
 
-    std::vector< double > stateVarsPlus( nStateVars, 0.0 );
-    std::vector< double > stateVarsMinus( nStateVars, 0.0 );
-    if ( stateVars != nullptr && nStateVars > 0 ) {
-      std::copy_n( stateVars, nStateVars, stateVarsPlus.begin() );
-      std::copy_n( stateVars, nStateVars, stateVarsMinus.begin() );
+    double     maxStiffnessDiagonal = 0.0;
+    const auto timeIncrement        = TimeIncrement{ 0.0, 1.0 };
+
+    for ( int i = 0; i < 3; ++i ) {
+      std::vector< double > stateVarsPlus( nStateVars, 0.0 );
+      std::vector< double > stateVarsMinus( nStateVars, 0.0 );
+      if ( stateVars != nullptr && nStateVars > 0 ) {
+        std::copy_n( stateVars, nStateVars, stateVarsPlus.begin() );
+        std::copy_n( stateVars, nStateVars, stateVarsMinus.begin() );
+      }
+
+      auto FPlus  = deformationGradient;
+      auto FMinus = deformationGradient;
+      FPlus( i, i ) *= ( 1.0 + dEps );
+      FMinus( i, i ) *= ( 1.0 - dEps );
+
+      Deformation< 3 > deformationPlus{ FPlus };
+      Deformation< 3 > deformationMinus{ FMinus };
+
+      ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsPlus.data() };
+      ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
+                                               -1.0,
+                                               0.0,
+                                               stateVarsMinus.data() };
+
+      computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
+      computeStressExplicit( responseMinus, deformationMinus, timeIncrement );
+
+      const double dLogStrain = std::log( 1.0 + dEps ) - std::log( 1.0 - dEps );
+      const double Cii        = ( responsePlus.tau( i, i ) - responseMinus.tau( i, i ) ) / dLogStrain;
+      maxStiffnessDiagonal    = std::max( maxStiffnessDiagonal, Cii );
     }
 
-    Fastor::Tensor< double, 3, 3 > FPlus( 0.0 );
-    Fastor::Tensor< double, 3, 3 > FMinus( 0.0 );
-    FPlus  = ( 1.0 + dVol ) * deformationGradient;
-    FMinus = ( 1.0 - dVol ) * deformationGradient;
-
-    Deformation< 3 > deformationPlus{ FPlus };
-    Deformation< 3 > deformationMinus{ FMinus };
-
-    ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsPlus.data() };
-    ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsMinus.data() };
-
-    const TimeIncrement timeIncrement{ 0.0, 1.0 };
-
-    computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
-    computeStressExplicit( responseMinus, deformationMinus, timeIncrement );
-
-    const double pPlus  = ( responsePlus.tau( 0, 0 ) + responsePlus.tau( 1, 1 ) + responsePlus.tau( 2, 2 ) ) / 3.0;
-    const double pMinus = ( responseMinus.tau( 0, 0 ) + responseMinus.tau( 1, 1 ) + responseMinus.tau( 2, 2 ) ) / 3.0;
-
-    const double lnJPlus  = 3.0 * std::log( 1.0 + dVol );
-    const double lnJMinus = 3.0 * std::log( 1.0 - dVol );
-
-    return ( pPlus - pMinus ) / ( lnJPlus - lnJMinus );
+    const double density = getDensity( stateVars );
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
   }
 
   /**

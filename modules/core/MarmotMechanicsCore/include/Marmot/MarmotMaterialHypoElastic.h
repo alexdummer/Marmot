@@ -30,6 +30,7 @@
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 /**
@@ -193,12 +194,13 @@ public:
   }
 
   /**
-   * @brief Get the bulk modulus of the material.
+   * @brief Get the maximum wave speed of the material.
    * @param[in] state Current material state
-   * @return Bulk modulus
-   * @details The default implementation computes an effective bulk modulus from the 3D algorithmic tangent.
+   * @return Maximum wave speed
+   * @details The default implementation computes the 3D algorithmic tangent and returns
+   *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
    */
-  virtual double getBulkModulus( const state3D& state ) const
+  virtual double getMaximumWaveSpeed( const state3D& state ) const
   {
     const int nStateVars = getNumberOfRequiredStateVars();
 
@@ -215,9 +217,15 @@ public:
 
     computeStress( stateCopy, dStress_dStrain, dStrain, timeInfo );
 
-    return ( dStress_dStrain( 0, 0 ) + dStress_dStrain( 1, 1 ) + dStress_dStrain( 2, 2 ) +
-             2.0 * ( dStress_dStrain( 0, 1 ) + dStress_dStrain( 0, 2 ) + dStress_dStrain( 1, 2 ) ) ) /
-           9.0;
+    const double maxStiffnessDiagonal = std::max( { dStress_dStrain( 0, 0 ),
+                                                    dStress_dStrain( 1, 1 ),
+                                                    dStress_dStrain( 2, 2 ),
+                                                    dStress_dStrain( 3, 3 ),
+                                                    dStress_dStrain( 4, 4 ),
+                                                    dStress_dStrain( 5, 5 ) } );
+    const double density              = getDensity( stateCopy.stateVars );
+
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
   }
 
   /**

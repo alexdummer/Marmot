@@ -944,18 +944,16 @@ namespace Marmot::Elements {
         characteristicElementLength = std::sqrt( 4 * qp.detJ );
       if constexpr ( nDim == 1 )
         characteristicElementLength = ( 2 * qp.detJ );
-      response bulkModulusResponse;
-      bulkModulusResponse.stress = qp.managedStateVars->stress;
-      bulkModulusResponse.KLocal.setZero();
-      bulkModulusResponse.c.setZero();
-      bulkModulusResponse.stateVars           = qp.managedStateVars->materialStateVars.data();
-      bulkModulusResponse.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
+      response waveSpeedResponse;
+      waveSpeedResponse.stress = qp.managedStateVars->stress;
+      waveSpeedResponse.KLocal.setZero();
+      waveSpeedResponse.c.setZero();
+      waveSpeedResponse.stateVars           = qp.managedStateVars->materialStateVars.data();
+      waveSpeedResponse.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
 
-      const double  rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double  K   = qp.material->getBulkModulus( bulkModulusResponse );
-      const double  c   = std::sqrt( K / rho ); // dilatational wave speed
-      const double& l   = characteristicElementLength;
-      double        dt  = l / c;
+      const double  c  = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
+      const double& l  = characteristicElementLength;
+      double        dt = l / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;
     }

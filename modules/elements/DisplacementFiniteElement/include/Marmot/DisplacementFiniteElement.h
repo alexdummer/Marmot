@@ -914,10 +914,8 @@ namespace Marmot::Elements {
       state.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
       state.stateVars           = qp.managedStateVars->materialStateVars.data();
 
-      const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double K   = qp.material->getBulkModulus( state );
-      const double c   = std::sqrt( K / rho );
-      const double dt  = characteristicElementLength / c;
+      const double c  = qp.material->getMaximumWaveSpeed( state );
+      const double dt = characteristicElementLength / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;
     }

@@ -987,24 +987,22 @@ namespace Marmot::Elements {
         characteristicElementLength = 2 * qp.detJ;
 
       using namespace Marmot::FastorIndices;
-      auto deformationGradientForBulkModulus = identity3x3;
+      auto deformationGradientForWaveSpeed = identity3x3;
       if ( hasQTotal ) {
         const auto dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );
         const auto F_np = evaluate( einsum< Ai, jA >( qU_np, dNdX ) + I );
         if constexpr ( nDim == 3 ) {
-          deformationGradientForBulkModulus = F_np;
+          deformationGradientForWaveSpeed = F_np;
         }
         if constexpr ( nDim == 2 ) {
-          deformationGradientForBulkModulus         = expandTo3D( F_np );
-          deformationGradientForBulkModulus( 2, 2 ) = 1.0;
+          deformationGradientForWaveSpeed         = expandTo3D( F_np );
+          deformationGradientForWaveSpeed( 2, 2 ) = 1.0;
         }
       }
 
-      const double rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data(),
-                                                    deformationGradientForBulkModulus );
-      const double c   = std::sqrt( K / rho );
-      const double dt  = characteristicElementLength / c;
+      const double c  = qp.material->getMaximumWaveSpeed( qp.managedStateVars->materialStateVars.data(),
+                                                         deformationGradientForWaveSpeed );
+      const double dt = characteristicElementLength / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;
     }
