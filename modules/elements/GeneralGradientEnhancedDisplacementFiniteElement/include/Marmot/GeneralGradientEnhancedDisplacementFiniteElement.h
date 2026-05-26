@@ -154,7 +154,7 @@ namespace Marmot::Elements {
       public:
         mVector6d                     stress;
         mVector6d                     strain;
-        double                        strainEnergy;
+        double&                       strainEnergy;
         Eigen::Map< Eigen::VectorXd > materialStateVars;
 
         static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
@@ -396,7 +396,7 @@ namespace Marmot::Elements {
      * is the dilatational wave speed computed from the material properties at the quadrature points.
      * The minimum time step across all quadrature points is returned.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
 
     /**
      * @brief Compute the internal energy of the element by summing the strain energy contributions from all quadrature
@@ -929,8 +929,10 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep )
+    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
   {
+    (void)QTotal;
+    using response = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
 
     // TODO: current implementation ignores nonlocal variables
     criticalTimeStep = std::numeric_limits< double >::max();
@@ -942,11 +944,16 @@ namespace Marmot::Elements {
         characteristicElementLength = std::sqrt( 4 * qp.detJ );
       if constexpr ( nDim == 1 )
         characteristicElementLength = ( 2 * qp.detJ );
-      const double  rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
-      const double  K   = qp.material->getBulkModulus( qp.managedStateVars->materialStateVars.data() );
-      const double  c   = std::sqrt( K / rho ); // dilatational wave speed
-      const double& l   = characteristicElementLength;
-      double        dt  = l / c;
+      response waveSpeedResponse;
+      waveSpeedResponse.stress = qp.managedStateVars->stress;
+      waveSpeedResponse.KLocal.setZero();
+      waveSpeedResponse.c.setZero();
+      waveSpeedResponse.stateVars           = qp.managedStateVars->materialStateVars.data();
+      waveSpeedResponse.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
+
+      const double  c  = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
+      const double& l  = characteristicElementLength;
+      double        dt = l / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;
     }
@@ -958,8 +965,8 @@ namespace Marmot::Elements {
   {
     internalEnergy = 0.0;
     for ( const auto& qp : qps ) {
-      // internalEnergy += qp.managedStateVars->strainEnergy;
-      internalEnergy += 0.5 * qp.managedStateVars->stress.dot( qp.managedStateVars->strain ) * qp.J0xW;
+      internalEnergy += qp.managedStateVars->strainEnergy;
+      // internalEnergy += 0.5 * qp.managedStateVars->stress.dot( qp.managedStateVars->strain ) * qp.J0xW;
     }
   }
 

@@ -29,6 +29,9 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 /**
  *
@@ -188,6 +191,41 @@ public:
     for ( int i = 0; i < nStateVars; ++i ) {
       stateVars[i] = 0.0;
     }
+  }
+
+  /**
+   * @brief Get the maximum wave speed of the material.
+   * @param[in] state Current material state
+   * @return Maximum wave speed
+   * @details The default implementation computes the 3D algorithmic tangent and returns
+   *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
+   */
+  virtual double getMaximumWaveSpeed( const state3D& state ) const
+  {
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    std::vector< double > stateVarsCopy( nStateVars, 0.0 );
+    if ( state.stateVars != nullptr && nStateVars > 0 ) {
+      std::copy_n( state.stateVars, nStateVars, stateVarsCopy.begin() );
+    }
+
+    state3D stateCopy{ state.stress, state.strainEnergyDensity, stateVarsCopy.data() };
+
+    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
+    const auto       dStrain         = Marmot::Vector6d::Zero();
+    const timeInfo   timeInfo{ 0.0, 1.0 };
+
+    computeStress( stateCopy, dStress_dStrain, dStrain, timeInfo );
+
+    const double maxStiffnessDiagonal = std::max( { dStress_dStrain( 0, 0 ),
+                                                    dStress_dStrain( 1, 1 ),
+                                                    dStress_dStrain( 2, 2 ),
+                                                    dStress_dStrain( 3, 3 ),
+                                                    dStress_dStrain( 4, 4 ),
+                                                    dStress_dStrain( 5, 5 ) } );
+    const double density              = getDensity( stateCopy.stateVars );
+
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
   }
 
   /**

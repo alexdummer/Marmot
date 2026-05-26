@@ -28,6 +28,9 @@
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 /**
  * @brief Base class for general gradient-enhanced hypoelastic material models.
@@ -273,13 +276,44 @@ public:
   virtual double getDensity( const double* stateVars ) const = 0;
 
   /**
-   * @breif Get the bulk modulus of the material.
-   * @param stateVars Pointer to the array of state variables
-   * @return Bulk modulus of the material
-   * This method must be implemented in derived classes to return the bulk modulus of the material, which is required
-   * for dynamic analyses.
+   * @brief Get the maximum wave speed for the current response state.
+   * @param currentResponse Current response state
+   * @return Maximum wave speed
+   * @details The default implementation computes the 3D algorithmic tangent and returns
+   *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
    */
-  virtual double getBulkModulus( const double* stateVars ) const = 0;
+  virtual double getMaximumWaveSpeed( const response& currentResponse ) const
+  {
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    std::vector< double > stateVarsCopy( nStateVars, 0.0 );
+    if ( currentResponse.stateVars != nullptr && nStateVars > 0 ) {
+      std::copy_n( currentResponse.stateVars, nStateVars, stateVarsCopy.begin() );
+    }
+
+    response responseCopy  = currentResponse;
+    responseCopy.stateVars = stateVarsCopy.data();
+
+    tangents  tan;
+    increment inc;
+    inc.dStrain = Marmot::Vector6d::Zero();
+    inc.K       = Eigen::Vector< double, nNonlocalVariables >::Zero();
+    inc.dK      = Eigen::Vector< double, nNonlocalVariables >::Zero();
+    inc.time    = 0.0;
+    inc.dT      = 1.0;
+
+    computeStress( responseCopy, tan, inc );
+
+    const double maxStiffnessDiagonal = std::max( { tan.dStressddStrain( 0, 0 ),
+                                                    tan.dStressddStrain( 1, 1 ),
+                                                    tan.dStressddStrain( 2, 2 ),
+                                                    tan.dStressddStrain( 3, 3 ),
+                                                    tan.dStressddStrain( 4, 4 ),
+                                                    tan.dStressddStrain( 5, 5 ) } );
+    const double density              = getDensity( responseCopy.stateVars );
+
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
+  }
 
   /**
    * @brief Get the nonlocal viscosity of the material.
