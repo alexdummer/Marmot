@@ -33,17 +33,17 @@ namespace MarmotLibrary {
 
   class MarmotMaterialGradientPlasticityHypoElasticFactory {
   public:
-    using materialFactoryFunction =
-      std::function< Marmot::MarmotMaterialGradientPlasticityHypoElastic*( const double* materialProperties,
-                                                                           int           nMaterialProperties,
-                                                                           int           materialNumber ) >;
+    using materialFactoryFunction = std::function<
+      Marmot::MarmotMaterialGradientPlasticityHypoElastic*( const double* materialProperties,
+                                                            int           nMaterialProperties,
+                                                            int           materialNumber ) >;
 
     MarmotMaterialGradientPlasticityHypoElasticFactory() = delete;
 
     static Marmot::MarmotMaterialGradientPlasticityHypoElastic* createMaterial( const std::string& materialName,
-                                                                                 const double*      materialProperties,
-                                                                                 int                nMaterialProperties,
-                                                                                 int                materialNumber );
+                                                                                const double*      materialProperties,
+                                                                                int                nMaterialProperties,
+                                                                                int                materialNumber );
 
     template < class T >
     static bool registerMaterial( const std::string& materialName )
@@ -52,8 +52,9 @@ namespace MarmotLibrary {
 
       assert( map.find( materialName ) == map.end() && "Material already registered!" );
 
-      map[materialName] = []( const double* materialProperties, int nMaterialProperties, int materialNumber )
-        -> Marmot::MarmotMaterialGradientPlasticityHypoElastic* {
+      map[materialName] = []( const double* materialProperties,
+                              int           nMaterialProperties,
+                              int           materialNumber ) -> Marmot::MarmotMaterialGradientPlasticityHypoElastic* {
         return new T( materialProperties, nMaterialProperties, materialNumber );
       };
       return true;

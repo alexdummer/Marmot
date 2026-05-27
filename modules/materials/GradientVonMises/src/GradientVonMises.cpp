@@ -33,9 +33,9 @@ namespace Marmot::Materials {
 
   void GradientVonMises::computeStress( response& res, tangents& tan, const increment& inc ) const
   {
-    const double& E        = materialProperties[0];
-    const double& nu       = materialProperties[1];
-    const double& sigmaY0  = materialProperties[2];
+    const double& E         = materialProperties[0];
+    const double& nu        = materialProperties[1];
+    const double& sigmaY0   = materialProperties[2];
     const double& HNonlocal = materialProperties[3];
     const double& l         = materialProperties[4];
 
@@ -66,10 +66,11 @@ namespace Marmot::Materials {
       return;
     }
 
-    const Vector6d n = IDev * trialStress / rhoTrial;
-    const double   dKappa =
-      std::max( 0.0, fTrial / std::max( Constants::sqrt6 * G, std::numeric_limits< double >::epsilon() ) );
-    const double dLambda = Constants::sqrt3_2 * dKappa;
+    const Vector6d n       = IDev * trialStress / rhoTrial;
+    const double   dKappa  = std::max( 0.0,
+                                    fTrial /
+                                      std::max( Constants::sqrt6 * G, std::numeric_limits< double >::epsilon() ) );
+    const double   dLambda = Constants::sqrt3_2 * dKappa;
 
     res.stress = trialStress - 2. * G * dLambda * n;
 
@@ -79,7 +80,7 @@ namespace Marmot::Materials {
     Matrix6d IDevHalfShear = IDev;
     IDevHalfShear.block< 6, 3 >( 0, 3 ) *= 0.5;
 
-    tan.dStressddStrain = Cel - 2. * G * ( n * n.transpose() ) - 4. * G * G * dLambda / rhoTrial * IDevHalfShear;
+    tan.dStressddStrain     = Cel - 2. * G * ( n * n.transpose() ) - 4. * G * G * dLambda / rhoTrial * IDevHalfShear;
     tan.dStressddK.col( 0 ) = Constants::sqrt2_3 * HNonlocal * n;
 
     tan.dKLocalddStrain.row( 0 ) = Constants::sqrt2_3 * n.transpose();

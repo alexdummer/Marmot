@@ -53,10 +53,9 @@ namespace Marmot::Elements::Registration {
 
   const static bool GP3D8_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "GP3D8",
-                     makeFactoryFunction<
-                       GradientPlasticityDisplacementFiniteElement< 3, 8 >,
-                       FullIntegration,
-                       GradientPlasticityDisplacementFiniteElement< 3, 8 >::SectionType::Solid >() );
+                     makeFactoryFunction< GradientPlasticityDisplacementFiniteElement< 3, 8 >,
+                                          FullIntegration,
+                                          GradientPlasticityDisplacementFiniteElement< 3, 8 >::SectionType::Solid >() );
 
   const static bool GP3D20_isRegistered = MarmotLibrary::MarmotElementFactory::
     registerElement( "GP3D20",

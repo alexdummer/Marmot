@@ -29,12 +29,14 @@ namespace Marmot {
 
   class MarmotMaterialGradientPlasticityHypoElastic : public MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 > {
   public:
-    using Parent   = MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >;
+    using Parent    = MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >;
     using increment = Parent::increment;
     using response  = Parent::response;
     using tangents  = Parent::tangents;
 
-    MarmotMaterialGradientPlasticityHypoElastic( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
+    MarmotMaterialGradientPlasticityHypoElastic( const double* matProperties_,
+                                                 int           nMaterialProperties_,
+                                                 int           materialNumber_ )
       : MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 >( matProperties_, nMaterialProperties_, materialNumber_ )
     {
     }

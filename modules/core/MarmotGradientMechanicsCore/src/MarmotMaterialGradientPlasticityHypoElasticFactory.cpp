@@ -3,15 +3,18 @@
 
 using namespace MarmotLibrary;
 
-MarmotMaterialGradientPlasticityHypoElasticFactory::MaterialFactoryMap&
-  MarmotMaterialGradientPlasticityHypoElasticFactory::materialFactoryFunctionByName()
+MarmotMaterialGradientPlasticityHypoElasticFactory::MaterialFactoryMap& MarmotMaterialGradientPlasticityHypoElasticFactory::
+  materialFactoryFunctionByName()
 {
   static MaterialFactoryMap map;
   return map;
 }
 
 Marmot::MarmotMaterialGradientPlasticityHypoElastic* MarmotMaterialGradientPlasticityHypoElasticFactory::createMaterial(
-  const std::string& materialName, const double* materialProperties, int nMaterialProperties, int materialNumber )
+  const std::string& materialName,
+  const double*      materialProperties,
+  int                nMaterialProperties,
+  int                materialNumber )
 {
   auto& map = materialFactoryFunctionByName();
   auto  it  = map.find( materialName );

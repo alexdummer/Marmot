@@ -22,7 +22,7 @@ void testElasticStep()
   Res res;
   Tan tan;
   Inc inc;
-  inc.dStrain = Vector6d::Zero();
+  inc.dStrain      = Vector6d::Zero();
   inc.dStrain( 0 ) = 1e-4;
   inc.K( 0 )       = 0.1;
   inc.dK( 0 )      = 0.0;
@@ -51,7 +51,7 @@ void testPlasticStepAndCoupling()
   Res res;
   Tan tan;
   Inc inc;
-  inc.dStrain = Vector6d::Zero();
+  inc.dStrain      = Vector6d::Zero();
   inc.dStrain( 0 ) = 2e-3;
   inc.K( 0 )       = 0.2;
   inc.dK( 0 )      = 0.0;

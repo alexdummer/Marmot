@@ -34,6 +34,7 @@ namespace Marmot::Elements {
   public:
     using BaseType    = GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, 1, nNonLocalNodes >;
     using SectionType = typename BaseType::SectionType;
+    using BaseType::assignProperty;
 
     GradientPlasticityDisplacementFiniteElement( int                                         elementID,
                                                  FiniteElement::Quadrature::IntegrationTypes integrationType,
@@ -46,8 +47,11 @@ namespace Marmot::Elements {
     {
       for ( auto& qp : this->qps ) {
         qp.material = std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< 1 > >(
-          MarmotLibrary::MarmotMaterialGradientPlasticityHypoElasticFactory::createMaterial(
-            section.materialName, section.materialProperties, section.nMaterialProperties, this->elLabel ) );
+          MarmotLibrary::MarmotMaterialGradientPlasticityHypoElasticFactory::createMaterial( section.materialName,
+                                                                                             section.materialProperties,
+                                                                                             section
+                                                                                               .nMaterialProperties,
+                                                                                             this->elLabel ) );
       }
     }
   };

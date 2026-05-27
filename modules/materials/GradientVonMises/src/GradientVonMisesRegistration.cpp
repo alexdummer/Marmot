@@ -7,8 +7,8 @@ namespace Marmot::Materials {
 
     using namespace MarmotLibrary;
 
-    const static bool GradientVonMisesIsRegistered =
-      MarmotMaterialGradientPlasticityHypoElasticFactory::registerMaterial< GradientVonMises >( "GRADIENTVONMISES" );
+    const static bool GradientVonMisesIsRegistered = MarmotMaterialGradientPlasticityHypoElasticFactory::
+      registerMaterial< GradientVonMises >( "GRADIENTVONMISES" );
 
   } // namespace Registration
 
