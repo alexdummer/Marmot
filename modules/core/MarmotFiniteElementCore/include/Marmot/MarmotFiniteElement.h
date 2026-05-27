@@ -9,11 +9,7 @@
  * University of Innsbruck,
  * 2020 - today
  *
- * festigkeitslehre@uibk.ac.at
  *
- * Peter Gamnitzer peter.gamnitzer@uibk.ac.at
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
  *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
