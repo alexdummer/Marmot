@@ -9,7 +9,6 @@
  * University of Innsbruck,
  * 2020 - today
  *
- * festigkeitslehre@uibk.ac.at
  *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
