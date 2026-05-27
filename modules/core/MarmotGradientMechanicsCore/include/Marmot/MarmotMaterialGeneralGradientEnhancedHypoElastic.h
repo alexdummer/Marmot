@@ -92,7 +92,8 @@ public:
     Eigen::Vector< double, nNonlocalVariables > KLocal;    ///< Local driving variables at the current increment
     Eigen::Vector< double, nNonlocalVariables > c;         ///< Nonlocal interaction parameters at the current increment
     double*                                     stateVars; ///< Pointer to the array of state variables
-    double                                      strainEnergyDensity; ///< Strain energy density at the current increment
+    double                                      elasticEnergyDensity; ///< Elastic strain energy density
+    double                                      dissipation;          ///< Dissipation (if applicable)
   };
 
   /// @brief Struct to hold the algorithmic tangent matrices for the material model.
@@ -175,8 +176,8 @@ public:
     Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );
 
     VectorXd  stateVarsOld = stateVars;
-    response  resTemp      = { res.stress, res.KLocal, res.c, res.stateVars, res.strainEnergyDensity };
-    increment incTemp      = { inc.dStrain, inc.K, inc.dK, inc.time, inc.dT };
+    response  resTemp = { res.stress, res.KLocal, res.c, res.stateVars, res.elasticEnergyDensity, res.dissipation };
+    increment incTemp = { inc.dStrain, inc.K, inc.dK, inc.time, inc.dT };
 
     double residual          = 1;
     double tangentCompliance = 1.;
@@ -188,7 +189,12 @@ public:
     while ( true ) {
 
       // set old response
-      resTemp = { res.stress, res.KLocal, res.c, res.stateVars, res.strainEnergyDensity };
+      resTemp = { .stress               = res.stress,
+                  .KLocal               = res.KLocal,
+                  .c                    = res.c,
+                  .stateVars            = res.stateVars,
+                  .elasticEnergyDensity = res.elasticEnergyDensity,
+                  .dissipation          = res.dissipation };
       // set old state variables
       stateVars = stateVarsOld;
       // compute stress
@@ -215,7 +221,7 @@ public:
       }
     }
 
-    res = { resTemp.stress, resTemp.KLocal, resTemp.c, resTemp.stateVars, resTemp.strainEnergyDensity };
+    res = resTemp;
   }
 
   /**

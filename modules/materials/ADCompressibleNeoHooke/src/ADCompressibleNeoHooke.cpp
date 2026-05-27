@@ -45,7 +45,7 @@ namespace Marmot::Materials {
 
     const auto tau                = StressMeasures::KirchhoffStressFromPK2( PK2, F_ );
     response.tau                  = tau;
-    response.rho                  = 1.0;
     response.elasticEnergyDensity = Math::makeReal( psi_ );
+    response.dissipation          = 0.0;
   }
 } // namespace Marmot::Materials

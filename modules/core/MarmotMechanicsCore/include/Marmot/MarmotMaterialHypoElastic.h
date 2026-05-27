@@ -79,23 +79,45 @@ public:
 
   /// Structure to hold the material state at a material point in 3D
   struct state3D {
-    Marmot::Vector6d stress;              ///< Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector6d stress;               ///< Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+
+    state3D()
+      : stress( Marmot::Vector6d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
+    state3D( Marmot::Vector6d stress_, double elasticEnergyDensity_, double dissipation_, double* stateVars_ )
+      : stress( stress_ ),
+        elasticEnergyDensity( elasticEnergyDensity_ ),
+        dissipation( dissipation_ ),
+        stateVars( stateVars_ )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 2D plane stress
   struct state2D {
-    Marmot::Vector3d stress;              ///< 2D Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector3d stress;               ///< 2D Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+
+    state2D()
+      : stress( Marmot::Vector3d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 1D uniaxial stress
   struct state1D {
-    double  stress;              ///< 1D Cauchy stress
-    double  strainEnergyDensity; ///< Strain energy density
-    double* stateVars;           ///< Pointer to array of state variables
+    double  stress;               ///< 1D Cauchy stress
+    double  elasticEnergyDensity; ///< Elastic strain energy density
+    double  dissipation;          ///< Dissipation
+    double* stateVars;            ///< Pointer to array of state variables
+
+    state1D() : stress( 0.0 ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr ) {}
   };
 
   struct timeInfo {
@@ -200,33 +222,7 @@ public:
    * @details The default implementation computes the 3D algorithmic tangent and returns
    *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
    */
-  virtual double getMaximumWaveSpeed( const state3D& state ) const
-  {
-    const int nStateVars = getNumberOfRequiredStateVars();
-
-    std::vector< double > stateVarsCopy( nStateVars, 0.0 );
-    if ( state.stateVars != nullptr && nStateVars > 0 ) {
-      std::copy_n( state.stateVars, nStateVars, stateVarsCopy.begin() );
-    }
-
-    state3D stateCopy{ state.stress, state.strainEnergyDensity, stateVarsCopy.data() };
-
-    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
-    const auto       dStrain         = Marmot::Vector6d::Zero();
-    const timeInfo   timeInfo{ 0.0, 1.0 };
-
-    computeStress( stateCopy, dStress_dStrain, dStrain, timeInfo );
-
-    const double maxStiffnessDiagonal = std::max( { dStress_dStrain( 0, 0 ),
-                                                    dStress_dStrain( 1, 1 ),
-                                                    dStress_dStrain( 2, 2 ),
-                                                    dStress_dStrain( 3, 3 ),
-                                                    dStress_dStrain( 4, 4 ),
-                                                    dStress_dStrain( 5, 5 ) } );
-    const double density              = getDensity( stateCopy.stateVars );
-
-    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
-  }
+  virtual double getMaximumWaveSpeed( const state3D& state ) const;
 
   /**
    * @brief Returns the mass density of the material.

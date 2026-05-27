@@ -67,9 +67,25 @@ public:
   template < int nDim >
   struct ConstitutiveResponse {
     Fastor::Tensor< double, nDim, nDim > tau;                  ///< Kirchhoff stress
-    double                               rho;                  ///< mass density
     double                               elasticEnergyDensity; ///< elastic energy per unit volume
+    double                               dissipation;          ///< dissipation per unit volume
     double*                              stateVars;            ///< pointer to state variables
+
+    ConstitutiveResponse()
+      : tau( Fastor::Tensor< double, nDim, nDim >( 0.0 ) ),
+        elasticEnergyDensity( 0.0 ),
+        dissipation( 0.0 ),
+        stateVars( nullptr )
+    {
+    }
+
+    ConstitutiveResponse( const Fastor::Tensor< double, nDim, nDim >& tau_,
+                          double                                      elasticEnergyDensity_,
+                          double                                      dissipation_,
+                          double*                                     stateVars_ )
+      : tau( tau_ ), elasticEnergyDensity( elasticEnergyDensity_ ), dissipation( dissipation_ ), stateVars( stateVars_ )
+    {
+    }
   };
 
   /**
@@ -323,11 +339,8 @@ public:
       Deformation< 3 > deformationPlus{ FPlus };
       Deformation< 3 > deformationMinus{ FMinus };
 
-      ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), -1.0, 0.0, stateVarsPlus.data() };
-      ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ),
-                                               -1.0,
-                                               0.0,
-                                               stateVarsMinus.data() };
+      ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsPlus.data() };
+      ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsMinus.data() };
 
       computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
       computeStressExplicit( responseMinus, deformationMinus, timeIncrement );

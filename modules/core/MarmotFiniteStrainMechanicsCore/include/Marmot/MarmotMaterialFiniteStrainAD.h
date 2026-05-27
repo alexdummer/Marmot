@@ -27,6 +27,7 @@
  */
 #pragma once
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include <Eigen/Core>
 #include <functional>
@@ -56,9 +57,17 @@ public:
   template < int nDim >
   struct ConstitutiveResponseAD {
     Fastor::Tensor< autodiff::dual, nDim, nDim > tau;                  ///< Kirchhoff stress
-    double                                       rho;                  ///< mass density
     double                                       elasticEnergyDensity; ///< elastic energy per unit volume
-    double*                                      stateVars;            ///< pointer to state variables
+    double                                       dissipation; ///< dissipation per unit volume (for inelastic materials)
+    double*                                      stateVars;   ///< pointer to state variables
+
+    ConstitutiveResponseAD( ConstitutiveResponse< nDim >& response )
+      : tau( Marmot::makeDual( response.tau ) ),
+        elasticEnergyDensity( response.elasticEnergyDensity ),
+        dissipation( response.dissipation ),
+        stateVars( response.stateVars )
+    {
+    }
   };
 
   /**
@@ -110,23 +119,20 @@ public:
     const Eigen::VectorXd stateVarsOld = stateVars;
     const Tensor33d       tauOld       = response.tau;
 
+    ConstitutiveResponseAD< 3 > responseAD( response );
+
     std::function< Tensor33t< scalar >( const Tensor33t< scalar >& ) > computeTauAD =
       [&]( const Tensor33t< scalar >& F_ ) {
         // Reset stateVars to old state
         stateVars = stateVarsOld;
 
-        // Explicitly convert old (double-valued) stress to a dual-valued tensor for AD
-        Tensor33t< scalar > tauAD = makeDual( tauOld );
-
         // Construct AD state
         DeformationAD< 3 > deformationAD;
         deformationAD.F = F_;
 
-        ConstitutiveResponseAD< 3 > responseAD;
-        responseAD.tau                  = tauAD;
-        responseAD.rho                  = response.rho;
-        responseAD.elasticEnergyDensity = response.elasticEnergyDensity;
-        responseAD.stateVars            = stateVars.data();
+        responseAD.tau                  = Marmot::makeDual( tauOld ); // Initialize tau with old value for consistency
+        responseAD.elasticEnergyDensity = response.elasticEnergyDensity; // Initialize energy density
+        responseAD.dissipation          = response.dissipation;          // Initialize dissipation
 
         // Compute stress utilizing the child class's AD implementation
         this->computeStressAD( responseAD, deformationAD, timeIncrement );
@@ -139,6 +145,8 @@ public:
 
     // Compute Kirchhoff stress (tau) and algorithmic tangent (dTau_dF) with autodiff
     std::tie( response.tau, tangents.dTau_dF ) = Marmot::AutomaticDifferentiation::dF_dT( computeTauAD, deformation.F );
+    response.elasticEnergyDensity              = responseAD.elasticEnergyDensity;
+    response.dissipation                       = responseAD.dissipation;
   }
 
   /**

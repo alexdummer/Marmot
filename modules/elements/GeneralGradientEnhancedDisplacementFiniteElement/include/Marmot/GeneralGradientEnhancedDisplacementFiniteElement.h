@@ -147,14 +147,18 @@ namespace Marmot::Elements {
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 6 },
           { .name = "strain", .length = 6 },
-          { .name = "strain energy", .length = 1 },
+          { .name = "total strain energy", .length = 1 },
+          { .name = "elastic strain energy", .length = 1 },
+          { .name = "dissipation", .length = 1 },
           { .name = "begin of material state", .length = 0 },
         } );
 
       public:
         mVector6d                     stress;
         mVector6d                     strain;
-        double&                       strainEnergy;
+        double&                       totalStrainEnergy;
+        double&                       elasticStrainEnergy;
+        double&                       dissipation;
         Eigen::Map< Eigen::VectorXd > materialStateVars;
 
         static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
@@ -163,7 +167,9 @@ namespace Marmot::Elements {
           : MarmotStateVarVectorManager( theStateVarVector, layout ),
             stress( &find( "stress" ) ),
             strain( &find( "strain" ) ),
-            strainEnergy( find( "strain energy" ) ),
+            totalStrainEnergy( find( "total strain energy" ) ),
+            elasticStrainEnergy( find( "elastic strain energy" ) ),
+            dissipation( find( "dissipation" ) ),
             materialStateVars( &find( "begin of material state" ),
                                nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
       };
@@ -648,13 +654,14 @@ namespace Marmot::Elements {
       increment inc;
       try {
         if constexpr ( nDim == 2 ) {
-          Vector6d dE6            = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-          res.stress              = qp.managedStateVars->stress;
-          res.strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
-          res.stateVars           = qp.managedStateVars->materialStateVars.data();
-          inc                     = { dE6, K, dK, time[1], dT };
-          CSized C                = CSized::Zero();
-          Voigt  S                = Voigt::Zero();
+          Vector6d dE6             = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          res.stress               = qp.managedStateVars->stress;
+          res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+          res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+          res.stateVars            = qp.managedStateVars->materialStateVars.data();
+          inc                      = { dE6, K, dK, time[1], dT };
+          CSized C                 = CSized::Zero();
+          Voigt  S                 = Voigt::Zero();
 
           if ( sectionType == SectionType::PlaneStress ) {
             qp.material->computePlaneStress( res, tan, inc );
@@ -699,10 +706,11 @@ namespace Marmot::Elements {
         else if ( nDim == 3 ) {
           if ( sectionType == Solid ) {
 
-            res.stress              = qp.managedStateVars->stress;
-            res.strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
-            res.stateVars           = qp.managedStateVars->materialStateVars.data();
-            inc                     = { dE, K, dK, time[1], dT };
+            res.stress               = qp.managedStateVars->stress;
+            res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+            res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+            res.stateVars            = qp.managedStateVars->materialStateVars.data();
+            inc                      = { dE, K, dK, time[1], dT };
             qp.material->computeStress( res, tan, inc );
 
             fU -= B.transpose() * res.stress * qp.J0xW;
@@ -737,8 +745,11 @@ namespace Marmot::Elements {
         pNewDT = 0.25;
         return;
       }
-      qp.managedStateVars->stress       = res.stress;
-      qp.managedStateVars->strainEnergy = res.strainEnergyDensity * qp.J0xW;
+      qp.managedStateVars->stress              = res.stress;
+      qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
+      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
+      qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
+      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
     }
   }
@@ -797,12 +808,13 @@ namespace Marmot::Elements {
       increment inc;
       try {
         if constexpr ( nDim == 2 ) {
-          Vector6d dE6            = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-          res.stress              = qp.managedStateVars->stress;
-          res.strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
-          res.stateVars           = qp.managedStateVars->materialStateVars.data();
-          inc                     = { dE6, K, dK, time[1], dT };
-          Voigt S                 = Voigt::Zero();
+          Vector6d dE6             = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          res.stress               = qp.managedStateVars->stress;
+          res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+          res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+          res.stateVars            = qp.managedStateVars->materialStateVars.data();
+          inc                      = { dE6, K, dK, time[1], dT };
+          Voigt S                  = Voigt::Zero();
 
           if ( sectionType == SectionType::PlaneStress ) {
             qp.material->computePlaneStressExplicit( res, inc );
@@ -831,10 +843,11 @@ namespace Marmot::Elements {
         else if ( nDim == 3 ) {
           if ( sectionType == Solid ) {
 
-            res.stress              = qp.managedStateVars->stress;
-            res.strainEnergyDensity = qp.managedStateVars->strainEnergy / qp.J0xW;
-            res.stateVars           = qp.managedStateVars->materialStateVars.data();
-            inc                     = { dE, K, dK, time[1], dT };
+            res.stress               = qp.managedStateVars->stress;
+            res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+            res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+            res.stateVars            = qp.managedStateVars->materialStateVars.data();
+            inc                      = { dE, K, dK, time[1], dT };
             qp.material->computeStressExplicit( res, inc );
 
             fU -= B.transpose() * res.stress * qp.J0xW;
@@ -858,7 +871,9 @@ namespace Marmot::Elements {
       }
       qp.managedStateVars->stress = res.stress;
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-      qp.managedStateVars->strainEnergy = res.strainEnergyDensity * qp.J0xW;
+      qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
+      qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
+      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
     }
   }
 
@@ -948,8 +963,9 @@ namespace Marmot::Elements {
       waveSpeedResponse.stress = qp.managedStateVars->stress;
       waveSpeedResponse.KLocal.setZero();
       waveSpeedResponse.c.setZero();
-      waveSpeedResponse.stateVars           = qp.managedStateVars->materialStateVars.data();
-      waveSpeedResponse.strainEnergyDensity = qp.J0xW > 0.0 ? qp.managedStateVars->strainEnergy / qp.J0xW : 0.0;
+      waveSpeedResponse.stateVars            = qp.managedStateVars->materialStateVars.data();
+      waveSpeedResponse.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+      waveSpeedResponse.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
 
       const double  c  = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
       const double& l  = characteristicElementLength;
@@ -965,8 +981,7 @@ namespace Marmot::Elements {
   {
     internalEnergy = 0.0;
     for ( const auto& qp : qps ) {
-      internalEnergy += qp.managedStateVars->strainEnergy;
-      // internalEnergy += 0.5 * qp.managedStateVars->stress.dot( qp.managedStateVars->strain ) * qp.J0xW;
+      internalEnergy += qp.managedStateVars->totalStrainEnergy;
     }
   }
 
