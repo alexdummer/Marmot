@@ -9,7 +9,7 @@ implementations of state-of-the-art constitutive models for different materials,
 for quasi-brittle materials such as (sprayed) concrete, rock and soils. It uses modern,
 object-oriented programming techniques and provides a generic interface that can be easily
 wrapped into your application. It can be seamlessly used with the
-`EdelweissFE <https://github.com/Edelweiss-Numerics/EdelweissFE>`_ finite element code, but
+`EdelweissFE <https://github.com/EdelweissFE/EdelweissFE>`_ finite element code, but
 also with commercial and open source finite element codes. Standard interfaces for commercial
 finite element codes, such as Abaqus, Plaxis and open source codes like
 `MOOSE <https://github.com/idaholab/moose>`_ or OpenSees, are ready-to-use available.
