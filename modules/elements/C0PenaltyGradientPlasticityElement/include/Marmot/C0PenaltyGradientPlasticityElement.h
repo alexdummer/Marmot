@@ -482,10 +482,8 @@ namespace Marmot::Elements {
                 qp.J0xW;
 
           const auto dSdK            = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressDDKappaNL );
-          const auto dKappaLocal_dDE = ContinuumMechanics::VoigtNotation::
-            voigtToPlaneVoigt( Eigen::Matrix < double,
-                               ParentGeometryElement::voigtSize == 3 ? 6 : 6,
-                               1 > ( tan.dKappaLocalDDStrain.transpose() ) );
+          const auto dKappaLocal_dDE = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt(
+            Eigen::Matrix< double, 6, 1 >( tan.dKappaLocalDDStrain.transpose() ) );
 
           // kUK = ∫ B^T (dσ/dκ̄) N dΩ
           kUK += B.transpose() * dSdK * N * qp.J0xW;
