@@ -894,7 +894,7 @@ namespace Marmot::Elements {
       for ( int n = 0; n < nNonlocalVariables; n++ ) {
         Eigen::Index idx = n * nNonLocalNodes;
         Me.bottomRightCorner( sizeDoFK, sizeDoFK )
-          .block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += N_K.transpose() * N_K * qp.J0xW * eta[idx];
+          .block( idx, idx, nNonLocalNodes, nNonLocalNodes ) += N_K.transpose() * N_K * qp.J0xW * eta[n];
       }
     }
   }
@@ -935,7 +935,7 @@ namespace Marmot::Elements {
       }
       for ( int n = 0; n < nNonlocalVariables; n++ ) {
         Eigen::Index idx = n * nNonLocalNodes;
-        VectorXd     mK  = N_weighted_nonlocal.segment( idx, nNonLocalNodes ) * qp.J0xW * eta[idx];
+        VectorXd     mK  = N_weighted_nonlocal * qp.J0xW * eta[n];
         for ( int i = 0; i < nNonLocalNodes; i++ )
           LMM( sizeDoFU + idx + i ) += mK( i );
       }

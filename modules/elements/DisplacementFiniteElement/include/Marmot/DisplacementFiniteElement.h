@@ -744,6 +744,7 @@ namespace Marmot::Elements {
 
           S                    = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
           elasticEnergyDensity = state.elasticEnergyDensity;
+          dissipation          = state.dissipation;
         }
       }
 

@@ -61,9 +61,9 @@ struct StateMapper< double& > {
 };
 
 /**
- * @struct StateMapper<double>
- * @brief Specialization of StateMapper for single double values.
- * This allows mapping a raw double pointer and size to a single double reference.
+ * @struct StateMapper<const double>
+ * @brief Specialization of StateMapper for single const double values.
+ * This allows mapping a raw const double pointer and size to a single const double reference.
  */
 template <>
 struct StateMapper< const double& > {
