@@ -402,7 +402,7 @@ namespace Marmot::Elements {
      * is the dilatational wave speed computed from the material properties at the quadrature points.
      * The minimum time step across all quadrature points is returned.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal );
 
     /**
      * @brief Compute the internal energy of the element by summing the strain energy contributions from all quadrature
@@ -945,7 +945,6 @@ namespace Marmot::Elements {
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
   {
-    (void)QTotal;
     using response = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
 
     // TODO: current implementation ignores nonlocal variables
@@ -966,7 +965,9 @@ namespace Marmot::Elements {
       waveSpeedResponse.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
       waveSpeedResponse.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
 
-      const double  c  = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
+      const double c = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
+      if ( c <= 0.0 )
+        throw std::runtime_error( "Material returned non-positive wave speed, cannot compute critical time step" );
       const double& l  = characteristicElementLength;
       double        dt = l / c;
       if ( dt < criticalTimeStep )

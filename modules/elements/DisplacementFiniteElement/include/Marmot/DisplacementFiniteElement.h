@@ -335,7 +335,7 @@ namespace Marmot::Elements {
      * @brief Compute the critical time step for explicit dynamics.
      * @param criticalTimeStep Output parameter for the computed critical time step.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal );
 
     /**
      * @brief Compute the internal energy of the element.
@@ -923,7 +923,6 @@ namespace Marmot::Elements {
   void DisplacementFiniteElement< nDim, nNodes >::computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep,
                                                                                               const double* QTotal )
   {
-    (void)QTotal;
 
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
@@ -936,12 +935,13 @@ namespace Marmot::Elements {
         characteristicElementLength = 2 * qp.detJ;
 
       MarmotMaterialHypoElastic::state3D state( qp.managedStateVars->stress,
-                                                qp.J0xW > 0.0 ? qp.managedStateVars->elasticStrainEnergy / qp.J0xW
-                                                              : 0.0,
+                                                qp.managedStateVars->elasticStrainEnergy / qp.J0xW,
                                                 qp.managedStateVars->dissipation / qp.J0xW,
                                                 qp.managedStateVars->materialStateVars.data() );
 
-      const double c  = qp.material->getMaximumWaveSpeed( state );
+      const double c = qp.material->getMaximumWaveSpeed( state );
+      if ( c <= 0.0 )
+        throw std::runtime_error( "Non-positive wave speed encountered in computeCriticalTimeStepForExplicitDynamics" );
       const double dt = characteristicElementLength / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;

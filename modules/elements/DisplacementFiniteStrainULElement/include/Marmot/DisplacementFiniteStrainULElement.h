@@ -394,7 +394,7 @@ namespace Marmot::Elements {
      * @brief Compute the critical time step for explicit dynamics.
      * @param criticalTimeStep Output parameter for the computed critical time step.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr );
+    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal );
 
     /**
      * @brief Compute the internal energy of the element.
@@ -972,9 +972,10 @@ namespace Marmot::Elements {
   {
     using namespace Fastor;
 
-    const auto qU_np = TensorMap< const double, nNodes, nDim >( qTotal );
+    const auto& qU_np = TensorMap< const double, nNodes, nDim >( qTotal );
 
-    const auto& I = Marmot::FastorStandardTensors::Spatial3D::I;
+    const static auto I = Tensor< double, nDim, nDim >(
+      ( Eigen::Matrix< double, nDim, nDim >() << Eigen::Matrix< double, nDim, nDim >::Identity() ).finished().data() );
 
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
@@ -987,9 +988,9 @@ namespace Marmot::Elements {
         characteristicElementLength = 2 * qp.detJ;
 
       using namespace Marmot::FastorIndices;
-      const auto             dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );
-      const auto             F_np = evaluate( einsum< Ai, jA >( qU_np, dNdX ) + I );
-      Tensor< double, 3, 3 > F_np_3D;
+      const auto                         dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );
+      const Tensor< double, nDim, nDim > F_np = evaluate( einsum< Ai, jA >( qU_np, dNdX ) + I );
+      Tensor< double, 3, 3 >             F_np_3D;
       if constexpr ( nDim == 3 ) {
         F_np_3D = F_np;
       }
@@ -998,8 +999,11 @@ namespace Marmot::Elements {
         F_np_3D( 2, 2 ) = 1.0;
       }
 
-      const double c  = qp.material->getMaximumWaveSpeed( qp.managedStateVars->materialStateVars.data(),
+      const double c = qp.material->getMaximumWaveSpeed( qp.managedStateVars->materialStateVars.data(),
                                                          F_np_3D.data() );
+      if ( c <= 0.0 ) {
+        throw std::runtime_error( "Non-positive wave speed encountered in computeCriticalTimeStepForExplicitDynamics" );
+      }
       const double dt = characteristicElementLength / c;
       if ( dt < criticalTimeStep )
         criticalTimeStep = dt;
