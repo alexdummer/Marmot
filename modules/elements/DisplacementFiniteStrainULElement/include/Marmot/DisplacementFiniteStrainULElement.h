@@ -137,6 +137,7 @@ namespace Marmot::Elements {
           { .name = "F0 XX", .length = 1 },
           { .name = "F0 YY", .length = 1 },
           { .name = "F0 ZZ", .length = 1 },
+          { .name = "F", .length = 9 },
           { .name = "begin of material state", .length = 0 },
         } );
 
@@ -145,6 +146,7 @@ namespace Marmot::Elements {
         double&                        totalStrainEnergy; /**< Integrated total strain energy at the quadrature point */
         double&                        elasticEnergy;     /**< Integrated elastic energy at the quadrature point */
         double&                        dissipation;       /**< Integrated dissipation at the quadrature point */
+        Eigen::Map< Marmot::Vector9d > F;                 /**< Deformation gradient at the quadrature point */
         double& F0_XX; /**< Deformation gradient component XX for prescribing an initial deformation state*/
         double& F0_YY; /**< Deformation gradient component YY for prescribing an initial deformation state*/
         double& F0_ZZ; /**< Deformation gradient component ZZ for prescribing an initial deformation state*/
@@ -164,6 +166,7 @@ namespace Marmot::Elements {
             totalStrainEnergy( find( "total strain energy" ) ),
             elasticEnergy( find( "elastic energy" ) ),
             dissipation( find( "dissipation" ) ),
+            F( &find( "F" ) ),
             F0_XX( find( "F0 XX" ) ),
             F0_YY( find( "F0 YY" ) ),
             F0_ZZ( find( "F0 ZZ" ) ),
@@ -641,6 +644,7 @@ namespace Marmot::Elements {
             };
 
             qp.managedStateVars->stress = Marmot::mapEigenToFastor( response3D.tau ).reshaped();
+            qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation3D.F ).reshaped();
           }
           else {
             throw std::runtime_error( "Plane stress update is not implemented yet for finite strain materials." );
@@ -652,6 +656,7 @@ namespace Marmot::Elements {
 
           // implicit conversion to col major
           qp.managedStateVars->stress = Marmot::mapEigenToFastor( response.tau ).reshaped();
+          qp.managedStateVars->F      = Marmot::mapEigenToFastor( deformation.F ).reshaped();
         }
       }
       catch ( const Marmot::StressUpdateFailed& ) {
@@ -1137,7 +1142,6 @@ namespace Marmot::Elements {
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
                     -1.0,
-                    -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 
       Material::AlgorithmicModuli< 3 > algorithmicModuli3D;
@@ -1286,7 +1290,6 @@ namespace Marmot::Elements {
       using namespace Marmot;
       Material::ConstitutiveResponse< 3 >
         response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
-                    -1.0,
                     -1.0,
                     qp.managedStateVars->materialStateVars.data() };
 

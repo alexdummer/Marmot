@@ -28,7 +28,6 @@
 #pragma once
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/MarmotVoigt.h"
 #include <utility>
 
 namespace Marmot {

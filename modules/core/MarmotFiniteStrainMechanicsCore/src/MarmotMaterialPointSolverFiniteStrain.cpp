@@ -12,9 +12,9 @@ using namespace Marmot::Solvers;
 using namespace Fastor;
 using namespace FastorStandardTensors;
 
-MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( std::string&         materialName,
-                                                                              double*              materialProperties,
-                                                                              int                  nMaterialProperties,
+MarmotMaterialPointSolverFiniteStrain::MarmotMaterialPointSolverFiniteStrain( const std::string&   materialName,
+                                                                              const double*        materialProperties,
+                                                                              const int            nMaterialProperties,
                                                                               const SolverOptions& options )
   : options( options )
 {
@@ -71,7 +71,7 @@ void MarmotMaterialPointSolverFiniteStrain::resetToInitialState()
 void MarmotMaterialPointSolverFiniteStrain::solveStep( const Step& step )
 {
   double time     = step.timeStart;
-  double dT       = step.dTStart;
+  double dT       = 0.0;
   double stepTime = step.timeEnd - step.timeStart;
 
   int counter = 0;
@@ -81,6 +81,8 @@ void MarmotMaterialPointSolverFiniteStrain::solveStep( const Step& step )
     // adjust time step if overshooting
     if ( time + dT > step.timeEnd )
       dT = step.timeEnd - time;
+    if ( counter == 1 )
+      dT = step.dTStart; // use initial time step for the first increment, then adjust based on convergence
 
     // setup increment
     Increment increment;
@@ -233,7 +235,7 @@ void MarmotMaterialPointSolverFiniteStrain::solveIncrement( const Increment& inc
   // copy back updated state variables
   stateVars = stateVarsTemp;
   history.push_back(
-    HistoryEntry{ increment.timeOld + increment.dT, stress, Spatial3D::I + gradU, dTau_dF, stateVars } );
+    HistoryEntry( increment.timeOld + increment.dT, stress, Spatial3D::I + gradU, dTau_dF, stateVars ) );
 }
 
 Tensor9d MarmotMaterialPointSolverFiniteStrain::computeResidual( const Tensor9d&  stressIncrement,
