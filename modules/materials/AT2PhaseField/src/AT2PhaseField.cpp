@@ -59,7 +59,7 @@ namespace Marmot::Materials {
 
     // elastic energy density (degraded) and dissipation
     res.elasticEnergyDensity = g * psiPlus;
-    res.dissipation += ( 1.0 - g ) * psiPlus;
+    res.dissipation = ( 1.0 - g ) * psiPlus;
 
     // local crack driving force (right-hand side of the phase-field equation)
     //   phi - l^2 * Delta(phi) = KLocal = 2*l/Gc * (1-phi) * H
