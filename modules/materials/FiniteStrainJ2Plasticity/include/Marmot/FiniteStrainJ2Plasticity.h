@@ -34,7 +34,6 @@
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
-#include <map>
 #include <stdexcept>
 #include <string>
 #include <tuple>
