@@ -747,7 +747,6 @@ namespace Marmot::Elements {
       }
       qp.managedStateVars->stress              = res.stress;
       qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
-      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
       qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
       qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
       qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );

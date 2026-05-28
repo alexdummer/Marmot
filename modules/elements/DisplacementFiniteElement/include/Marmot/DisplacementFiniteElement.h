@@ -26,7 +26,6 @@
  * ---------------------------------------------------------------------
  */
 #pragma once
-#include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotElement.h"
 #include "Marmot/MarmotElementProperty.h"
 #include "Marmot/MarmotExceptions.h"
@@ -708,12 +707,14 @@ namespace Marmot::Elements {
           try {
             qp.material->computePlaneStress( state, C, dE, timeInfo );
           }
-          catch ( const std::runtime_error& e ) {
+          catch ( const StressUpdateFailed& e ) {
             pNewDT = 0.5;
             return;
           }
           qp.managedStateVars->stress = make3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
           S                           = state.stress;
+          elasticEnergyDensity        = state.elasticEnergyDensity;
+          dissipation                 = state.dissipation;
         }
 
         else if ( sectionType == SectionType::PlaneStrain ) {
