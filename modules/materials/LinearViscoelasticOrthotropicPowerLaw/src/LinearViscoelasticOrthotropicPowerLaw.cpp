@@ -167,6 +167,8 @@ namespace Marmot::Materials {
 
     // update stress in global coordinate system
     nomStress += Transformations::transformStressToGlobalSystem( deltaStressLocal, localCoordinateSystem );
+    state.elasticEnergyDensity += 0.5 * ( dELocal - creepStrainIncrement ).dot( deltaStressLocal );
+    state.dissipation += 0.5 * creepStrainIncrement.dot( deltaStressLocal );
 
     // transform local stiffness to global coordinate system
     C = 1. / effectiveCompliance * CelUnitGlobal;

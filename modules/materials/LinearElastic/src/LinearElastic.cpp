@@ -82,6 +82,8 @@ namespace Marmot::Materials {
 
     // Compute stress increment
     state.stress += dStressDDStrain * dStrain;
+    state.elasticEnergyDensity += 0.5 * dStrain.dot( dStressDDStrain * dStrain );
+    state.dissipation += 0.0;
   }
 
   double LinearElastic::getDensity( const double* stateVars ) const
