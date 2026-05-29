@@ -40,9 +40,17 @@ public:
 
   /// @brief Structure holding the material state for 3D using dual numbers (for automatic differentiation).
   struct state3DAD {
-    Marmot::Vector6dual stress;              ///< Cauchy stress tensor in Voigt notation
-    double              strainEnergyDensity; ///< Strain energy density
-    double*             stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector6dual stress;               ///< Cauchy stress tensor in Voigt notation
+    double              elasticEnergyDensity; ///< Elastic strain energy density
+    double              dissipation;          ///< Dissipation
+    double*             stateVars;            ///< Pointer to array of state variables
+    state3DAD()
+      : stress( Marmot::Vector6dual::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr ){};
+    state3DAD( state3D& state )
+      : stress( state.stress ),
+        elasticEnergyDensity( state.elasticEnergyDensity ),
+        dissipation( state.dissipation ),
+        stateVars( state.stateVars ){};
   };
   /**
    * @brief Compute the Cauchy stress tensor \f$\boldsymbol{\sigma}\f$ given an increment of the linearized strain
