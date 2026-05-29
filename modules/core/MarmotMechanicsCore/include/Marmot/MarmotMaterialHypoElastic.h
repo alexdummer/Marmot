@@ -29,6 +29,9 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 /**
  *
@@ -76,23 +79,45 @@ public:
 
   /// Structure to hold the material state at a material point in 3D
   struct state3D {
-    Marmot::Vector6d stress;              ///< Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector6d stress;               ///< Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+
+    state3D()
+      : stress( Marmot::Vector6d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
+    state3D( Marmot::Vector6d stress_, double elasticEnergyDensity_, double dissipation_, double* stateVars_ )
+      : stress( stress_ ),
+        elasticEnergyDensity( elasticEnergyDensity_ ),
+        dissipation( dissipation_ ),
+        stateVars( stateVars_ )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 2D plane stress
   struct state2D {
-    Marmot::Vector3d stress;              ///< 2D Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector3d stress;               ///< 2D Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+
+    state2D()
+      : stress( Marmot::Vector3d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 1D uniaxial stress
   struct state1D {
-    double  stress;              ///< 1D Cauchy stress
-    double  strainEnergyDensity; ///< Strain energy density
-    double* stateVars;           ///< Pointer to array of state variables
+    double  stress;               ///< 1D Cauchy stress
+    double  elasticEnergyDensity; ///< Elastic strain energy density
+    double  dissipation;          ///< Dissipation
+    double* stateVars;            ///< Pointer to array of state variables
+
+    state1D() : stress( 0.0 ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr ) {}
   };
 
   struct timeInfo {
@@ -189,6 +214,15 @@ public:
       stateVars[i] = 0.0;
     }
   }
+
+  /**
+   * @brief Get the maximum wave speed of the material.
+   * @param[in] state Current material state
+   * @return Maximum wave speed
+   * @details The default implementation computes the 3D algorithmic tangent and returns
+   *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
+   */
+  virtual double getMaximumWaveSpeed( const state3D& state ) const;
 
   /**
    * @brief Returns the mass density of the material.

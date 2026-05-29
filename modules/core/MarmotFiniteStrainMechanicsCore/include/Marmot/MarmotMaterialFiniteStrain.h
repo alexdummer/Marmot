@@ -28,6 +28,9 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include <Fastor/tensor/Tensor.h>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 class MarmotMaterialFiniteStrain {
 
@@ -65,7 +68,24 @@ public:
   struct ConstitutiveResponse {
     Fastor::Tensor< double, nDim, nDim > tau;                  ///< Kirchhoff stress
     double                               elasticEnergyDensity; ///< elastic energy per unit volume
+    double                               dissipation;          ///< dissipation per unit volume
     double*                              stateVars;            ///< pointer to state variables
+
+    ConstitutiveResponse()
+      : tau( Fastor::Tensor< double, nDim, nDim >( 0.0 ) ),
+        elasticEnergyDensity( 0.0 ),
+        dissipation( 0.0 ),
+        stateVars( nullptr )
+    {
+    }
+
+    ConstitutiveResponse( const Fastor::Tensor< double, nDim, nDim >& tau_,
+                          double                                      elasticEnergyDensity_,
+                          double                                      dissipation_,
+                          double*                                     stateVars_ )
+      : tau( tau_ ), elasticEnergyDensity( elasticEnergyDensity_ ), dissipation( dissipation_ ), stateVars( stateVars_ )
+    {
+    }
   };
 
   /**
@@ -283,6 +303,55 @@ public:
     for ( int i = 0; i < nStateVars; ++i ) {
       stateVars[i] = 0.0;
     }
+  }
+
+  /**
+   * @brief Get the maximum wave speed of the material for a given deformation gradient.
+   * @param[in] stateVars Pointer to the state variable array
+   * @param[in] deformationGradient Current deformation gradient used as perturbation reference
+   * @return Maximum wave speed
+   * @details The default implementation computes diagonal Voigt tangent entries by centered
+   * finite differences and returns `sqrt(max(C_ii) / rho)`.
+   */
+  virtual double getMaximumWaveSpeed( const double*                         stateVars,
+                                      const Fastor::Tensor< double, 3, 3 >& deformationGradient ) const
+  {
+    constexpr double dEps = 1e-6;
+
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    double     maxStiffnessDiagonal = 0.0;
+    const auto timeIncrement        = TimeIncrement{ 0.0, 1.0 };
+
+    for ( int i = 0; i < 3; ++i ) {
+      std::vector< double > stateVarsPlus( nStateVars, 0.0 );
+      std::vector< double > stateVarsMinus( nStateVars, 0.0 );
+      if ( stateVars != nullptr && nStateVars > 0 ) {
+        std::copy_n( stateVars, nStateVars, stateVarsPlus.begin() );
+        std::copy_n( stateVars, nStateVars, stateVarsMinus.begin() );
+      }
+
+      auto FPlus  = deformationGradient;
+      auto FMinus = deformationGradient;
+      FPlus( i, i ) *= ( 1.0 + dEps );
+      FMinus( i, i ) *= ( 1.0 - dEps );
+
+      Deformation< 3 > deformationPlus{ FPlus };
+      Deformation< 3 > deformationMinus{ FMinus };
+
+      ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsPlus.data() };
+      ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsMinus.data() };
+
+      computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
+      computeStressExplicit( responseMinus, deformationMinus, timeIncrement );
+
+      const double dLogStrain = std::log( 1.0 + dEps ) - std::log( 1.0 - dEps );
+      const double Cii        = ( responsePlus.tau( i, i ) - responseMinus.tau( i, i ) ) / dLogStrain;
+      maxStiffnessDiagonal    = std::max( maxStiffnessDiagonal, Cii );
+    }
+
+    const double density = getDensity( stateVars );
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
   }
 
   /**
