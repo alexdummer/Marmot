@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -32,11 +30,11 @@
 #include <string>
 #include <utility>
 #include <vector>
-#pragma once
 
 namespace Marmot {
   namespace Solvers {
     /**
+     * @class Marmot::Solvers::MarmotMaterialPointSolverFiniteStrain
      * @brief Solver for material point problems with finite strain materials
      * @details This class implements a solver for material point problems
      * using finite strain material models. It supports loading steps with
@@ -172,6 +170,7 @@ namespace Marmot {
        * @param materialName Name of the finite strain material model
        * @param materialProperties Array of material properties
        * @param nMaterialProperties Number of material properties
+       * @param options Solver options controlling nonlinear iteration settings
        */
       MarmotMaterialPointSolverFiniteStrain( const std::string&   materialName,
                                              const double*        materialProperties,

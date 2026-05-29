@@ -111,6 +111,5 @@ The history can be exported to CSV. The columns are formatted as follows:
 - **F[9]**: Deformation gradient components (11, 12, 13, 21, 22, 23, 31, 32, 33).
 - **SV[N]**: Internal state variables (SV1, SV2, ...).
 
-.. doxygenclass:: MarmotMaterialPointSolverFiniteStrain
-   :project: MarmotFiniteStrainMechanicsCore
+.. doxygenclass:: Marmot::Solvers::MarmotMaterialPointSolverFiniteStrain
    :allow-dot-graphs:

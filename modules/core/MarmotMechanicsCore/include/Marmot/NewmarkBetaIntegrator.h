@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -43,7 +41,6 @@ namespace Marmot::TimeIntegration {
   //! \param newmarkBeta Newmark-Beta parameter (0.25 for linear problems)
   //! \param newmarkGamma Newmark-Gamma parameter (0.5 for linear problems)
   //! \param da_ddu Derivative of acceleration with respect to displacement
-  //! \return void
   //! \note The function assumes that the input vectors are of size nDim.
   //! \note The function also assumes that the time step is positive and
   //!       that the Newmark-Beta parameter is not zero.

@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -71,7 +69,7 @@ namespace Marmot::Materials {
    * - @b 2: FDAF — Full return mapping; derivatives approximated via forward finite differences
    * - @b 3: FDAC — Full return mapping; derivatives approximated via central finite differences
    * - @b 4: CSDA — Full return mapping; derivatives via complex-step differentiation
-   * \ingroup materials_plasticity
+   * Plasticity material model.
    */
 
   class FiniteStrainJ2Plasticity : public MarmotMaterialFiniteStrain {
