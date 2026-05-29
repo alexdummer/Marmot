@@ -224,7 +224,7 @@ public:
   /**
    * @brief Compute critical time step for explicit dynamics.
    * @param[out] criticalTimeStep Suggested critical time step size.
-   * @param[in] QTotal Total dof vector (optional, for state-dependent criteria).
+   * @param[in] QTotal Total dof vector.
    * @note Default implementation throws an exception.
    */
   virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )

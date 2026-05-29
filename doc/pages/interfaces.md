@@ -53,9 +53,7 @@ material->setCharacteristicElementLength( theCharacteristicElementLength );
 const int             nStateVars = material->getNumberOfRequiredStateVars();
 std::vector< double > stateVars( nStateVars, 0.0 );
 
-MarmotMaterialHypoElastic::state3D state;
-state.stress              = Marmot::Vector6d::Zero();
-state.strainEnergyDensity = 0.0;
+MarmotMaterialHypoElastic::state3D state = MarmotMaterialHypoElastic::state3D()
 state.stateVars           = stateVars.data();
 
 // compute stresses
