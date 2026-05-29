@@ -81,7 +81,7 @@ namespace Marmot::Materials {
      */
     template < int N >
     struct Factorial {
-      enum { value = N * Factorial< N - 1 >::value };
+      enum factorial { value = N * Factorial< N - 1 >::value };
     };
     /// \cond DOXYGEN_SKIP
     // Specialisation Factorial<0> is hidden from Doxygen: both the primary
@@ -94,7 +94,7 @@ namespace Marmot::Materials {
      */
     template <>
     struct Factorial< 0 > {
-      enum { value = 1 };
+      enum factorial { value = 1 };
     };
     /// \endcond
     /**

@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -224,11 +221,22 @@ public:
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
-  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal = nullptr )
+  /**
+   * @brief Compute critical time step for explicit dynamics.
+   * @param[out] criticalTimeStep Suggested critical time step size.
+   * @param[in] QTotal Total dof vector (optional, for state-dependent criteria).
+   * @note Default implementation throws an exception.
+   */
+  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
+  /**
+   * @brief Compute internal energy of the element.
+   * @param[out] internalEnergy Computed internal energy.
+   * @note Default implementation throws an exception.
+   */
   virtual void computeInternalEnergy( double& internalEnergy )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );

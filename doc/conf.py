@@ -114,10 +114,10 @@ breathe_default_members = ("members", "private-members", "protected-members", "u
 suppress_warnings = [
     # Shared headers (e.g. Marmot.h, MarmotTypedefs.h) are picked up by every
     # per-module autodoxygenindex page and re-emit the same cpp:type directives.
-    "cpp.duplicate_declaration",
+    "duplicate_declaration.cpp",
     # Some Doxygen-generated declarations use nested templates that Sphinx's C++
     # domain parser cannot handle; suppress the resulting parse errors.
-    "cpp.error",
+    "error.cpp",
     # Duplicate RST target names produced by repeated Doxygen anchors.
     "ref.duplicate",
 ]

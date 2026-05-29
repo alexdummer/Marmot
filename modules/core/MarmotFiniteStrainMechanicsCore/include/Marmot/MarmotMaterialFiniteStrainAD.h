@@ -64,7 +64,23 @@ public:
     double                                       dissipation; ///< dissipation per unit volume (for inelastic materials)
     double*                                      stateVars;   ///< pointer to state variables
 
-    ConstitutiveResponseAD( ConstitutiveResponse< nDim >& response )
+    /**
+     * @brief Default constructor.
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
+    ConstitutiveResponseAD()
+      : tau( Fastor::Tensor< autodiff::dual, nDim, nDim >( 0.0 ) ),
+        elasticEnergyDensity( 0.0 ),
+        dissipation( 0.0 ),
+        stateVars( nullptr )
+    {
+    }
+
+    /**
+     * @brief Constructor for initializing the AD constitutive response.
+     * @param response ConstitutiveResponse instance to initialize from.
+     */
+    ConstitutiveResponseAD( const ConstitutiveResponse< nDim >& response )
       : tau( Marmot::makeDual( response.tau ) ),
         elasticEnergyDensity( response.elasticEnergyDensity ),
         dissipation( response.dissipation ),

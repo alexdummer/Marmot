@@ -106,6 +106,9 @@ namespace Marmot {
         FastorStandardTensors::Tensor3333d dTau_dF;   ///< Material tangent at the history entry
         Eigen::VectorXd                    stateVars; ///< State variables at the history entry
 
+        /**
+         * @brief Print the history entry to the console
+         */
         void print() const
         {
           std::cout.precision( 6 );
@@ -133,8 +136,14 @@ namespace Marmot {
             std::cout << "]" << std::endl;
           }
         }
-
-        // constructor for easy creation
+        /**
+         * @brief Constructor for HistoryEntry
+         * @param time Time at the history entry
+         * @param stress Stress tensor at the history entry
+         * @param F Deformation gradient at the history entry
+         * @param dTau_dF Material tangent at the history entry
+         * @param stateVars State variables at the history entry
+         */
         HistoryEntry( double                                    time,
                       const FastorStandardTensors::Tensor33d&   stress,
                       const FastorStandardTensors::Tensor33d&   F,

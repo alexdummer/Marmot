@@ -78,6 +78,10 @@ public:
     double                               dissipation;          ///< dissipation per unit volume
     double*                              stateVars;            ///< pointer to state variables
 
+    /**
+     * @brief Default constructor.
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
     ConstitutiveResponse()
       : tau( Fastor::Tensor< double, nDim, nDim >( 0.0 ) ),
         elasticEnergyDensity( 0.0 ),
@@ -85,7 +89,13 @@ public:
         stateVars( nullptr )
     {
     }
-
+    /**
+     * @brief Constructor for initializing the constitutive response.
+     * @param tau_ Kirchhoff stress tensor.
+     * @param elasticEnergyDensity_ Elastic energy density.
+     * @param dissipation_ Dissipation per unit volume.
+     * @param stateVars_ Pointer to state variables.
+     */
     ConstitutiveResponse( const Fastor::Tensor< double, nDim, nDim >& tau_,
                           double                                      elasticEnergyDensity_,
                           double                                      dissipation_,

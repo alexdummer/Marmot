@@ -11,10 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -337,7 +333,16 @@ namespace Marmot {
         fS.col( i ) = 1. / ( 2. * h ) * ( fRate( rightX, fRateArgs... ) - fRate( leftX, fRateArgs... ) );
       }
 
-      return yN + ( Iy - dt * fS ).colPivHouseholderQr().solve( Iy ) * dt * fRate( yN, fRateArgs... );
+      const auto A = Iy - dt * fS;
+      const auto r = fRate( yN, fRateArgs... );
+
+      if constexpr ( ySize == 1 ) {
+        Eigen::Matrix< double, 1, 1 > out;
+        out( 0 ) = yN( 0 ) + dt * r( 0 ) / A( 0, 0 );
+        return out;
+      }
+
+      return yN + A.colPivHouseholderQr().solve( dt * r );
     }
 
     /**

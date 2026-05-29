@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -100,7 +98,7 @@ namespace Marmot {
   }   // namespace FastorStandardTensors
 
   namespace FastorIndices {
-    enum { i_, j_, k_, l_, m_, n_, o_, p_, A_, B_, I_, J_, K_, L_, M_, N_, P_ };
+    enum IndexTag { i_, j_, k_, l_, m_, n_, o_, p_, A_, B_, I_, J_, K_, L_, M_, N_, P_ };
 
     using A      = Fastor::Index< A_ >;
     using Ai     = Fastor::Index< A_, i_ >;
@@ -626,7 +624,7 @@ namespace Marmot {
   /**
    * @brief Construct a Fastor tensor of arbitrary type from a Fastor double tensor
    * @tparam T target scalar type
-   * @param Rest a pack of sizes specifying the dimensions of the tensor
+   * @tparam Rest a pack of sizes specifying the dimensions of the tensor
    * @param in a Fastor tensor of type double
    * @return a Fastor tensor of type T
    */

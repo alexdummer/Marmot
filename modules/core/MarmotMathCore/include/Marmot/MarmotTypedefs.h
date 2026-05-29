@@ -41,6 +41,7 @@
  * consistent set of names (e.g. @c Marmot::Vector6d, @c Marmot::Matrix6d).
  */
 
+/** @brief Macro to compute the Voigt notation index from the dimension */
 #define VOIGTFROMDIM( x ) ( ( ( x * x ) + x ) >> 1 )
 
 namespace Marmot {

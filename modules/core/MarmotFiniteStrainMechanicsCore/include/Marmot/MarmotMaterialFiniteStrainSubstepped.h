@@ -101,6 +101,14 @@ namespace Marmot::Materials {
 
     double getDensity( const double* stateVars ) const override { return baseMaterial->getDensity( stateVars ); }
 
+    /**
+     * @brief Initialize the state layout for substepping.
+     * The state variables are organized as follows:
+     * - "Substepping_F_n" (9 variables): Deformation gradient at the start of the global step (F_n).
+     * - "materialstate" (baseMaterial->getNumberOfRequiredStateVars() variables): State variables required by the
+     * wrapped base material. The total number of state variables is the sum of the above. The layout is finalized at
+     * the end of this function.
+     */
     void initializeStateLayout()
     {
 

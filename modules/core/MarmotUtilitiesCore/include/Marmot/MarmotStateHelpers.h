@@ -284,6 +284,16 @@ public:
     return StateMapper< View >::map( base + v.offset, v.size, std::forward< Args >( args )... );
   }
 
+  /**
+   * @brief Const version of @ref getAs.
+   * @tparam View   Target view type (must have a matching `StateMapper` specialization).
+   * @tparam Args   Additional constructor arguments forwarded to `StateMapper::map`.
+   * @param base    Pointer to the beginning of the state vector.
+   * @param name    Name of the variable.
+   * @param args    Extra arguments forwarded to `StateMapper::map`.
+   * @return        The mapped view of the requested variable.
+   * @throws std::runtime_error if the layout is not finalized or @p name is not registered.
+   */
   template < class View, class... Args >
   View getAs( const double* base, const std::string& name, Args&&... args ) const
   {
@@ -294,9 +304,16 @@ public:
     return StateMapper< View >::map( base + v.offset, v.size, std::forward< Args >( args )... );
   }
 
+  /**
+   * @brief Return the total size (in units of `double`) of the state layout.
+   * This is the size of the state vector required to hold all registered variables.
+   */
   int totalSize() const { return total_sz; }
 
-  /// Return `true` if finalize() has been called, `false` otherwise.
+  /**
+   * @brief Check if the layout has been finalized.
+   * @return `true` if finalize() has been called, `false` otherwise.
+   */
   bool isFinalized() const { return finalized; }
 
 private:

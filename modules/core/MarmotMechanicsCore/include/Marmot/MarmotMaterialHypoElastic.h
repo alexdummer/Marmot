@@ -86,11 +86,21 @@ public:
     double           elasticEnergyDensity; ///< Elastic strain energy density
     double           dissipation;          ///< Dissipation
     double*          stateVars;            ///< Pointer to array of state variables
-
+    /**
+     * @brief Default constructor for state3D
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
     state3D()
       : stress( Marmot::Vector6d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
     {
     }
+    /**
+     * @brief Constructor for initializing state3D
+     * @param stress_ Cauchy stress tensor in Voigt notation
+     * @param elasticEnergyDensity_ Elastic strain energy density
+     * @param dissipation_ Dissipation
+     * @param stateVars_ Pointer to array of state variables
+     */
     state3D( Marmot::Vector6d stress_, double elasticEnergyDensity_, double dissipation_, double* stateVars_ )
       : stress( stress_ ),
         elasticEnergyDensity( elasticEnergyDensity_ ),
