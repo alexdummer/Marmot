@@ -66,7 +66,7 @@ namespace Marmot::Materials {
                                                                      const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -194,7 +194,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -356,7 +356,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -521,7 +521,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -684,7 +684,7 @@ namespace Marmot::Materials {
       stateVars[i] = 0.0;
     }
 
-    Tensor33d& Fp = stateLayout.getAs< Tensor33d& >( stateVars, "Fp" );
+    TensorMap33d Fp = stateLayout.getAs< TensorMap33d >( stateVars, "Fp" );
     memcpy( Fp.data(), Spatial3D::I.data(), 9 * sizeof( double ) );
   }
 } // namespace Marmot::Materials

@@ -39,6 +39,8 @@ namespace Marmot {
     using Tensor3333d   = Fastor::Tensor< double, 3, 3, 3, 3 >;
     using Tensor333333d = Fastor::Tensor< double, 3, 3, 3, 3, 3, 3 >;
 
+    using TensorMap33d = Fastor::TensorMap< double, 3, 3 >;
+
     template < typename T >
     using Tensor3t = Fastor::Tensor< T, 3 >;
     template < typename T >

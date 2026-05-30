@@ -84,12 +84,12 @@ struct StateMapper< const double& > {
  * This allows mapping a raw double pointer and size to a Fastor 3x3 tensor.
  */
 template <>
-struct StateMapper< Fastor::Tensor< double, 3, 3 >& > {
-  static Fastor::Tensor< double, 3, 3 >& map( double* ptr, std::size_t n )
+struct StateMapper< Fastor::TensorMap< double, 3, 3 > > {
+  static Fastor::TensorMap< double, 3, 3 > map( double* ptr, std::size_t n )
   {
     if ( n != 9 )
       throw std::runtime_error( "Size mismatch for Fastor::Tensor<double,3,3>." );
-    return *reinterpret_cast< Fastor::Tensor< double, 3, 3 >* >( ptr );
+    return Fastor::TensorMap< double, 3, 3 >( ptr );
   }
 };
 

@@ -25,6 +25,7 @@
 #pragma once
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include <cassert>
+#include <functional>
 #include <string>
 #include <unordered_map>
 
