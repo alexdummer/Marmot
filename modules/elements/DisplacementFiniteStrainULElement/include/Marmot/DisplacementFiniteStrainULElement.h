@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -129,6 +126,7 @@ namespace Marmot::Elements {
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
         /// @brief Layout of the state variable vector at the quadrature point
+        /// \hideinitializer
         inline const static auto layout = makeLayout( {
           { .name = "stress", .length = 9 },
           { .name = "total strain energy", .length = 1 },

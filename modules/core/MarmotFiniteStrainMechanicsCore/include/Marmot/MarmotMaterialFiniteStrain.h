@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -32,18 +29,28 @@
 #include <cmath>
 #include <vector>
 
+/**
+ * @class MarmotMaterialFiniteStrain
+ * @brief Abstract base class for mechanical materials in the finite strain regime.
+ *
+ * Derived classes implement computeStress() to provide the constitutive response
+ * (Kirchhoff stress, density, elastic energy density) and the algorithmic tangent.
+ */
 class MarmotMaterialFiniteStrain {
 
-  /**
-   * @class MarmotMaterialFiniteStrain
-   * @brief Abstract basic class for mechanical materials in the finite strain regime
-   */
 protected:
-  const double* materialProperties;
-  const int     nMaterialProperties;
+  const double* materialProperties;  ///< Pointer to the array of material property values.
+  const int     nMaterialProperties; ///< Number of material property values.
 
 public:
-  const int materialNumber;
+  const int materialNumber; ///< Unique identifier for this material instance.
+
+  /**
+   * @brief Construct a MarmotMaterialFiniteStrain.
+   * @param[in] matProperties_       Pointer to the array of material property values.
+   * @param[in] nMaterialProperties_ Number of material property values.
+   * @param[in] materialNumber_      Unique identifier for this material instance.
+   */
   MarmotMaterialFiniteStrain( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : materialProperties( matProperties_ ),
       nMaterialProperties( nMaterialProperties_ ),
@@ -71,6 +78,10 @@ public:
     double                               dissipation;          ///< dissipation per unit volume
     double*                              stateVars;            ///< pointer to state variables
 
+    /**
+     * @brief Default constructor.
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
     ConstitutiveResponse()
       : tau( Fastor::Tensor< double, nDim, nDim >( 0.0 ) ),
         elasticEnergyDensity( 0.0 ),
@@ -78,7 +89,13 @@ public:
         stateVars( nullptr )
     {
     }
-
+    /**
+     * @brief Constructor for initializing the constitutive response.
+     * @param tau_ Kirchhoff stress tensor.
+     * @param elasticEnergyDensity_ Elastic energy density.
+     * @param dissipation_ Dissipation per unit volume.
+     * @param stateVars_ Pointer to state variables.
+     */
     ConstitutiveResponse( const Fastor::Tensor< double, nDim, nDim >& tau_,
                           double                                      elasticEnergyDensity_,
                           double                                      dissipation_,
@@ -265,6 +282,7 @@ public:
    * @brief Find the eigen deformation that corresponds to a given eigen stress.
    * @param initialGuess Initial guess for the eigen deformation.
    * @param eigenStress Target eigen stress.
+   * @param stateVars Pointer to the state variable array used during iteration.
    * @return Eigen deformation that corresponds to the given eigen stress.
    *
    * This function iteratively finds the eigen deformation that corresponds to a given eigen stress.

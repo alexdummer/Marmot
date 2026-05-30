@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -43,6 +40,12 @@
 class MarmotMaterialFiniteStrainAD : public MarmotMaterialFiniteStrain {
 
 public:
+  /**
+   * @brief Construct a MarmotMaterialFiniteStrainAD.
+   * @param[in] matProperties_       Pointer to the array of material property values.
+   * @param[in] nMaterialProperties_ Number of material property values.
+   * @param[in] materialNumber_      Unique identifier for this material instance.
+   */
   MarmotMaterialFiniteStrainAD( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : MarmotMaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
   {
@@ -61,7 +64,23 @@ public:
     double                                       dissipation; ///< dissipation per unit volume (for inelastic materials)
     double*                                      stateVars;   ///< pointer to state variables
 
-    ConstitutiveResponseAD( ConstitutiveResponse< nDim >& response )
+    /**
+     * @brief Default constructor.
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
+    ConstitutiveResponseAD()
+      : tau( Fastor::Tensor< autodiff::dual, nDim, nDim >( 0.0 ) ),
+        elasticEnergyDensity( 0.0 ),
+        dissipation( 0.0 ),
+        stateVars( nullptr )
+    {
+    }
+
+    /**
+     * @brief Constructor for initializing the AD constitutive response.
+     * @param response ConstitutiveResponse instance to initialize from.
+     */
+    ConstitutiveResponseAD( const ConstitutiveResponse< nDim >& response )
       : tau( Marmot::makeDual( response.tau ) ),
         elasticEnergyDensity( response.elasticEnergyDensity ),
         dissipation( response.dissipation ),

@@ -40,9 +40,9 @@
  *
  * In addition to the standard balance of linear momentum each nonlocal variable introduces an additional balance
  * equation, which is solved simultaneously with the balance of linear momentum. This balance equation is defined as:
- * \f[ \knl_i - \nabla ( c( \knl_i )\, \nabla \knl_i ) = \sourceTerm_i (\boldsymbol \varepsilon,\, \knl_i ) \f]
+ * \f[ \knl_i - \nabla ( c( \knl_i )\, \nabla \knl_i ) = s_i (\boldsymbol \varepsilon,\, \knl_i ) \f]
  * where \f$ \knl_i \f$ is the nonlocal variable, \f$ c( \knl_i ) \f$ is the nonlocal interaction parameter, and
- * \f$ \sourceTerm_i \f$ is the local driving variable for the nonlocal variable \f$ \knl_i \f$. The interaction
+ * \f$ s_i \f$ is the local driving variable for the nonlocal variable \f$ \knl_i \f$. The interaction
  * parameter
  * \f$ c( \knl_i ) \f$ defines the influence of the nonlocal variable on its own gradient and can be used to model
  * phenomena such as damage-dependent interactions. Also phase-field models can be implemented in this framework by
