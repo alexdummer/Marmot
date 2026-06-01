@@ -885,6 +885,17 @@ namespace Marmot {
       Marmot::Vector6d dJ2_dStress( const Marmot::Vector6d& stress );
 
       /**
+       * @brief Computes the second derivative \f$ \frac{\partial^2 J_2}{\partial \boldsymbol{\sigma} \partial
+       * \boldsymbol{\sigma}} \f$ of the second deviatoric invariant \f$ J_2 \f$ with respect to the stress vector in
+       * Voigt notation.
+       *
+       * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
+       * @return Matrix of second derivatives \f$ \frac{\partial^2 J_2}{\partial \boldsymbol{\sigma} \partial
+       * \boldsymbol{\sigma}} \f$ in Voigt notation.
+       */
+      Marmot::Matrix6d d2J2_dStress2( const Marmot::Vector6d& stress );
+
+      /**
        * @brief Computes the derivative \f$ \frac{\partial J_3}{\partial \boldsymbol{\sigma}}\f$ of the third deviatoric
        * invariant \f$ J_3 \f$ with respect to the stress vector in Voigt notation.
        *

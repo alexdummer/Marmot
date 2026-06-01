@@ -440,6 +440,11 @@ namespace Marmot {
         return P.array() * ( IDev * stress ).array();
       }
 
+      Matrix6d d2J2_dStress2( const Vector6d& stress )
+      {
+        return P.asDiagonal() * IDev;
+      }
+
       Vector6d dJ3_dStress( const Vector6d& stress )
       {
         Vector6d s = IDev * stress;
