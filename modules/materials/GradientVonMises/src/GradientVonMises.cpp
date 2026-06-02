@@ -56,30 +56,8 @@ namespace Marmot::Materials {
 
     // compute trial stress
     Vector6d trialStress = stress + C * dStrain;
-
-    if ( isYielding( trialStress, kappa, laplaceKappa ) ) {
-      // plastic correction
-      const double& dLambda = inc.dLambda( 0 );
-
-      const auto [f_tr,
-                  dF_dStress_tr,
-                  d2F_dStress2_tr,
-                  dF_dKappa_tr,
-                  dF_dLaplaceKappa_tr] = yieldFunction( trialStress, kappa, laplaceKappa );
-      // update stress with trial return mapping direction
-      stress = trialStress - C * ( dLambda * dF_dStress_tr );
-
-      dStressddStrain = C - dLambda * C * d2F_dStress2_tr * C;
-      dStressddLambda = -C * dF_dStress_tr;
-
-      Vector6d dF_dStress;
-      Matrix6d d2F_dStress2;
-      std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress,
-                                                                                            kappa,
-                                                                                            laplaceKappa );
-      dF_ddStrain                                                          = dF_dStress.transpose() * C;
-    }
-    else {
+    // handle zero increment
+    if ( inc.dStrain.norm() == 0 && inc.laplaceDLambda( 0 ) == 0 && inc.dLambda( 0 ) == 0 ) {
       // elastic step
       stress = trialStress;
       Vector6d dF_dStress;
@@ -87,10 +65,27 @@ namespace Marmot::Materials {
       std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress,
                                                                                             kappa,
                                                                                             laplaceKappa );
-      // fill tangents for elastic step
-      dF_ddStrain     = dF_dStress.transpose() * C;
-      dStressddStrain = C;
+      dF_ddStrain                                                          = dF_dStress.transpose() * C;
+      dStressddStrain                                                      = C;
+      return;
     }
+    const double& dLambda = inc.dLambda( 0 );
+
+    const auto [f_tr,
+                dF_dStress_tr,
+                d2F_dStress2_tr,
+                dF_dKappa_tr,
+                dF_dLaplaceKappa_tr] = yieldFunction( trialStress, kappa, laplaceKappa );
+    // update stress with trial return mapping direction
+    stress = trialStress - C * ( dLambda * dF_dStress_tr );
+
+    dStressddStrain = C - dLambda * C * d2F_dStress2_tr * C;
+    dStressddLambda = -C * dF_dStress_tr;
+
+    Vector6d dF_dStress;
+    Matrix6d d2F_dStress2;
+    std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress, kappa, laplaceKappa );
+    dF_ddStrain                                                          = dF_dStress.transpose() * C;
   }
 
 } // namespace Marmot::Materials

@@ -75,20 +75,17 @@ namespace Marmot::Materials {
       const Vector6d dJ2_dStress                                 = Derivatives::dJ2_dStress( stress );
       const Matrix6d d2J2_dStress2                               = Derivatives::d2J2_dStress2( stress );
 
-      const Vector6d dF_ddStress  = dJ2_dStress * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) ) );
-      const Matrix6d d2F_dStress2 = d2J2_dStress2 * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) ) ) -
+      const Vector6d dF_ddStress  = dJ2_dStress * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) );
+      const Matrix6d d2F_dStress2 = d2J2_dStress2 * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) ) -
                                     ( dJ2_dStress * dJ2_dStress.transpose() ) * ( 9.0 / ( 8.0 * std::pow( J2, 1.5 ) ) );
 
       const double f = std::sqrt( 3.0 * J2 ) - sigmaY; // yield
 
-      return { f, dF_ddStress, d2F_dStress2, -dSigmaY_dKappa, -dSigmaY_dLaplaceKappa };
-    }
-
-    // check if yielding
-    bool isYielding( const Vector6d& stress, double kappa, double laplaceKappa ) const
-    {
-      const auto [f, _, __, ___, ____] = yieldFunction( stress, kappa, laplaceKappa );
-      return f > 1e-14;
+      return { f,
+               dF_ddStress,
+               d2F_dStress2,
+               -dSigmaY_dKappa,
+               -dSigmaY_dLaplaceKappa }; // return yield function value and its derivatives
     }
   };
 
