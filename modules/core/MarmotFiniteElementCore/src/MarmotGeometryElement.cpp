@@ -28,6 +28,12 @@ MarmotGeometryElement< 2, 8 >::NSized MarmotGeometryElement< 2, 8 >::N( const Xi
 {
   return Marmot::FiniteElement::Spatial2D::Quad8::N( xi );
 }
+// Quad9
+template <>
+MarmotGeometryElement< 2, 9 >::NSized MarmotGeometryElement< 2, 9 >::N( const XiSized& xi ) const
+{
+  return Marmot::FiniteElement::Spatial2D::Quad9::N( xi );
+}
 // Tetra4
 template <>
 MarmotGeometryElement< 3, 4 >::NSized MarmotGeometryElement< 3, 4 >::N( const XiSized& xi ) const
@@ -52,6 +58,12 @@ MarmotGeometryElement< 3, 20 >::NSized MarmotGeometryElement< 3, 20 >::N( const 
 {
   return Marmot::FiniteElement::Spatial3D::Hexa20::N( xi );
 }
+// Hexa27
+template <>
+MarmotGeometryElement< 3, 27 >::NSized MarmotGeometryElement< 3, 27 >::N( const XiSized& xi ) const
+{
+  return Marmot::FiniteElement::Spatial3D::Hexa27::N( xi );
+}
 
 /* Template Specialization for Shape functions derivatives.
  * */
@@ -72,6 +84,12 @@ template <>
 MarmotGeometryElement< 2, 8 >::dNdXiSized MarmotGeometryElement< 2, 8 >::dNdXi( const XiSized& xi ) const
 {
   return Marmot::FiniteElement::Spatial2D::Quad8::dNdXi( xi );
+}
+// Quad9
+template <>
+MarmotGeometryElement< 2, 9 >::dNdXiSized MarmotGeometryElement< 2, 9 >::dNdXi( const XiSized& xi ) const
+{
+  return Marmot::FiniteElement::Spatial2D::Quad9::dNdXi( xi );
 }
 // Tetra4
 template <>
@@ -96,6 +114,12 @@ template <>
 MarmotGeometryElement< 3, 20 >::dNdXiSized MarmotGeometryElement< 3, 20 >::dNdXi( const XiSized& xi ) const
 {
   return Marmot::FiniteElement::Spatial3D::Hexa20::dNdXi( xi );
+}
+// Hexa27
+template <>
+MarmotGeometryElement< 3, 27 >::dNdXiSized MarmotGeometryElement< 3, 27 >::dNdXi( const XiSized& xi ) const
+{
+  return Marmot::FiniteElement::Spatial3D::Hexa27::dNdXi( xi );
 }
 
 /* Template Specialization for B Operator
@@ -135,6 +159,12 @@ template <>
 typename MarmotGeometryElement< 2, 8 >::BSized MarmotGeometryElement< 2, 8 >::B( const dNdXiSized& dNdX ) const
 {
   return Marmot::FiniteElement::Spatial2D::B< 8 >( dNdX );
+}
+// Quad9
+template <>
+typename MarmotGeometryElement< 2, 9 >::BSized MarmotGeometryElement< 2, 9 >::B( const dNdXiSized& dNdX ) const
+{
+  return Marmot::FiniteElement::Spatial2D::B< 9 >( dNdX );
 }
 // axisymmetric quad8
 template <>
@@ -176,6 +206,12 @@ typename MarmotGeometryElement< 3, 20 >::BSized MarmotGeometryElement< 3, 20 >::
 {
   return Marmot::FiniteElement::Spatial3D::B< 20 >( dNdX );
 }
+// Hexa27
+template <>
+typename MarmotGeometryElement< 3, 27 >::BSized MarmotGeometryElement< 3, 27 >::B( const dNdXiSized& dNdX ) const
+{
+  return Marmot::FiniteElement::Spatial3D::B< 27 >( dNdX );
+}
 
 // Bar2
 template <>
@@ -197,6 +233,13 @@ typename MarmotGeometryElement< 2, 8 >::BSized MarmotGeometryElement< 2, 8 >::BG
                                                                                       const JacobianSized& F ) const
 {
   return Marmot::FiniteElement::Spatial2D::BGreen< 8 >( dNdX, F );
+}
+// Quad9
+template <>
+typename MarmotGeometryElement< 2, 9 >::BSized MarmotGeometryElement< 2, 9 >::BGreen( const dNdXiSized&    dNdX,
+                                                                                      const JacobianSized& F ) const
+{
+  return Marmot::FiniteElement::Spatial2D::BGreen< 9 >( dNdX, F );
 }
 // Tetra4
 template <>
@@ -225,4 +268,11 @@ typename MarmotGeometryElement< 3, 20 >::BSized MarmotGeometryElement< 3, 20 >::
                                                                                         const JacobianSized& F ) const
 {
   return Marmot::FiniteElement::Spatial3D::BGreen< 20 >( dNdX, F );
+}
+// Hexa27
+template <>
+typename MarmotGeometryElement< 3, 27 >::BSized MarmotGeometryElement< 3, 27 >::BGreen( const dNdXiSized&    dNdX,
+                                                                                        const JacobianSized& F ) const
+{
+  return Marmot::FiniteElement::Spatial3D::BGreen< 27 >( dNdX, F );
 }

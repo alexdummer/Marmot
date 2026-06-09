@@ -34,6 +34,12 @@ namespace Marmot {
         mapBoundaryToParentScalar = VectorXi( Spatial2D::Quad8::getBoundaryElementIndices( parentFaceNumber ) );
         break;
       }
+      case Quad9: {
+        boundaryShape             = Bar3;
+        nNodes                    = Spatial1D::Bar3::nNodes;
+        mapBoundaryToParentScalar = VectorXi( Spatial2D::Quad9::getBoundaryElementIndices( parentFaceNumber ) );
+        break;
+      }
       case Hexa8: {
         boundaryShape             = Quad4;
         nNodes                    = Spatial2D::Quad4::nNodes;
@@ -44,6 +50,12 @@ namespace Marmot {
         boundaryShape             = Quad8;
         nNodes                    = Spatial2D::Quad8::nNodes;
         mapBoundaryToParentScalar = Spatial3D::Hexa20::getBoundaryElementIndices( parentFaceNumber );
+        break;
+      }
+      case Hexa27: {
+        boundaryShape             = Quad9;
+        nNodes                    = Spatial2D::Quad9::nNodes;
+        mapBoundaryToParentScalar = Spatial3D::Hexa27::getBoundaryElementIndices( parentFaceNumber );
         break;
       }
 
@@ -93,6 +105,11 @@ namespace Marmot {
         case Quad8: {
           qp.N     = Spatial2D::Quad8::N( qp.xi );
           qp.dNdXi = Spatial2D::Quad8::dNdXi( Vector2d( qp.xi ) );
+          break;
+        }
+        case Quad9: {
+          qp.N     = Spatial2D::Quad9::N( qp.xi );
+          qp.dNdXi = Spatial2D::Quad9::dNdXi( Vector2d( qp.xi ) );
           break;
         }
 

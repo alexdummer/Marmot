@@ -265,6 +265,22 @@ namespace Marmot {
         Eigen::Vector3i getBoundaryElementIndices( int faceID );
       } // namespace Quad8
 
+      namespace Quad9 {
+        constexpr int nNodes = 9;                                          ///< Number of nodes for a Quad9 element.
+
+        using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
+
+        /// @brief Evaluate Quad9 shape functions at natural coordinates @p xi.
+        NSized N( const Eigen::Vector2d& xi );
+        /// @brief Evaluate Quad9 shape function natural derivatives at @p xi.
+        dNdXiSized dNdXi( const Eigen::Vector2d& xi );
+
+        /// @brief Return the local node indices for boundary face @p faceID.
+        Eigen::Vector3i getBoundaryElementIndices( int faceID );
+      } // namespace Quad9
+
     }   // end of namespace Spatial2D
 
     namespace Spatial3D {
@@ -481,6 +497,21 @@ namespace Marmot {
         /// @brief Return the local node indices for boundary face @p faceID.
         Marmot::Vector8i getBoundaryElementIndices( int faceID );
       } // namespace Hexa20
+
+      namespace Hexa27 {
+        constexpr int nNodes  = 27;                                        ///< Number of nodes for a Hexa27 element.
+        using CoordinateSized = Eigen::Matrix< double, nNodes * nDim, 1 >; ///< Flat vector of nodal coordinates.
+        using NSized          = Eigen::Matrix< double, 1, nNodes >;        ///< Row vector of shape function values.
+        using dNdXiSized = Eigen::Matrix< double, nDim, nNodes >; ///< Matrix of shape function natural derivatives.
+
+        /// @brief Evaluate Hexa27 shape functions at natural coordinates @p xi.
+        NSized N( const Eigen::Vector3d& xi );
+        /// @brief Evaluate Hexa27 shape function natural derivatives at @p xi.
+        dNdXiSized dNdXi( const Eigen::Vector3d& xi );
+
+        /// @brief Return the local node indices for boundary face @p faceID.
+        Marmot::Vector9i getBoundaryElementIndices( int faceID );
+      } // namespace Hexa27
     }   // namespace Spatial3D
 
     /**

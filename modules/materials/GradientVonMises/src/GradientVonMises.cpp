@@ -35,16 +35,16 @@ namespace Marmot::Materials {
   {
 
     // map response and increment variables for easier access
-    Vector6d&       stress  = res.stress;
+    mVector6d       stress( res.stress.data() );
     const Vector6d& dStrain = inc.dStrain;
     double&         f       = res.f( 0 ); // yield function value
 
     // map to tangents
-    Matrix6d&               dStressddStrain  = tan.dStressddStrain;
-    Matrix< double, 6, 1 >& dStressddLambda  = tan.dStressddLambda;
-    Matrix< double, 1, 6 >& dF_ddStrain      = tan.dFddStrain;
-    double&                 dF_dKappa        = tan.dFddLambda( 0, 0 );
-    double&                 dF_dLaplaceKappa = tan.dFddLambda( 0, 0 );
+    mMatrix6d                     dStressddStrain( tan.dStressddStrain.data() );
+    Map< Matrix< double, 6, 1 > > dStressddLambda( tan.dStressddLambda.data() );
+    Map< Matrix< double, 1, 6 > > dF_ddStrain( tan.dFddStrain.data() );
+    double&                       dF_dKappa        = tan.dFddLambda( 0, 0 );
+    double&                       dF_dLaplaceKappa = tan.dFddLaplacian( 0, 0 );
 
     // get state variables
     double& kappa        = stateLayout.getAs< double& >( res.stateVars, "kappa" );
@@ -85,7 +85,8 @@ namespace Marmot::Materials {
     Vector6d dF_dStress;
     Matrix6d d2F_dStress2;
     std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress, kappa, laplaceKappa );
-    dF_ddStrain                                                          = dF_dStress.transpose() * C;
+    dF_ddStrain                                                          = dF_dStress.transpose() * dStressddStrain;
+    dF_dKappa += dF_dStress.transpose() * dStressddLambda;
   }
 
 } // namespace Marmot::Materials

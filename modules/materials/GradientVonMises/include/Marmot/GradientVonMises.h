@@ -66,23 +66,40 @@ namespace Marmot::Materials {
 
     // compute the von Mises yield function value and its derivatives with respect to stress, kappa, and laplaceKappa
     std::tuple< double, Vector6d, Matrix6d, double, double > yieldFunction( const Vector6d& stress,
-                                                                            double&         kappa,
-                                                                            double&         laplaceKappa ) const
+                                                                            const double&   kappa,
+                                                                            const double&   laplaceKappa ) const
     {
       using namespace Marmot::ContinuumMechanics::VoigtNotation;
       const auto [sigmaY, dSigmaY_dKappa, dSigmaY_dLaplaceKappa] = fy( kappa, laplaceKappa );
-      const double   J2                                          = Invariants::J2( stress );
-      const Vector6d dJ2_dStress                                 = Derivatives::dJ2_dStress( stress );
-      const Matrix6d d2J2_dStress2                               = Derivatives::d2J2_dStress2( stress );
+      const double J2                                            = Invariants::J2( stress );
+      const double f                                             = std::sqrt( 3.0 * J2 ) - sigmaY; // yield
 
-      const Vector6d dF_ddStress  = dJ2_dStress * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) );
-      const Matrix6d d2F_dStress2 = d2J2_dStress2 * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) ) -
-                                    ( dJ2_dStress * dJ2_dStress.transpose() ) * ( 9.0 / ( 8.0 * std::pow( J2, 1.5 ) ) );
+      if ( J2 < 1e-12 ) {
+        return { f, Vector6d::Zero(), Matrix6d::Zero(), -dSigmaY_dKappa, -dSigmaY_dLaplaceKappa };
+      }
 
-      const double f = std::sqrt( 3.0 * J2 ) - sigmaY; // yield
+      // const Vector6d dJ2_dStress                                 = Derivatives::dJ2_dStress( stress );
+      // const Matrix6d d2J2_dStress2                               = Derivatives::d2J2_dStress2( stress );
+
+      // const Vector6d dF_ddStress  = dJ2_dStress * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) );
+      // const Matrix6d d2F_dStress2 = d2J2_dStress2 * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) ) -
+      //                               ( dJ2_dStress * dJ2_dStress.transpose() ) * ( 9.0 / ( 8.0 * std::pow( J2, 1.5 ) +
+      //                               1e-14 ) );
+      // 3. Compute base derivatives if J2 is safely non-zero
+      const Vector6d dJ2_dStress   = Derivatives::dJ2_dStress( stress );
+      const Matrix6d d2J2_dStress2 = Derivatives::d2J2_dStress2( stress );
+
+      // 4. Compute correct yield function derivatives
+      const double   root3J2    = std::sqrt( 3.0 * J2 );
+      const Vector6d dF_dStress = dJ2_dStress * ( 3.0 / ( 2.0 * root3J2 ) );
+
+      // Corrected the math scalar multiplier here from 9/8 to sqrt(3)/4
+      const double   scalar2Matrix = std::sqrt( 3.0 ) / ( 4.0 * std::pow( J2, 1.5 ) );
+      const Matrix6d d2F_dStress2  = d2J2_dStress2 * ( 3.0 / ( 2.0 * root3J2 ) ) -
+                                    ( dJ2_dStress * dJ2_dStress.transpose() ) * scalar2Matrix;
 
       return { f,
-               dF_ddStress,
+               dF_dStress,
                d2F_dStress2,
                -dSigmaY_dKappa,
                -dSigmaY_dLaplaceKappa }; // return yield function value and its derivatives

@@ -79,10 +79,12 @@ public:
     static std::map< ElementShapes, std::string > shapes = { { Bar2, "bar2" },
                                                              { Quad4, "quad4" },
                                                              { Quad8, "quad8" },
+                                                             { Quad9, "quad9" },
                                                              { Tetra4, "tetra4" },
                                                              { Tetra10, "tetra10" },
                                                              { Hexa8, "hexa8" },
-                                                             { Hexa20, "hexa20" } };
+                                                             { Hexa20, "hexa20" },
+                                                             { Hexa27, "hexa27" } };
 
     return shapes[this->shape];
   }

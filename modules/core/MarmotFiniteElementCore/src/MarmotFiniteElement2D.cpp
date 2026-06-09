@@ -151,6 +151,81 @@ namespace Marmot {
 
       } // end of namespace Quad8
 
+      namespace Quad9 {
+
+        inline double l0( double t )
+        {
+          return 0.5 * t * ( t - 1.0 );
+        }
+        inline double l1( double t )
+        {
+          return 1.0 - t * t;
+        }
+        inline double l2( double t )
+        {
+          return 0.5 * t * ( t + 1.0 );
+        }
+
+        inline double dl0( double t )
+        {
+          return t - 0.5;
+        }
+        inline double dl1( double t )
+        {
+          return -2.0 * t;
+        }
+        inline double dl2( double t )
+        {
+          return t + 0.5;
+        }
+
+        NSized N( const Vector2d& xi )
+        {
+          const double xi0 = xi( 0 );
+          const double xi1 = xi( 1 );
+
+          NSized N_;
+          // clang-format off
+          N_ << l0( xi0 ) * l0( xi1 ),
+                l2( xi0 ) * l0( xi1 ),
+                l2( xi0 ) * l2( xi1 ),
+                l0( xi0 ) * l2( xi1 ),
+                l1( xi0 ) * l0( xi1 ),
+                l2( xi0 ) * l1( xi1 ),
+                l1( xi0 ) * l2( xi1 ),
+                l0( xi0 ) * l1( xi1 ),
+                l1( xi0 ) * l1( xi1 );
+          // clang-format on
+          return N_;
+        }
+
+        dNdXiSized dNdXi( const Vector2d& xi )
+        {
+          const double xi0 = xi( 0 );
+          const double xi1 = xi( 1 );
+
+          dNdXiSized result;
+          // clang-format off
+                    result <<
+                           /*      0                           1                           2                           3                           4                           5                           6                           7                           8 */
+                           /* ,xi1 */ dl0( xi0 ) * l0( xi1 ),    dl2( xi0 ) * l0( xi1 ),    dl2( xi0 ) * l2( xi1 ),    dl0( xi0 ) * l2( xi1 ),    dl1( xi0 ) * l0( xi1 ),    dl2( xi0 ) * l1( xi1 ),    dl1( xi0 ) * l2( xi1 ),    dl0( xi0 ) * l1( xi1 ),    dl1( xi0 ) * l1( xi1 ),
+                           /* ,xi2 */ l0( xi0 ) * dl0( xi1 ),    l2( xi0 ) * dl0( xi1 ),    l2( xi0 ) * dl2( xi1 ),    l0( xi0 ) * dl2( xi1 ),    l1( xi0 ) * dl0( xi1 ),    l2( xi0 ) * dl1( xi1 ),    l1( xi0 ) * dl2( xi1 ),    l0( xi0 ) * dl1( xi1 ),    l1( xi0 ) * dl1( xi1 );
+          // clang-format on
+          return result;
+        }
+
+        Vector3i getBoundaryElementIndices( int faceID )
+        {
+          switch ( faceID ) {
+          case 1: return ( Vector3i() << 0, 1, 4 ).finished();
+          case 2: return ( Vector3i() << 1, 2, 5 ).finished();
+          case 3: return ( Vector3i() << 2, 3, 6 ).finished();
+          case 4: return ( Vector3i() << 3, 0, 7 ).finished();
+          default: throw std::invalid_argument( "Quad9: invalid face ID specifed" );
+          }
+        }
+      } // end of namespace Quad9
+
       void modifyCharElemLengthAbaqusLike( double& charElemLength, int intPoint )
       {
         switch ( intPoint ) {

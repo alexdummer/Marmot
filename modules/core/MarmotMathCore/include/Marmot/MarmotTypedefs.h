@@ -56,6 +56,7 @@ namespace Marmot {
   typedef Eigen::Matrix< double, 8, 1 >        Vector8d;       ///< 8-component double column vector
   typedef Eigen::Matrix< double, 9, 1 >        Vector9d;       ///< 9-component double column vector
   typedef Eigen::Matrix< int, 8, 1 >           Vector8i;       ///< 8-component integer column vector
+  typedef Eigen::Matrix< int, 9, 1 >           Vector9i;       ///< 9-component integer column vector
   typedef Eigen::Matrix< double, 1, 6 >        RowVector6d;    ///< 6-component double row vector
   typedef Eigen::Map< Vector6d >               mVector6d;      ///< Non-owning map over a Vector6d
   typedef Eigen::Map< Eigen::VectorXd >        mVectorXd;      ///< Non-owning map over a dynamic double vector

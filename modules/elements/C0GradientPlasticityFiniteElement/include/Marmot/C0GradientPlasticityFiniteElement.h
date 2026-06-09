@@ -197,19 +197,22 @@ namespace Marmot::Elements {
       static std::vector< int > permutationPattern;
 
       if ( permutationPattern.empty() ) {
+        // displacements
         for ( int i = 0; i < nNodes; i++ ) {
           for ( int j = 0; j < nDim; j++ ) {
-            permutationPattern.push_back( i * nDim + j );
+            permutationPattern.push_back( i * ( nDim + 1 + nDim ) + j );
           }
-
-          permutationPattern.push_back( sizeDoFU + i );
-
+        }
+        // plastic multiplier
+        for ( int i = 0; i < nNodes; i++ )
+          permutationPattern.push_back( i * ( nDim + 1 + nDim ) + nDim );
+        // plastic multiplier gradient
+        for ( int i = 0; i < nNodes; i++ ) {
           for ( int j = 0; j < nDim; j++ ) {
-            permutationPattern.push_back( sizeDoFU + sizeDoFL + i * nDim + j );
+            permutationPattern.push_back( i * ( nDim + 1 + nDim ) + nDim + 1 + j );
           }
         }
       }
-
       return permutationPattern;
     }
 
@@ -316,7 +319,7 @@ namespace Marmot::Elements {
       using tangents  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::tangents;
       using increment = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::increment;
 
-      const double penalty = 1e14;
+      const double penalty = 1e8;
 
       for ( auto& qp : qps ) {
         const BSized&    B    = qp.B;
@@ -336,8 +339,7 @@ namespace Marmot::Elements {
         const double lambdaIncrement        = N * dQL;
         const double laplaceLambdaIncrement = divOperator * dQG;
 
-        const Matrix< double, nDim, 1 > gradLambdaInc = NVec * dQG;
-        const Matrix< double, nDim, 1 > cConstraint   = NVec * dQG - dNdX * dQL;
+        const Matrix< double, nDim, 1 > cConstraint = NVec * qG - dNdX * qL;
 
         response  res;
         tangents  tan;
@@ -376,6 +378,15 @@ namespace Marmot::Elements {
                         .transpose();
             }
             else if ( sectionType == SectionType::PlaneStrain ) {
+              const double eps        = 1e-8;
+              const int    nStateVars = 2; // Adjust to match your actual number of state variables
+
+              // 1. Back up the baseline unperturbed outputs and state
+              Vector6d baselineStress = res.stress;
+              double   baselineF      = res.f( 0 );
+
+              std::vector< double > originalState( nStateVars );
+              std::memcpy( originalState.data(), res.stateVars, nStateVars * sizeof( double ) );
               qp.material->computeStress( res, tan, inc );
               stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
               C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
@@ -383,6 +394,109 @@ namespace Marmot::Elements {
               dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
               dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
                         .transpose();
+              // // =========================================================================
+              // // FINITE DIFFERENCE TANGENT CHECK (DEBUGGING ONLY)
+              // // =========================================================================
+              // {
+
+              //   // Allocate numerical tangent containers
+              //   Matrix6d               num_C            = Matrix6d::Zero();
+              //   Vector6d               num_dSdLambda    = Vector6d::Zero();
+              //   Vector6d               num_dSdLaplacian = Vector6d::Zero();
+              //   Matrix< double, 1, 6 > num_dFddE        = Matrix< double, 1, 6 >::Zero();
+              //   double                 num_dFddLambda   = 0.0;
+              //   double                 num_dFddLap      = 0.0;
+
+              //   // Helper lambda to restore state to baseline before each evaluation
+              //   auto resetToBaseline = [&]() {
+              //     res.stress = baselineStress;
+              //     res.f( 0 ) = baselineF;
+              //     std::memcpy( res.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //   };
+
+              //   // --- A. Perturb dStrain (for C and dFddE) ---
+              //   for ( int i = 0; i < 6; ++i ) {
+              //     increment inc_plus  = inc;
+              //     response  res_plus  = res;
+              //     increment inc_minus = inc;
+              //     response  res_minus = res;
+
+              //     inc_plus.dStrain( i ) += eps;
+              //     inc_minus.dStrain( i ) -= eps;
+
+              //     // Positive perturbation
+              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_plus, tan, inc_plus );
+
+              //     // Negative perturbation
+              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_minus, tan, inc_minus );
+
+              //     num_C.col( i )    = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
+              //     num_dFddE( 0, i ) = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
+              //   }
+              //   resetToBaseline();
+
+              //   // --- B. Perturb dLambda (for dSdLambda and dFddLambda) ---
+              //   {
+              //     increment inc_plus  = inc;
+              //     response  res_plus  = res;
+              //     increment inc_minus = inc;
+              //     response  res_minus = res;
+
+              //     inc_plus.dLambda( 0 ) += eps;
+              //     inc_minus.dLambda( 0 ) -= eps;
+
+              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_plus, tan, inc_plus );
+
+              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_minus, tan, inc_minus );
+
+              //     num_dSdLambda  = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
+              //     num_dFddLambda = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
+              //   }
+              //   resetToBaseline();
+
+              //   // --- C. Perturb laplaceDLambda (for dSdLaplacian and dFddLaplacian) ---
+              //   {
+              //     increment inc_plus  = inc;
+              //     response  res_plus  = res;
+              //     increment inc_minus = inc;
+              //     response  res_minus = res;
+
+              //     inc_plus.laplaceDLambda( 0 ) += eps;
+              //     inc_minus.laplaceDLambda( 0 ) -= eps;
+
+              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_plus, tan, inc_plus );
+
+              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
+              //     qp.material->computeStress( res_minus, tan, inc_minus );
+
+              //     num_dSdLaplacian = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
+              //     num_dFddLap      = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
+              //   }
+              //   resetToBaseline();
+
+              //   // --- D. Compare and Print Discrepancies ---
+              //   std::cout << "--- Tangent Check Element: " << elLabel << " ---" << std::endl;
+              //   std::cout << "C Error Norm:          " << ( tan.dStressddStrain - num_C ).norm() << std::endl;
+              //   std::cout << "dSdLambda Error Norm:  " << ( tan.dStressddLambda.col( 0 ) - num_dSdLambda ).norm() <<
+              //   std::endl; std::cout << "dSdLaplacian Error:    " << ( tan.dStressddLaplacian.col( 0 ) -
+              //   num_dSdLaplacian ).norm() << std::endl; std::cout << "dFddE Error Norm:      " << (
+              //   tan.dFddStrain.row( 0 ) - num_dFddE ).norm() << std::endl;
+              // // print dFddE and num_dFddE for debugging
+              //     std::cout << "dFddE (analytic):      " << tan.dFddStrain.row( 0 ) << std::endl;
+              //     std::cout << "dFddE (numeric):       " << num_dFddE << std::endl;
+              //   std::cout << "dFddLambda Error:      " << std::abs( tan.dFddLambda( 0, 0 ) - num_dFddLambda ) <<
+              //   std::endl;
+              //   // print dFddLambda and num_dFddLambda for debugging
+              //     std::cout << "dFddLambda (analytic): " << tan.dFddLambda( 0, 0 ) << std::endl;
+              //     std::cout << "dFddLambda (numeric):  " << num_dFddLambda << std::endl;
+              //   std::cout << "dFddLaplacian Error:   " << std::abs( tan.dFddLaplacian( 0, 0 ) - num_dFddLap ) <<
+              //   std::endl;
+              // }
             }
             else {
               throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
@@ -418,18 +532,24 @@ namespace Marmot::Elements {
         const double dFddLap    = tan.dFddLaplacian( 0, 0 );
 
         // fischer-burmeister formulation for yield function and plastic multiplier constraints
-        const double mu                    = 1e-14;
+        const double mu                    = 1e-20;
         const double scale                 = 1e3;
         const double lambdaIncrementScaled = scale * lambdaIncrement;
 
-        const double fb = std::sqrt( fYield * fYield + lambdaIncrementScaled * lambdaIncrementScaled + 2 * mu ) +
-                          fYield - lambdaIncrementScaled;
+        double fb = std::sqrt( fYield * fYield + lambdaIncrementScaled * lambdaIncrementScaled + 2 * mu ) + fYield -
+                    lambdaIncrementScaled;
         // Corrected Fischer-Burmeister derivatives
         const double common_denom = std::sqrt( fYield * fYield + lambdaIncrementScaled * lambdaIncrementScaled +
                                                2 * mu );
 
-        const double dfb_df       = ( fYield / common_denom ) + 1.0;
-        const double dfb_ddLambda = ( lambdaIncrementScaled / common_denom ) - 1.0;
+        double dfb_df       = ( fYield / common_denom ) + 1.0;
+        double dfb_ddLambda = ( lambdaIncrementScaled / common_denom ) - 1.0;
+
+        // if ( std::abs( lambdaIncrement ) < 1e-8 && std::abs( fYield ) < 1e-8 ) {
+        //   fb           = 0.0;
+        //   dfb_df       = 0.0;
+        //   dfb_ddLambda = 0.0;
+        // }
 
         fU -= B.transpose() * stress * qp.J0xW;
         fL -= ( N.transpose() * fb - penalty * dNdX.transpose() * cConstraint ) * qp.J0xW;
@@ -449,9 +569,18 @@ namespace Marmot::Elements {
         KGL += ( -penalty * NVec.transpose() * dNdX ) * qp.J0xW;
         KGG += ( penalty * NVec.transpose() * NVec ) * qp.J0xW;
 
+        // check if any of the tangents are NaN and if  so print some debug output
+        if ( C.hasNaN() || dSdLambda.hasNaN() || dSdLaplacian.hasNaN() || dFddE.hasNaN() ) {
+          cout << "NaN detected in tangents at element " << elLabel << " quadrature point " << endl;
+          cout << "dSdE: " << endl << C << endl;
+          cout << "dSdLambda: " << endl << dSdLambda.transpose() << endl;
+          cout << "dSdLaplacian: " << endl << dSdLaplacian.transpose() << endl;
+          cout << "dFddE: " << endl << dFddE.transpose() << endl;
+        }
+
         // // / 2. Corrected Residuals
         // fU -= B.transpose() * stress * qp.J0xW;
-        // fL += ( N.transpose() * fb ) * qp.J0xW; // <-- REMOVED penalty force term here!
+        // fL -= ( N.transpose() * fb ) * qp.J0xW; // <-- REMOVED penalty force term here!
         // fG -= ( NVec.transpose() * cConstraint ) * qp.J0xW; // <-- Pure L2 projection
 
         // // 3. Corrected Tangents (Remove penalty terms from KLL and KLG)
@@ -459,9 +588,9 @@ namespace Marmot::Elements {
         // KUL += B.transpose() * dSdLambda * N * qp.J0xW;
         // KUG += B.transpose() * dSdLaplacian * divOperator * qp.J0xW;
 
-        // KLU -= N.transpose() * dfb_df * dFddE * B * qp.J0xW;
-        // KLL -= ( N.transpose() * ( dfb_df * dFddLambda + dfb_ddLambda * scale ) * N ) * qp.J0xW; // <-- REMOVED
-        // penalty KLG -= ( N.transpose() * dfb_df * dFddLap * divOperator ) * qp.J0xW;           // <-- REMOVED penalty
+        // KLU += N.transpose() * dfb_df * dFddE * B * qp.J0xW;
+        // KLL += ( N.transpose() * ( dfb_df * dFddLambda + dfb_ddLambda * scale ) * N ) * qp.J0xW; // <-- REMOVED
+        // KLG += ( N.transpose() * dfb_df * dFddLap * divOperator ) * qp.J0xW;           // <-- REMOVED penalty
 
         // KGU += Matrix< double, sizeDoFG, sizeDoFU >::Zero();
         // KGL += ( -NVec.transpose() * dNdX ) * qp.J0xW; // <-- Pure coupling

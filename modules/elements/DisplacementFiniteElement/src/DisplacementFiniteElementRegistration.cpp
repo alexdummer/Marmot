@@ -39,6 +39,17 @@ namespace Marmot::Elements::Registration {
                      makeFactoryFunction< DisplacementFiniteElement< 2, 8 >,
                                           ReducedIntegration,
                                           DisplacementFiniteElement< 2, 8 >::PlaneStrain >() );
+  const static bool CPE9R_isRegistered = MarmotElementFactory::
+    registerElement( "CPE9R",
+                     makeFactoryFunction< DisplacementFiniteElement< 2, 9 >,
+                                          ReducedIntegration,
+                                          DisplacementFiniteElement< 2, 9 >::PlaneStrain >() );
+
+  const static bool CPE9_isRegistered = MarmotElementFactory::
+    registerElement( "CPE9",
+                     makeFactoryFunction< DisplacementFiniteElement< 2, 9 >,
+                                          FullIntegration,
+                                          DisplacementFiniteElement< 2, 9 >::PlaneStrain >() );
 
   const static bool CPE8_isRegistered = MarmotElementFactory::
     registerElement( "CPE8",

@@ -130,6 +130,13 @@ namespace Marmot {
           return Spatial2D::gaussPointList2x2;
       }
 
+      case ( ElementShapes::Quad9 ): {
+        if ( integrationType == IntegrationTypes::FullIntegration )
+          return Spatial2D::gaussPointList3x3;
+        else
+          return Spatial2D::gaussPointList2x2;
+      }
+
       case ( ElementShapes::Tetra4 ): {
         return Spatial3D::gaussPointListTetra4;
       }
@@ -145,6 +152,13 @@ namespace Marmot {
       }
 
       case ( ElementShapes::Hexa20 ): {
+        if ( integrationType == IntegrationTypes::FullIntegration )
+          return Spatial3D::gaussPointList3x3x3;
+        else
+          return Spatial3D::gaussPointList2x2x2;
+      }
+
+      case ( ElementShapes::Hexa27 ): {
         if ( integrationType == IntegrationTypes::FullIntegration )
           return Spatial3D::gaussPointList3x3x3;
         else
