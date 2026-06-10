@@ -47,7 +47,7 @@ using namespace Eigen;
 
 namespace Marmot::Elements {
 
-  template < int nDim, int nNodes >
+  template < int nDim, int nNodesU, int nNodesL = nNodesU, int nNodesG = nNodesL >
   class C0GradientPlasticityFiniteElement : public MarmotElement {
 
   public:
@@ -61,26 +61,41 @@ namespace Marmot::Elements {
     static constexpr int nDofPerNodeL = 1;
     static constexpr int nDofPerNodeG = nDim;
 
-    static constexpr int sizeDoFU       = nNodes * nDofPerNodeU;
-    static constexpr int sizeDoFL       = nNodes * nDofPerNodeL;
-    static constexpr int sizeDoFG       = nNodes * nDofPerNodeG;
+    static constexpr int nNodes = nNodesU >= nNodesL ? ( nNodesU >= nNodesG ? nNodesU : nNodesG )
+                                                     : ( nNodesL >= nNodesG ? nNodesL : nNodesG );
+
+    static constexpr int sizeDoFU       = nNodesU * nDofPerNodeU;
+    static constexpr int sizeDoFL       = nNodesL * nDofPerNodeL;
+    static constexpr int sizeDoFG       = nNodesG * nDofPerNodeG;
     static constexpr int sizeLoadVector = sizeDoFU + sizeDoFL + sizeDoFG;
 
-    using ParentGeometryElement = MarmotGeometryElement< nDim, nNodes >;
-    using JacobianSized         = typename ParentGeometryElement::JacobianSized;
-    using NSized                = typename ParentGeometryElement::NSized;
-    using dNdXiSized            = typename ParentGeometryElement::dNdXiSized;
-    using BSized                = typename ParentGeometryElement::BSized;
-    using XiSized               = typename ParentGeometryElement::XiSized;
-    using RhsSized              = Matrix< double, sizeLoadVector, 1 >;
-    using KeSizedMatrix         = Matrix< double, sizeLoadVector, sizeLoadVector >;
-    using USizedVector          = Matrix< double, sizeDoFU, 1 >;
-    using LSizedVector          = Matrix< double, sizeDoFL, 1 >;
-    using GSizedVector          = Matrix< double, sizeDoFG, 1 >;
-    using CSized                = Matrix< double, ParentGeometryElement::voigtSize, ParentGeometryElement::voigtSize >;
-    using Voigt                 = Matrix< double, ParentGeometryElement::voigtSize, 1 >;
+    using ParentGeometryElementU = MarmotGeometryElement< nDim, nNodesU >;
+    using ParentGeometryElementL = MarmotGeometryElement< nDim, nNodesL >;
+    using ParentGeometryElementG = MarmotGeometryElement< nDim, nNodesG >;
+    using ParentGeometryElement  = MarmotGeometryElement< nDim, nNodes >;
+    using JacobianSizedU         = typename ParentGeometryElementU::JacobianSized;
+    using JacobianSizedL         = typename ParentGeometryElementL::JacobianSized;
+    using JacobianSizedG         = typename ParentGeometryElementG::JacobianSized;
+    using NSizedU                = typename ParentGeometryElementU::NSized;
+    using NSizedL                = typename ParentGeometryElementL::NSized;
+    using NSizedG                = typename ParentGeometryElementG::NSized;
+    using dNdXiSizedU            = typename ParentGeometryElementU::dNdXiSized;
+    using dNdXiSizedL            = typename ParentGeometryElementL::dNdXiSized;
+    using dNdXiSizedG            = typename ParentGeometryElementG::dNdXiSized;
+    using BSizedU                = typename ParentGeometryElementU::BSized;
+    using XiSized                = typename ParentGeometryElementU::XiSized;
+    using RhsSized               = Matrix< double, sizeLoadVector, 1 >;
+    using KeSizedMatrix          = Matrix< double, sizeLoadVector, sizeLoadVector >;
+    using USizedVector           = Matrix< double, sizeDoFU, 1 >;
+    using LSizedVector           = Matrix< double, sizeDoFL, 1 >;
+    using GSizedVector           = Matrix< double, sizeDoFG, 1 >;
+    using CSized = Matrix< double, ParentGeometryElementU::voigtSize, ParentGeometryElementU::voigtSize >;
+    using Voigt  = Matrix< double, ParentGeometryElementU::voigtSize, 1 >;
 
-    ParentGeometryElement localGeometryElement;
+    ParentGeometryElementU localGeometryElementU;
+    ParentGeometryElementL localGeometryElementL;
+    ParentGeometryElementG localGeometryElementG;
+    ParentGeometryElement  localGeometryElement;
 
     Map< const VectorXd > elementProperties;
     const int             elLabel;
@@ -91,11 +106,15 @@ namespace Marmot::Elements {
       const XiSized xi;
       const double  weight;
 
-      double     detJ;
-      double     J0xW;
-      NSized     N;
-      dNdXiSized dNdX;
-      BSized     B;
+      double      detJ;
+      double      J0xW;
+      NSizedU     N_U;
+      dNdXiSizedU dNdX_U;
+      BSizedU     B_U;
+      NSizedL     N_L;
+      dNdXiSizedL dNdX_L;
+      NSizedG     N_G;
+      dNdXiSizedG dNdX_G;
 
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
@@ -105,16 +124,18 @@ namespace Marmot::Elements {
           { .name = "total strain energy", .length = 1 },
           { .name = "elastic strain energy", .length = 1 },
           { .name = "dissipation", .length = 1 },
+          { .name = "augLagrangeMultiplier", .length = nDim },
           { .name = "begin of material state", .length = 0 },
         } );
 
       public:
-        mVector6d                     stress;
-        mVector6d                     strain;
-        double&                       totalStrainEnergy;
-        double&                       elasticStrainEnergy;
-        double&                       dissipation;
-        Eigen::Map< Eigen::VectorXd > materialStateVars;
+        mVector6d                                   stress;
+        mVector6d                                   strain;
+        double&                                     totalStrainEnergy;
+        double&                                     elasticStrainEnergy;
+        double&                                     dissipation;
+        Eigen::Map< Eigen::Vector< double, nDim > > augLagrangeMultiplier;
+        Eigen::Map< Eigen::VectorXd >               materialStateVars;
 
         static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
 
@@ -125,6 +146,7 @@ namespace Marmot::Elements {
             totalStrainEnergy( find( "total strain energy" ) ),
             elasticStrainEnergy( find( "elastic strain energy" ) ),
             dissipation( find( "dissipation" ) ),
+            augLagrangeMultiplier( &find( "augLagrangeMultiplier" ) ),
             materialStateVars( &find( "begin of material state" ),
                                nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() )
         {
@@ -155,9 +177,13 @@ namespace Marmot::Elements {
           weight( weight ),
           detJ( 0.0 ),
           J0xW( 0.0 ),
-          N( NSized::Zero() ),
-          dNdX( dNdXiSized::Zero() ),
-          B( BSized::Zero() )
+          N_U( NSizedU::Zero() ),
+          dNdX_U( dNdXiSizedU::Zero() ),
+          B_U( BSizedU::Zero() ),
+          N_L( NSizedL::Zero() ),
+          dNdX_L( dNdXiSizedL::Zero() ),
+          N_G( NSizedG::Zero() ),
+          dNdX_G( dNdXiSizedG::Zero() )
       {
       }
     };
@@ -183,9 +209,12 @@ namespace Marmot::Elements {
       if ( nodeFields.empty() ) {
         nodeFields.resize( nNodes );
         for ( int i = 0; i < nNodes; i++ ) {
-          nodeFields[i].push_back( "displacement" );
-          nodeFields[i].push_back( "plastic multiplier" );
-          nodeFields[i].push_back( "plastic multiplier gradient" );
+          if ( i < nNodesU )
+            nodeFields[i].push_back( "displacement" );
+          if ( i < nNodesL )
+            nodeFields[i].push_back( "plastic multiplier" );
+          if ( i < nNodesG )
+            nodeFields[i].push_back( "plastic multiplier gradient" );
         }
       }
 
@@ -196,23 +225,107 @@ namespace Marmot::Elements {
     {
       static std::vector< int > permutationPattern;
 
+      // if (permutationPattern.empty()) {
+      //     // 1. Pre-compute the starting local index (offset) for each node.
+      //     // This dynamically handles the fact that nodes 0-3 have 5 DoFs, while 4-7 have 3 DoFs.
+      //     int totalNodes = std::max({nNodesU, nNodesL, nNodesG});
+      //     std::vector<int> localNodeOffsets(totalNodes, 0);
+
+      //     int currentOffset = 0;
+      //     for (int i = 0; i < nNodes; ++i) {
+      //         localNodeOffsets[i] = currentOffset;
+      //         if (i < nNodesU) {
+      //             currentOffset += nDim + 1 + nDim; // u (nDim) + l (1) + g (nDim) = 5
+      //         } else {
+      //             currentOffset += 1 + nDim;        // l (1) + g (nDim) = 3
+      //         }
+      //     }
+
+      //     // 2. Map Global 'u' DoFs -> Local Layout
+      //     for (int i = 0; i < nNodesU; i++) {
+      //         for (int j = 0; j < nDim; j++) {
+      //             permutationPattern.push_back(localNodeOffsets[i] + j);
+      //         }
+      //     }
+
+      //     // 3. Map Global 'l' DoFs -> Local Layout
+      //     for (int i = 0; i < nNodesL; i++) {
+      //         if (i < nNodesU) {
+      //             permutationPattern.push_back(localNodeOffsets[i] + nDim); // Placed after 'u' DoFs
+      //         } else {
+      //             permutationPattern.push_back(localNodeOffsets[i] + 0);    // Placed at the very start of the node
+      //         }
+      //     }
+
+      //     // 4. Map Global 'g' DoFs -> Local Layout
+      //     for (int i = 0; i < nNodesG; i++) {
+      //         for (int j = 0; j < nDim; j++) {
+      //             if (i < nNodesU) {
+      //                 permutationPattern.push_back(localNodeOffsets[i] + nDim + 1 + j); // Placed after 'u' and 'l'
+      //             } else {
+      //                 permutationPattern.push_back(localNodeOffsets[i] + 1 + j);        // Placed after 'l'
+      //             }
+      //         }
+      //     }
+      // }
       if ( permutationPattern.empty() ) {
-        // displacements
-        for ( int i = 0; i < nNodes; i++ ) {
-          for ( int j = 0; j < nDim; j++ ) {
-            permutationPattern.push_back( i * ( nDim + 1 + nDim ) + j );
-          }
+        int totalNodes = std::max( { nNodesU, nNodesL, nNodesG } );
+
+        // 1. Calculate how many elements are in each global block
+        // so we can figure out where the 'l' and 'g' global layouts start.
+        int globalLStart = nNodesU * nDim;
+        int globalGStart = globalLStart + nNodesL; // (1 DoF per node for L)
+
+        // Tracks the next available global index for each DoF type
+        int globalUIdx = 0;
+        int globalLIdx = globalLStart;
+        int globalGIdx = globalGStart;
+
+        // 2. Pre-calculate the local memory offset for every node.
+        // Each node only takes up space for the DoFs it actually contains.
+        std::vector< int > localNodeOffsets( totalNodes, 0 );
+        int                currentLocalOffset = 0;
+        for ( int i = 0; i < totalNodes; ++i ) {
+          localNodeOffsets[i] = currentLocalOffset;
+
+          if ( i < nNodesU )
+            currentLocalOffset += nDim;
+          if ( i < nNodesL )
+            currentLocalOffset += 1;
+          if ( i < nNodesG )
+            currentLocalOffset += nDim;
         }
-        // plastic multiplier
-        for ( int i = 0; i < nNodes; i++ )
-          permutationPattern.push_back( i * ( nDim + 1 + nDim ) + nDim );
-        // plastic multiplier gradient
-        for ( int i = 0; i < nNodes; i++ ) {
-          for ( int j = 0; j < nDim; j++ ) {
-            permutationPattern.push_back( i * ( nDim + 1 + nDim ) + nDim + 1 + j );
+
+        // 3. Size the permutation pattern array to hold all global DoFs
+        int totalGlobalDofs = ( nNodesU * nDim ) + nNodesL + ( nNodesG * nDim );
+        permutationPattern.resize( totalGlobalDofs );
+
+        // 4. Map each node's local components to their true global positions
+        for ( int i = 0; i < totalNodes; ++i ) {
+          int nodeLocalStart  = localNodeOffsets[i];
+          int currentLocalDof = 0;
+
+          // Map U DoFs if this node has them
+          if ( i < nNodesU ) {
+            for ( int j = 0; j < nDim; ++j ) {
+              permutationPattern[globalUIdx++] = nodeLocalStart + currentLocalDof++;
+            }
+          }
+
+          // Map L DoF if this node has it
+          if ( i < nNodesL ) {
+            permutationPattern[globalLIdx++] = nodeLocalStart + currentLocalDof++;
+          }
+
+          // Map G DoFs if this node has them
+          if ( i < nNodesG ) {
+            for ( int j = 0; j < nDim; ++j ) {
+              permutationPattern[globalGIdx++] = nodeLocalStart + currentLocalDof++;
+            }
           }
         }
       }
+
       return permutationPattern;
     }
 
@@ -253,18 +366,31 @@ namespace Marmot::Elements {
     void assignNodeCoordinates( const double* coordinates )
     {
       localGeometryElement.assignNodeCoordinates( coordinates );
+      localGeometryElementU.assignNodeCoordinates( coordinates );
+      localGeometryElementL.assignNodeCoordinates( coordinates );
+      localGeometryElementG.assignNodeCoordinates( coordinates );
     }
 
     void initializeYourself()
     {
       for ( QuadraturePoint& qp : qps ) {
-        const auto          dNdXi = localGeometryElement.dNdXi( qp.xi );
-        const JacobianSized J     = localGeometryElement.Jacobian( dNdXi );
-        const JacobianSized JInv  = J.inverse();
-        qp.detJ                   = J.determinant();
-        qp.N                      = localGeometryElement.N( qp.xi );
-        qp.dNdX                   = localGeometryElement.dNdX( dNdXi, JInv );
-        qp.B                      = localGeometryElement.B( qp.dNdX );
+        const auto           dNdXi_U = localGeometryElementU.dNdXi( qp.xi );
+        const JacobianSizedU J_U     = localGeometryElementU.Jacobian( dNdXi_U );
+        const JacobianSizedU JInv_U  = J_U.inverse();
+        const auto           dNdXi_L = localGeometryElementL.dNdXi( qp.xi );
+        const JacobianSizedL J_L     = localGeometryElementL.Jacobian( dNdXi_L );
+        const JacobianSizedL JInv_L  = J_L.inverse();
+        const auto           dNdXi_G = localGeometryElementG.dNdXi( qp.xi );
+        const JacobianSizedG J_G     = localGeometryElementG.Jacobian( dNdXi_G );
+        const JacobianSizedG JInv_G  = J_G.inverse();
+        qp.detJ                      = J_U.determinant();
+        qp.N_U                       = localGeometryElementU.N( qp.xi );
+        qp.dNdX_U                    = localGeometryElementU.dNdX( dNdXi_U, JInv_U );
+        qp.B_U                       = localGeometryElementU.B( qp.dNdX_U );
+        qp.N_L                       = localGeometryElementL.N( qp.xi );
+        qp.dNdX_L                    = localGeometryElementL.dNdX( dNdXi_L, JInv_L );
+        qp.N_G                       = localGeometryElementG.N( qp.xi );
+        qp.dNdX_G                    = localGeometryElementG.dNdX( dNdXi_G, JInv_G );
 
         if constexpr ( nDim == 3 ) {
           qp.J0xW = qp.weight * qp.detJ;
@@ -322,24 +448,27 @@ namespace Marmot::Elements {
       const double penalty = 1e8;
 
       for ( auto& qp : qps ) {
-        const BSized&    B    = qp.B;
-        const NSized&    N    = qp.N;
-        const dNdXiSized dNdX = qp.dNdX;
-        const auto       NVec = localGeometryElement.NB( N );
+        const BSizedU&     B     = qp.B_U;
+        const NSizedL&     N     = qp.N_L;
+        const dNdXiSizedL& dNdX  = qp.dNdX_L;
+        const auto         NVec  = localGeometryElementG.NB( qp.N_G );
+        const dNdXiSizedG& dNdXG = qp.dNdX_G;
 
         Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
-        for ( int a = 0; a < nNodes; a++ ) {
+        for ( int a = 0; a < nNodesG; a++ ) {
           for ( int i = 0; i < nDim; i++ ) {
-            divOperator( 0, a * nDim + i ) = dNdX( i, a );
+            divOperator( 0, a * nDim + i ) = dNdXG( i, a );
           }
         }
 
         Voigt dE = B * dQU;
 
-        const double lambdaIncrement        = N * dQL;
-        const double laplaceLambdaIncrement = divOperator * dQG;
+        const double lambdaIncrement        = ( N * dQL )( 0 );
+        const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
 
-        const Matrix< double, nDim, 1 > cConstraint = NVec * qG - dNdX * qL;
+        const auto&                     gamma          = qp.managedStateVars->augLagrangeMultiplier;
+        const Matrix< double, nDim, 1 > cConstraint    = NVec * qG - dNdX * qL;
+        const Matrix< double, nDim, 1 > augmentedForce = gamma + penalty * cConstraint;
 
         response  res;
         tangents  tan;
@@ -378,15 +507,7 @@ namespace Marmot::Elements {
                         .transpose();
             }
             else if ( sectionType == SectionType::PlaneStrain ) {
-              const double eps        = 1e-8;
-              const int    nStateVars = 2; // Adjust to match your actual number of state variables
 
-              // 1. Back up the baseline unperturbed outputs and state
-              Vector6d baselineStress = res.stress;
-              double   baselineF      = res.f( 0 );
-
-              std::vector< double > originalState( nStateVars );
-              std::memcpy( originalState.data(), res.stateVars, nStateVars * sizeof( double ) );
               qp.material->computeStress( res, tan, inc );
               stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
               C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
@@ -394,109 +515,6 @@ namespace Marmot::Elements {
               dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
               dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
                         .transpose();
-              // // =========================================================================
-              // // FINITE DIFFERENCE TANGENT CHECK (DEBUGGING ONLY)
-              // // =========================================================================
-              // {
-
-              //   // Allocate numerical tangent containers
-              //   Matrix6d               num_C            = Matrix6d::Zero();
-              //   Vector6d               num_dSdLambda    = Vector6d::Zero();
-              //   Vector6d               num_dSdLaplacian = Vector6d::Zero();
-              //   Matrix< double, 1, 6 > num_dFddE        = Matrix< double, 1, 6 >::Zero();
-              //   double                 num_dFddLambda   = 0.0;
-              //   double                 num_dFddLap      = 0.0;
-
-              //   // Helper lambda to restore state to baseline before each evaluation
-              //   auto resetToBaseline = [&]() {
-              //     res.stress = baselineStress;
-              //     res.f( 0 ) = baselineF;
-              //     std::memcpy( res.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //   };
-
-              //   // --- A. Perturb dStrain (for C and dFddE) ---
-              //   for ( int i = 0; i < 6; ++i ) {
-              //     increment inc_plus  = inc;
-              //     response  res_plus  = res;
-              //     increment inc_minus = inc;
-              //     response  res_minus = res;
-
-              //     inc_plus.dStrain( i ) += eps;
-              //     inc_minus.dStrain( i ) -= eps;
-
-              //     // Positive perturbation
-              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_plus, tan, inc_plus );
-
-              //     // Negative perturbation
-              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_minus, tan, inc_minus );
-
-              //     num_C.col( i )    = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
-              //     num_dFddE( 0, i ) = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
-              //   }
-              //   resetToBaseline();
-
-              //   // --- B. Perturb dLambda (for dSdLambda and dFddLambda) ---
-              //   {
-              //     increment inc_plus  = inc;
-              //     response  res_plus  = res;
-              //     increment inc_minus = inc;
-              //     response  res_minus = res;
-
-              //     inc_plus.dLambda( 0 ) += eps;
-              //     inc_minus.dLambda( 0 ) -= eps;
-
-              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_plus, tan, inc_plus );
-
-              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_minus, tan, inc_minus );
-
-              //     num_dSdLambda  = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
-              //     num_dFddLambda = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
-              //   }
-              //   resetToBaseline();
-
-              //   // --- C. Perturb laplaceDLambda (for dSdLaplacian and dFddLaplacian) ---
-              //   {
-              //     increment inc_plus  = inc;
-              //     response  res_plus  = res;
-              //     increment inc_minus = inc;
-              //     response  res_minus = res;
-
-              //     inc_plus.laplaceDLambda( 0 ) += eps;
-              //     inc_minus.laplaceDLambda( 0 ) -= eps;
-
-              //     std::memcpy( res_plus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_plus, tan, inc_plus );
-
-              //     std::memcpy( res_minus.stateVars, originalState.data(), nStateVars * sizeof( double ) );
-              //     qp.material->computeStress( res_minus, tan, inc_minus );
-
-              //     num_dSdLaplacian = ( res_plus.stress - res_minus.stress ) / ( 2.0 * eps );
-              //     num_dFddLap      = ( res_plus.f( 0 ) - res_minus.f( 0 ) ) / ( 2.0 * eps );
-              //   }
-              //   resetToBaseline();
-
-              //   // --- D. Compare and Print Discrepancies ---
-              //   std::cout << "--- Tangent Check Element: " << elLabel << " ---" << std::endl;
-              //   std::cout << "C Error Norm:          " << ( tan.dStressddStrain - num_C ).norm() << std::endl;
-              //   std::cout << "dSdLambda Error Norm:  " << ( tan.dStressddLambda.col( 0 ) - num_dSdLambda ).norm() <<
-              //   std::endl; std::cout << "dSdLaplacian Error:    " << ( tan.dStressddLaplacian.col( 0 ) -
-              //   num_dSdLaplacian ).norm() << std::endl; std::cout << "dFddE Error Norm:      " << (
-              //   tan.dFddStrain.row( 0 ) - num_dFddE ).norm() << std::endl;
-              // // print dFddE and num_dFddE for debugging
-              //     std::cout << "dFddE (analytic):      " << tan.dFddStrain.row( 0 ) << std::endl;
-              //     std::cout << "dFddE (numeric):       " << num_dFddE << std::endl;
-              //   std::cout << "dFddLambda Error:      " << std::abs( tan.dFddLambda( 0, 0 ) - num_dFddLambda ) <<
-              //   std::endl;
-              //   // print dFddLambda and num_dFddLambda for debugging
-              //     std::cout << "dFddLambda (analytic): " << tan.dFddLambda( 0, 0 ) << std::endl;
-              //     std::cout << "dFddLambda (numeric):  " << num_dFddLambda << std::endl;
-              //   std::cout << "dFddLaplacian Error:   " << std::abs( tan.dFddLaplacian( 0, 0 ) - num_dFddLap ) <<
-              //   std::endl;
-              // }
             }
             else {
               throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
@@ -552,8 +570,11 @@ namespace Marmot::Elements {
         // }
 
         fU -= B.transpose() * stress * qp.J0xW;
-        fL -= ( N.transpose() * fb - penalty * dNdX.transpose() * cConstraint ) * qp.J0xW;
-        fG -= ( penalty * NVec.transpose() * cConstraint ) * qp.J0xW;
+        fL -= ( N.transpose() * fb - dNdX.transpose() * augmentedForce ) * qp.J0xW;
+        // fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
+        const double alpha = 1e-4 * penalty; // Small regularization factor
+
+        fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
 
         KUU += B.transpose() * C * B * qp.J0xW;
         KUL += B.transpose() * dSdLambda * N * qp.J0xW;
@@ -602,6 +623,7 @@ namespace Marmot::Elements {
         qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
         qp.managedStateVars
           ->strain += ContinuumMechanics::VoigtNotation::make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+        qp.managedStateVars->augLagrangeMultiplier = augmentedForce;
       }
     }
 
@@ -634,22 +656,23 @@ namespace Marmot::Elements {
       const double penalty = elementProperties.size() > 1 ? elementProperties[1] : 1.0;
 
       for ( auto& qp : qps ) {
-        const BSized&    B    = qp.B;
-        const NSized&    N    = qp.N;
-        const dNdXiSized dNdX = qp.dNdX;
-        const auto       NVec = localGeometryElement.NB( N );
+        const BSizedU&     B     = qp.B_U;
+        const NSizedL&     N     = qp.N_L;
+        const dNdXiSizedL& dNdX  = qp.dNdX_L;
+        const auto         NVec  = localGeometryElementG.NB( qp.N_G );
+        const dNdXiSizedG& dNdXG = qp.dNdX_G;
 
         Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
-        for ( int a = 0; a < nNodes; a++ ) {
+        for ( int a = 0; a < nNodesG; a++ ) {
           for ( int i = 0; i < nDim; i++ ) {
-            divOperator( 0, a * nDim + i ) = dNdX( i, a );
+            divOperator( 0, a * nDim + i ) = dNdXG( i, a );
           }
         }
 
         Voigt dE = B * dQU;
 
         const double lambdaIncrement        = ( N * dQL )( 0 );
-        const double laplaceLambdaIncrement = divOperator * dQG;
+        const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
 
         const Matrix< double, nDim, 1 > gradLambdaInc = NVec * dQG;
         const Matrix< double, nDim, 1 > cConstraint   = gradLambdaInc - dNdX * dQL;
@@ -778,7 +801,7 @@ namespace Marmot::Elements {
       const Map< const Matrix< double, nDim, 1 > > f( load );
 
       for ( const auto& qp : qps )
-        Pe += localGeometryElement.NB( localGeometryElement.N( qp.xi ) ).transpose() * f * qp.J0xW;
+        Pe += localGeometryElementU.NB( qp.N_U ).transpose() * f * qp.J0xW;
     }
 
     void computeConsistentInertia( double* M )
@@ -787,16 +810,15 @@ namespace Marmot::Elements {
       Me.setZero();
 
       for ( const auto& qp : qps ) {
-        const auto                  N    = qp.N;
-        const auto                  N_u  = localGeometryElement.NB( N );
-        const auto                  N_g  = localGeometryElement.NB( N );
+        const auto                  N_u  = localGeometryElementU.NB( qp.N_U );
+        const auto                  N_g  = localGeometryElementG.NB( qp.N_G );
         const double                rho  = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
         const std::vector< double > etaV = qp.material->getNonlocalViscosity(
           qp.managedStateVars->materialStateVars.data() );
         const double eta = etaV.empty() ? 0.0 : etaV[0];
 
         Me.topLeftCorner( sizeDoFU, sizeDoFU ) += N_u.transpose() * N_u * qp.J0xW * rho;
-        Me.block( sizeDoFU, sizeDoFU, sizeDoFL, sizeDoFL ) += N.transpose() * N * qp.J0xW * eta;
+        Me.block( sizeDoFU, sizeDoFU, sizeDoFL, sizeDoFL ) += qp.N_L.transpose() * qp.N_L * qp.J0xW * eta;
         Me.bottomRightCorner( sizeDoFG, sizeDoFG ) += N_g.transpose() * N_g * qp.J0xW * eta;
       }
     }
@@ -809,28 +831,37 @@ namespace Marmot::Elements {
       constexpr int nNodesLinear  = ( 1 << nDim );
       auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
 
-      for ( const auto& qp : qps ) {
-        const auto N     = qp.N;
-        const auto N_lin = linGeometryEl.N( qp.xi );
-
-        VectorXd N_weighted = 0.5 * N;
+      auto computeWeightedN = [&]( const auto& NField, const XiSized& xi ) {
+        VectorXd   N_weighted = 0.5 * NField;
+        const auto N_lin      = linGeometryEl.N( xi );
         N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+        return N_weighted;
+      };
+
+      for ( const auto& qp : qps ) {
+        const VectorXd N_weightedU = computeWeightedN( qp.N_U, qp.xi );
+        const VectorXd N_weightedL = computeWeightedN( qp.N_L, qp.xi );
+        const VectorXd N_weightedG = computeWeightedN( qp.N_G, qp.xi );
 
         const double                rho  = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
         const std::vector< double > etaV = qp.material->getNonlocalViscosity(
           qp.managedStateVars->materialStateVars.data() );
         const double eta = etaV.empty() ? 0.0 : etaV[0];
 
-        const VectorXd mU = N_weighted * qp.J0xW * rho;
-        const VectorXd mL = N_weighted * qp.J0xW * eta;
-        const VectorXd mG = N_weighted * qp.J0xW * eta;
+        const VectorXd mU = N_weightedU * qp.J0xW * rho;
+        const VectorXd mL = N_weightedL * qp.J0xW * eta;
+        const VectorXd mG = N_weightedG * qp.J0xW * eta;
 
-        for ( int i = 0; i < nNodes; i++ ) {
+        for ( int i = 0; i < nNodesU; i++ ) {
           for ( int d = 0; d < nDim; d++ )
             LMM( i * nDim + d ) += mU( i );
+        }
 
+        for ( int i = 0; i < nNodesL; i++ ) {
           LMM( sizeDoFU + i ) += mL( i );
+        }
 
+        for ( int i = 0; i < nNodesG; i++ ) {
           for ( int d = 0; d < nDim; d++ )
             LMM( sizeDoFU + sizeDoFL + i * nDim + d ) += mG( i );
         }
@@ -882,8 +913,8 @@ namespace Marmot::Elements {
         case MarmotElement::GeostaticStress: {
           for ( QuadraturePoint& qp : qps ) {
 
-            XiSized coordAtGauss = localGeometryElement.NB( localGeometryElement.N( qp.xi ) ) *
-                                   localGeometryElement.coordinates;
+            XiSized coordAtGauss = localGeometryElementU.NB( localGeometryElementU.N( qp.xi ) ) *
+                                   localGeometryElementU.coordinates;
 
             const double sigY1 = values[0];
             const double sigY2 = values[2];
@@ -935,7 +966,7 @@ namespace Marmot::Elements {
 
       Eigen::Map< XiSized > coordsMap( &coords[0] );
       const auto            centerXi = XiSized::Zero();
-      coordsMap = localGeometryElement.NB( localGeometryElement.N( centerXi ) ) * localGeometryElement.coordinates;
+      coordsMap = localGeometryElementU.NB( localGeometryElementU.N( centerXi ) ) * localGeometryElementU.coordinates;
       return coords;
     }
 
@@ -947,7 +978,7 @@ namespace Marmot::Elements {
       Eigen::Map< XiSized > coordsMap( &coords[0] );
 
       for ( const auto& qp : qps ) {
-        coordsMap = localGeometryElement.NB( localGeometryElement.N( qp.xi ) ) * localGeometryElement.coordinates;
+        coordsMap = localGeometryElementU.NB( localGeometryElementU.N( qp.xi ) ) * localGeometryElementU.coordinates;
         listedCoords.push_back( coords );
       }
 

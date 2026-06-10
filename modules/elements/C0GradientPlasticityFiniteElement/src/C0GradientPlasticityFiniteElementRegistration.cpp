@@ -45,4 +45,15 @@ namespace Marmot::Elements::Registration {
                                           FullIntegration,
                                           C0GradientPlasticityFiniteElement< 2, 9 >::PlaneStrain >() );
 
+  const static bool C0GPPE8U9L9GR_isRegistered = MarmotElementFactory::
+    registerElement( "C0GPPE8U9L9GR",
+                     makeFactoryFunction< C0GradientPlasticityFiniteElement< 2, 8, 9, 9 >,
+                                          ReducedIntegration,
+                                          C0GradientPlasticityFiniteElement< 2, 8, 9, 9 >::PlaneStrain >() );
+
+  const static bool C0GPPE8U9L4GR_isRegistered = MarmotElementFactory::
+    registerElement( "C0GPPE8U9L4GR",
+                     makeFactoryFunction< C0GradientPlasticityFiniteElement< 2, 8, 9, 4 >,
+                                          FullIntegration,
+                                          C0GradientPlasticityFiniteElement< 2, 8, 9, 4 >::PlaneStrain >() );
 } // namespace Marmot::Elements::Registration
