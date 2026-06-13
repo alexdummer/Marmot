@@ -36,6 +36,8 @@ namespace Marmot::Materials {
     GradientVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
     void computeStress( response& res, tangents& tan, const increment& inc ) const override;
+    void computeStressStandard( response& res, tangents& tan, const increment& inc ) const;
+    void computeStressFischerBurmeister( response& res, tangents& tan, const increment& inc ) const;
 
     void initializeStateLayout()
     {
@@ -49,61 +51,24 @@ namespace Marmot::Materials {
     std::vector< double > getNonlocalViscosity( const double* stateVars ) const override;
 
   private:
+    const double& E; // Young's modulus
     /// @brief Elastic stiffness tensor
     const Marmot::Matrix6d C;
     const double&          fy0; // initial yield strength
     const double&          H;   // hardening modulus
     const double&          g;   // gradient influence parameter
 
-    /// compute yield stress and its derivatives from kappa and laplaceKappa
-    std::tuple< double, double, double > fy( double kappa, double laplaceKappa ) const
-    {
-      const double sigmaY = fy0 + H * kappa - g * laplaceKappa; // yield stress as a function of kappa
-      return { sigmaY,
-               H,
-               -g }; // return yield stress and its derivatives (d(sigmaY)/d(kappa) = H, d(sigmaY)/d(laplaceKappa) = -g)
-    }
+    enum class Implementation { standard, fischer_burmeister } implementation = Implementation::fischer_burmeister;
 
-    // compute the von Mises yield function value and its derivatives with respect to stress, kappa, and laplaceKappa
+    std::tuple< double, double, double > fy( double kappa, double laplaceKappa ) const;
+
     std::tuple< double, Vector6d, Matrix6d, double, double > yieldFunction( const Vector6d& stress,
                                                                             const double&   kappa,
-                                                                            const double&   laplaceKappa ) const
-    {
-      using namespace Marmot::ContinuumMechanics::VoigtNotation;
-      const auto [sigmaY, dSigmaY_dKappa, dSigmaY_dLaplaceKappa] = fy( kappa, laplaceKappa );
-      const double J2                                            = Invariants::J2( stress );
-      const double f                                             = std::sqrt( 3.0 * J2 ) - sigmaY; // yield
+                                                                            const double&   laplaceKappa ) const;
 
-      if ( J2 < 1e-12 ) {
-        return { f, Vector6d::Zero(), Matrix6d::Zero(), -dSigmaY_dKappa, -dSigmaY_dLaplaceKappa };
-      }
-
-      // const Vector6d dJ2_dStress                                 = Derivatives::dJ2_dStress( stress );
-      // const Matrix6d d2J2_dStress2                               = Derivatives::d2J2_dStress2( stress );
-
-      // const Vector6d dF_ddStress  = dJ2_dStress * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) );
-      // const Matrix6d d2F_dStress2 = d2J2_dStress2 * ( 3.0 / ( 2.0 * std::sqrt( 3.0 * J2 ) + 1e-14 ) ) -
-      //                               ( dJ2_dStress * dJ2_dStress.transpose() ) * ( 9.0 / ( 8.0 * std::pow( J2, 1.5 ) +
-      //                               1e-14 ) );
-      // 3. Compute base derivatives if J2 is safely non-zero
-      const Vector6d dJ2_dStress   = Derivatives::dJ2_dStress( stress );
-      const Matrix6d d2J2_dStress2 = Derivatives::d2J2_dStress2( stress );
-
-      // 4. Compute correct yield function derivatives
-      const double   root3J2    = std::sqrt( 3.0 * J2 );
-      const Vector6d dF_dStress = dJ2_dStress * ( 3.0 / ( 2.0 * root3J2 ) );
-
-      // Corrected the math scalar multiplier here from 9/8 to sqrt(3)/4
-      const double   scalar2Matrix = std::sqrt( 3.0 ) / ( 4.0 * std::pow( J2, 1.5 ) );
-      const Matrix6d d2F_dStress2  = d2J2_dStress2 * ( 3.0 / ( 2.0 * root3J2 ) ) -
-                                    ( dJ2_dStress * dJ2_dStress.transpose() ) * scalar2Matrix;
-
-      return { f,
-               dF_dStress,
-               d2F_dStress2,
-               -dSigmaY_dKappa,
-               -dSigmaY_dLaplaceKappa }; // return yield function value and its derivatives
-    }
+    std::tuple< double, double, double > fischerBurmeisterFunction( const double a,
+                                                                    const double b,
+                                                                    const double epsilon ) const;
   };
 
 } // namespace Marmot::Materials
