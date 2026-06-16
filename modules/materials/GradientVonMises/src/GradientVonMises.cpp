@@ -161,12 +161,12 @@ namespace Marmot::Materials {
                                                                                                          laplaceKappa );
 
     double df_da, df_db;
-    double scale      = 1e6; // scaling factor to improve conditioning of the Fischer-Burmeister function derivatives
+    double scale      = 1e4; // scaling factor to improve conditioning of the Fischer-Burmeister function derivatives
     std::tie( f,
               df_da,
               df_db ) = fischerBurmeisterFunction( -f_tr,
                                                    dLambda * scale,
-                                                   1e-12 ); // using Fischer-Burmeister to enforce yield condition
+                                                   1e-16 ); // using Fischer-Burmeister to enforce yield condition
 
                                                             // Compute derivatives of the Fischer-Burmeister function
     dF_dStress = -df_da * dF_dStress_tr;
@@ -224,8 +224,8 @@ namespace Marmot::Materials {
   {
     const double sqrtTerm = std::sqrt( a * a + b * b + epsilon );
     const double f        = sqrtTerm - ( a + b );
-    const double df_da    = 0.5 * a / sqrtTerm - 1.0;
-    const double df_db    = 0.5 * b / sqrtTerm - 1.0;
+    const double df_da    = a / sqrtTerm - 1.0;
+    const double df_db    = b / sqrtTerm - 1.0;
     return { f, df_da, df_db };
   }
 
