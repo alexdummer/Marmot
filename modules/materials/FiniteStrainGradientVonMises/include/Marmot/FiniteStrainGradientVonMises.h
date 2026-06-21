@@ -48,10 +48,9 @@ namespace Marmot::Materials {
     void initializeYourself( double* stateVars, int nStateVars ) override;
 
   private:
-    std::tuple< autodiff::dual, autodiff::dual, autodiff::dual > fischerBurmeisterFunction(
-      const autodiff::dual a,
-      const autodiff::dual b,
-      const double         epsilon ) const;
+    autodiff::dual fischerBurmeisterFunction( const autodiff::dual a,
+                                              const autodiff::dual b,
+                                              const double         epsilon ) const;
 
     autodiff::dual fy( const autodiff::dual& kappa, const autodiff::dual& laplaceKappa ) const;
   };

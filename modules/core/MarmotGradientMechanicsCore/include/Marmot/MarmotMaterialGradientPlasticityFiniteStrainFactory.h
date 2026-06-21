@@ -68,7 +68,3 @@ namespace MarmotLibrary {
   };
 
 } // namespace MarmotLibrary
-
-#define REGISTER_MARMOT_MATERIAL_GRADIENT_FINITE_STRAIN( MATERIAL_CLASS_NAME, YIELD_SURFACES )                         \
-  bool is##MATERIAL_CLASS_NAME##Registered = MarmotLibrary::MarmotMaterialGradientPlasticityFiniteStrainFactory<       \
-    YIELD_SURFACES >::registerMaterial< MATERIAL_CLASS_NAME >( #MATERIAL_CLASS_NAME );

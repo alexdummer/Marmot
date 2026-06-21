@@ -1,28 +1,3 @@
-/* ---------------------------------------------------------------------
- *                                       _
- *  _ __ ___   __ _ _ __ _ __ ___   ___ | |_
- * | '_ ` _ \ / _` | '__| '_ ` _ \ / _ \| __|
- * | | | | | | (_| | |  | | | | | | (_) | |_
- * |_| |_| |_|\__,_|_|  |_| |_| |_|\___/ \__|
- *
- * Unit of Strength of Materials and Structural Analysis
- * University of Innsbruck,
- * 2020 - today
- *
- * festigkeitslehre@uibk.ac.at
- *
- * This file is part of the MAteRialMOdellingToolbox (marmot).
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * The full text of the license can be found in the file LICENSE.md at
- * the top level directory of marmot.
- * ---------------------------------------------------------------------
- */
-
 #include "Marmot/FiniteStrainGradientVonMises.h"
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
@@ -80,30 +55,24 @@ namespace Marmot::Materials {
     memcpy( Fp.data(), Spatial3D::I.data(), 9 * sizeof( double ) );
   }
 
-  std::tuple< autodiff::dual, autodiff::dual, autodiff::dual > FiniteStrainGradientVonMises::fischerBurmeisterFunction(
-    const autodiff::dual a,
-    const autodiff::dual b,
-    const double         epsilon ) const
+  dual FiniteStrainGradientVonMises::fischerBurmeisterFunction( const dual a, const dual b, const double epsilon ) const
   {
-    const autodiff::dual sqrtTerm = sqrt( a * a + b * b + epsilon );
-    const autodiff::dual f        = sqrtTerm - ( a + b );
-    const autodiff::dual df_da    = 0.5 * a / sqrtTerm - 1.0;
-    const autodiff::dual df_db    = 0.5 * b / sqrtTerm - 1.0;
-    return { f, df_da, df_db };
+    const dual sqrtTerm = sqrt( a * a + b * b + epsilon );
+    const dual f        = sqrtTerm - ( a + b );
+    return f;
   }
 
-  autodiff::dual FiniteStrainGradientVonMises::fy( const autodiff::dual& kappa,
-                                                   const autodiff::dual& laplaceKappa ) const
+  dual FiniteStrainGradientVonMises::fy( const dual& kappa, const dual& laplaceKappa ) const
   {
     return fy0 + H * kappa - g * laplaceKappa;
   }
 
   void FiniteStrainGradientVonMises::computeStressAD( responseAD& res, const incrementAD& inc ) const
   {
-    TensorMap33d                FpOld_map = stateLayout.getAs< TensorMap33d >( res.stateVars, "Fp" );
-    Tensor33t< autodiff::dual > FpOld     = Marmot::makeDual( Tensor33d( FpOld_map ) );
+    TensorMap33d      FpOld_map = stateLayout.getAs< TensorMap33d >( res.stateVars, "Fp" );
+    Tensor33t< dual > FpOld     = Marmot::makeDual( Tensor33d( FpOld_map ) );
 
-    const autodiff::dual dLambda = inc.dLambda( 0 );
+    const dual dLambda = inc.dLambda( 0 );
 
     // Accumulate kappa and laplaceKappa from state variables
     double& kappaOld        = stateLayout.getAs< double& >( res.stateVars, "kappa" );
@@ -113,69 +82,63 @@ namespace Marmot::Materials {
     autodiff::dual laplaceKappa = laplaceKappaOld + inc.laplaceDLambda( 0 );
 
     // 1. Trial state: F^{e,trial} = F * (F^{p,old})^{-1}
-    Tensor33t< autodiff::dual > FeTrial = inc.deformation.F % Fastor::inverse( FpOld );
-    Tensor33t< autodiff::dual > CeTrial = transpose( FeTrial ) % FeTrial;
+    Tensor33t< dual > FeTrial = inc.deformation.F % Fastor::inverse( FpOld );
+    Tensor33t< dual > CeTrial = transpose( FeTrial ) % FeTrial;
 
-    auto [psiTrial, dPsi_dCeTrial]     = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( CeTrial, K, G );
-    Tensor33t< autodiff::dual > STrial = multiplyFastorTensorWithScalar( dPsi_dCeTrial, autodiff::dual( 2.0 ) );
+    auto [psiTrial, dPsi_dCeTrial] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( CeTrial, K, G );
+    Tensor33t< dual > STrial       = dPsi_dCeTrial + dPsi_dCeTrial; //  2 * dPsi_dCeTrial
 
-    autodiff::dual              J        = determinant( inc.deformation.F );
-    autodiff::dual              Jinv     = autodiff::dual( 1.0 ) / J;
-    Tensor33t< autodiff::dual > tauTrial = FeTrial % STrial % transpose( FeTrial );
-    Tensor33t< autodiff::dual > tTrial   = multiplyFastorTensorWithScalar( tauTrial, Jinv );
+    dual              J        = determinant( inc.deformation.F );
+    dual              Jinv     = dual( 1.0 ) / J;
+    Tensor33t< dual > tauTrial = FeTrial % STrial % transpose( FeTrial );
+    Tensor33t< dual > tTrial   = multiplyFastorTensorWithScalar( tauTrial, Jinv );
 
     // Deviatoric trial Cauchy stress and J2
-    Tensor33t< autodiff::dual > tTrial_dev = Marmot::deviatoric( tTrial );
-    autodiff::dual              J2_tTrial  = autodiff::dual( 0.5 ) * einsum_ij_ij_hardcoded( tTrial_dev, tTrial_dev );
-    autodiff::dual              f_tr       = sqrt( autodiff::dual( 3.0 ) * J2_tTrial ) - fy( kappa, laplaceKappa );
+    Tensor33t< dual > tTrial_dev = Marmot::deviatoric( tTrial );
+    dual              J2_tTrial  = dual( 0.5 ) * einsum_ij_ij_hardcoded( tTrial_dev, tTrial_dev );
+    dual              f_tr       = sqrt( dual( 3.0 ) * J2_tTrial ) - fy( kappa, laplaceKappa );
 
     // Flow direction: df_p/dt = (3/2) * t_dev / sqrt(3 J2)
     // df_p/dM_{KL} = (df_p/dt_{ij}) * (1/J) * F^{e,-1}_{Ki} * F^{e}_{jL}
-    Tensor33t< autodiff::dual > dfp_dt;
-    if ( J2_tTrial > 1e-12 ) {
-      autodiff::dual factor = autodiff::dual( 1.5 ) / sqrt( autodiff::dual( 3.0 ) * J2_tTrial );
-      dfp_dt                = multiplyFastorTensorWithScalar( tTrial_dev, factor );
+    Tensor33t< dual > dfp_dt;
+    if ( Math::makeReal( J2_tTrial ) > 1e-12 ) {
+      dual factor = dual( 1.5 ) / sqrt( dual( 3.0 ) * J2_tTrial );
+      dfp_dt      = multiplyFastorTensorWithScalar( tTrial_dev, factor );
     }
     else {
-      dfp_dt = Marmot::makeDual( Tensor33d( 0.0 ) );
+      dfp_dt = makeDual( Tensor33d( 0.0 ) );
     }
 
-    Tensor33t< autodiff::dual > FeTrial_inv     = Fastor::inverse( FeTrial );
-    Tensor33t< autodiff::dual > dfp_dM_unscaled = Tensor33t< autodiff::dual >( transpose( FeTrial_inv ) % dfp_dt %
-                                                                               transpose( FeTrial ) );
-    Tensor33t< autodiff::dual > dfp_dM          = multiplyFastorTensorWithScalar( dfp_dM_unscaled, Jinv );
+    Tensor33t< dual > FeTrial_inv     = Fastor::inverse( FeTrial );
+    Tensor33t< dual > dfp_dM_unscaled = Tensor33t< dual >( transpose( FeTrial_inv ) % dfp_dt % transpose( FeTrial ) );
+    Tensor33t< dual > dfp_dM          = multiplyFastorTensorWithScalar( dfp_dM_unscaled, Jinv );
 
     // 2. Exponential map: delta Fp = exp( dLambda * dfp_dM )
-    Tensor33t< autodiff::dual > dGp     = multiplyFastorTensorWithScalar( dfp_dM, dLambda );
-    Tensor33t< autodiff::dual > deltaFp = ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration::exponentialMap(
-      dGp );
+    Tensor33t< dual > dGp     = multiplyFastorTensorWithScalar( dfp_dM, dLambda );
+    Tensor33t< dual > deltaFp = ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration::exponentialMap( dGp );
 
-    Tensor33t< autodiff::dual > FpNew = deltaFp % FpOld;
+    Tensor33t< dual > FpNew = deltaFp % FpOld;
 
     // 3. Updated elastic state: F^e = F * (F^{p,new})^{-1}
-    Tensor33t< autodiff::dual > Fe  = inc.deformation.F % Fastor::inverse( FpNew );
-    Tensor33t< autodiff::dual > Ce  = transpose( Fe ) % Fe;
-    auto [psi, dPsi_dCe]            = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
-    Tensor33t< autodiff::dual > S   = multiplyFastorTensorWithScalar( dPsi_dCe, autodiff::dual( 2.0 ) );
-    Tensor33t< autodiff::dual > tau = Fe % S % transpose( Fe );
+    Tensor33t< dual > Fe  = inc.deformation.F % Fastor::inverse( FpNew );
+    Tensor33t< dual > Ce  = transpose( Fe ) % Fe;
+    auto [psi, dPsi_dCe]  = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+    Tensor33t< dual > S   = multiplyFastorTensorWithScalar( dPsi_dCe, dual( 2.0 ) );
+    Tensor33t< dual > tau = Fe % S % transpose( Fe );
 
     // 4. Fischer-Burmeister complementarity function
-    double scale             = 1e6;
-    auto [fFB, df_da, df_db] = fischerBurmeisterFunction( -f_tr, dLambda * scale, 1e-12 );
+    double scale = 1e6;
+    dual   fFB   = fischerBurmeisterFunction( -f_tr, dLambda * scale, 1e-12 );
 
     // 5. Update state variables (primal values only)
-    for ( int i = 0; i < 3; ++i ) {
-      for ( int j = 0; j < 3; ++j ) {
-        res.stateVars[i * 3 + j] = double( FpNew( i, j ) );
-      }
-    }
-    kappaOld        = double( kappa );
-    laplaceKappaOld = double( laplaceKappa );
+    memcpy( stateLayout.getPtr( res.stateVars, "Fp" ), makeReal( FpNew ).data(), 9 * sizeof( double ) );
+    stateLayout.getAs< double& >( res.stateVars, "kappa" )        = Math::makeReal( kappa );
+    stateLayout.getAs< double& >( res.stateVars, "laplaceKappa" ) = Math::makeReal( laplaceKappa );
 
     // 6. Write response
     res.tau                  = tau;
     res.f( 0 )               = fFB;
     res.elasticEnergyDensity = psi;
-    res.dissipation          = autodiff::dual( 0.0 );
+    res.dissipation          = dual( 0.0 );
   }
 } // namespace Marmot::Materials
