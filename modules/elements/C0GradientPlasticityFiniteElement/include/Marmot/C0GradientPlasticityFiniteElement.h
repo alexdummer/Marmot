@@ -373,213 +373,212 @@ namespace Marmot::Elements {
       Map< KeSizedMatrix >  Ke( Ke_ );
       Map< RhsSized >       Pe( Pe_ );
 
-      // call computeYourselfExplicit size of QTotal times to compute Ke with finite difference
+      //   // call computeYourselfExplicit size of QTotal times to compute Ke with finite difference
 
-      // copy state variables to restore after finite difference perturbation
-      std::vector< double > stateVarsBackup( qps.size() * qps[0].getNumberOfRequiredStateVars() );
-      for ( size_t i = 0; i < qps.size(); i++ ) {
-        const auto& qp = qps[i];
-        std::copy( qp.managedStateVars->stress.data(),
-                   qp.managedStateVars->stress.data() + qp.managedStateVars->stress.size(),
-                   stateVarsBackup.data() + ( i * getNumberOfRequiredStateVars() / qps.size() ) );
-      }
+      //   const int nStateVarsPerQp = getNumberOfRequiredStateVars() / qps.size();
 
-      auto resetStateVars = [&]() {
-        for ( size_t i = 0; i < qps.size(); i++ ) {
-          auto& qp = qps[i];
-          std::copy( stateVarsBackup.data() + ( i * getNumberOfRequiredStateVars() / qps.size() ),
-                     stateVarsBackup.data() + ( ( i + 1 ) * qp.getNumberOfRequiredStateVars() / qps.size() ),
-                     qp.managedStateVars->stress.data() );
+      //   // copy state variables to restore after finite difference perturbation
+      //   std::vector< double > stateVarsBackup( qps.size() * nStateVarsPerQp );
+      //   for ( size_t i = 0; i < qps.size(); i++ ) {
+      //     const auto& qp = qps[i];
+      //     std::copy( qp.managedStateVars->stress.data(),
+      //                qp.managedStateVars->stress.data() + nStateVarsPerQp,
+      //                stateVarsBackup.data() + ( i * nStateVarsPerQp ) );
+      //   }
+
+      //   auto resetStateVars = [&]() {
+      //     for ( size_t i = 0; i < qps.size(); i++ ) {
+      //       auto& qp = qps[i];
+      //       std::copy( stateVarsBackup.data() + ( i * nStateVarsPerQp ),
+      //                  stateVarsBackup.data() + ( ( i + 1 ) * nStateVarsPerQp ),
+      //                  qp.managedStateVars->stress.data() );
+      //     }
+      //   };
+
+      //   RhsSized dQ_per     = dQ;
+      //   RhsSized QTotal_per = QTotal;
+      //   for ( int i = 0; i < sizeLoadVector; i++ ) {
+      //     double volatile perturbation = 1e-8;
+      //     dQ_per( i ) += perturbation;     // perturb the i-th DoF
+      //     QTotal_per( i ) += perturbation; // also perturb QTotal to ensure consistent state for
+      //     computeYourselfExplicit RhsSized PePlus( Pe ); RhsSized PeMinus( Pe );
+      //     // restore state variables to ensure consistent state for each evaluation of computeYourselfExplicit
+      //     // VectorXd stateVarsBeforeReset= Eigen::Map<Eigen::VectorXd>( qps[0].managedStateVars->stress.data(),
+      //     nStateVarsPerQp );
+      //     // std::cout << "statevars before reset: " << stateVarsBeforeReset.transpose() << std::endl;
+      //     resetStateVars();
+      //     // VectorXd stateVarsAfterReset= Eigen::Map<Eigen::VectorXd>( qps[0].managedStateVars->stress.data(),
+      //     nStateVarsPerQp );
+      //     // std::cout << "statevars after reset: " << stateVarsAfterReset.transpose() << std::endl;
+
+      //     computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PePlus.data(), time, dT, pNewDT );
+      //     dQ_per( i ) -= 2 * perturbation;     // perturb in the negative direction for central difference
+      //     QTotal_per( i ) -= 2 * perturbation; // also perturb QTotal in the negative direction for consistent state
+
+      //     resetStateVars(); // reset state variables again before the next evaluation of computeYourselfExplicit with
+      //                       // negative perturbation
+      //     computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PeMinus.data(), time, dT, pNewDT );
+      //     for ( int j = 0; j < sizeLoadVector; j++ ) {
+      //       Ke( j, i ) = -( PePlus( j ) - PeMinus( j ) ) / ( 2 * perturbation );
+      //     }
+      //     QTotal_per( i ) += perturbation; // reset QTotal for next iteration
+      //     dQ_per( i ) += perturbation;     // add back the perturbation for the next iteration
+      //   }
+      //   resetStateVars(); // final reset of state variables to original state after finite difference approximation
+      //   is done computeYourselfExplicit( QTotal_, dQ_, Pe_, time, dT, pNewDT );
+      // }
+
+      const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
+      const Ref< const LSizedVector > qL( QTotal.segment( sizeDoFU, sizeDoFL ) );
+      const Ref< const GSizedVector > qG( QTotal.tail( sizeDoFG ) );
+
+      const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
+      const Ref< const LSizedVector > dQL( dQ.segment( sizeDoFU, sizeDoFL ) );
+      const Ref< const GSizedVector > dQG( dQ.tail( sizeDoFG ) );
+
+      Ref< Matrix< double, sizeDoFU, sizeDoFU > > KUU( Ke.topLeftCorner( sizeDoFU, sizeDoFU ) );
+      Ref< Matrix< double, sizeDoFU, sizeDoFL > > KUL( Ke.block( 0, sizeDoFU, sizeDoFU, sizeDoFL ) );
+      Ref< Matrix< double, sizeDoFU, sizeDoFG > > KUG( Ke.topRightCorner( sizeDoFU, sizeDoFG ) );
+      Ref< Matrix< double, sizeDoFL, sizeDoFU > > KLU( Ke.block( sizeDoFU, 0, sizeDoFL, sizeDoFU ) );
+      Ref< Matrix< double, sizeDoFL, sizeDoFL > > KLL( Ke.block( sizeDoFU, sizeDoFU, sizeDoFL, sizeDoFL ) );
+      Ref< Matrix< double, sizeDoFL, sizeDoFG > > KLG( Ke.block( sizeDoFU, sizeDoFU + sizeDoFL, sizeDoFL, sizeDoFG ) );
+      Ref< Matrix< double, sizeDoFG, sizeDoFU > > KGU( Ke.block( sizeDoFU + sizeDoFL, 0, sizeDoFG, sizeDoFU ) );
+      Ref< Matrix< double, sizeDoFG, sizeDoFL > > KGL( Ke.block( sizeDoFU + sizeDoFL, sizeDoFU, sizeDoFG, sizeDoFL ) );
+      Ref< Matrix< double, sizeDoFG, sizeDoFG > > KGG( Ke.bottomRightCorner( sizeDoFG, sizeDoFG ) );
+
+      Ref< USizedVector > fU( Pe.head( sizeDoFU ) );
+      Ref< LSizedVector > fL( Pe.segment( sizeDoFU, sizeDoFL ) );
+      Ref< GSizedVector > fG( Pe.tail( sizeDoFG ) );
+
+      using response  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::response;
+      using tangents  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::tangents;
+      using increment = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::increment;
+
+      const double penalty = 1e11;
+
+      for ( auto& qp : qps ) {
+        const BSizedU&     B     = qp.B_U;
+        const NSizedL&     N     = qp.N_L;
+        const dNdXiSizedL& dNdX  = qp.dNdX_L;
+        const auto         NVec  = localGeometryElementG.NB( qp.N_G );
+        const dNdXiSizedG& dNdXG = qp.dNdX_G;
+
+        Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
+        for ( int a = 0; a < nNodesG; a++ ) {
+          for ( int i = 0; i < nDim; i++ ) {
+            divOperator( 0, a * nDim + i ) = dNdXG( i, a );
+          }
         }
-      };
 
-      resetStateVars(); // restore state variables to original state after finite difference approximation is done
-      computeYourselfExplicit( QTotal_, dQ_, Pe_, time, dT, pNewDT );
+        Voigt dE = B * dQU;
 
-      RhsSized dQ_per     = dQ;
-      RhsSized QTotal_per = QTotal;
-      for ( int i = 0; i < sizeLoadVector; i++ ) {
-        double volatile perturbation = 1e-8;
-        dQ_per( i ) += perturbation;     // perturb the i-th DoF
-        QTotal_per( i ) += perturbation; // also perturb QTotal to ensure consistent state for computeYourselfExplicit
-        RhsSized PePlus( Pe );
-        RhsSized PeMinus( Pe );
-        // restore state variables to ensure consistent state for each evaluation of computeYourselfExplicit
-        // std::cout << "statevars before reset: " << qps[0].managedStateVars->materialStateVars << std::endl;
-        resetStateVars();
-        // std::cout << "statevars after reset: " << qps[0].managedStateVars->materialStateVars << std::endl;
+        const double lambdaIncrement        = ( N * dQL )( 0 );
+        const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
 
-        computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PePlus.data(), time, dT, pNewDT );
-        dQ_per( i ) -= 2 * perturbation;     // perturb in the negative direction for central difference
-        QTotal_per( i ) -= 2 * perturbation; // also perturb QTotal in the negative direction for consistent state
+        // const auto&                     gamma          = qp.managedStateVars->augLagrangeMultiplier;
+        const Matrix< double, nDim, 1 > cConstraint    = NVec * dQG - dNdX * dQL;
+        const Matrix< double, nDim, 1 > augmentedForce = penalty * cConstraint;
 
-        resetStateVars(); // reset state variables again before the next evaluation of computeYourselfExplicit with
-                          // negative perturbation
-        computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PeMinus.data(), time, dT, pNewDT );
-        for ( int j = 0; j < sizeLoadVector; j++ ) {
-          Ke( j, i ) = ( PePlus( j ) - PeMinus( j ) ) / ( 2 * perturbation );
+        response  res;
+        tangents  tan;
+        increment inc;
+
+        res.stress = qp.managedStateVars->stress;
+        res.f.setZero();
+        res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
+        res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+        res.stateVars            = qp.managedStateVars->materialStateVars.data();
+
+        inc.dLambda( 0 )        = lambdaIncrement;
+        inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
+        inc.time                = time[1];
+        inc.dT                  = dT;
+
+        Voigt  stress       = Voigt::Zero();
+        CSized C            = CSized::Zero();
+        Voigt  dSdLambda    = Voigt::Zero();
+        Voigt  dSdLaplacian = Voigt::Zero();
+        Matrix< double, 1, ParentGeometryElement::voigtSize >
+          dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
+
+        try {
+          if constexpr ( nDim == 2 ) {
+            Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+            inc.dStrain  = dE6;
+
+            if ( sectionType == SectionType::PlaneStress ) {
+              qp.material->computePlaneStress( res, tan, inc );
+              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+              C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
+                        .transpose();
+            }
+            else if ( sectionType == SectionType::PlaneStrain ) {
+
+              qp.material->computeStress( res, tan, inc );
+              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+              C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
+                        .transpose();
+            }
+            else {
+              throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
+            }
+          }
+          else if ( nDim == 3 ) {
+            if ( sectionType != SectionType::Solid )
+              throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
+
+            inc.dStrain = dE;
+            qp.material->computeStress( res, tan, inc );
+            stress       = res.stress;
+            C            = tan.dStressddStrain;
+            dSdLambda    = tan.dStressddLambda.col( 0 );
+            dSdLaplacian = tan.dStressddLaplacian.col( 0 );
+            dFddE        = tan.dFddStrain.row( 0 );
+          }
         }
-        QTotal_per( i ) += perturbation; // reset QTotal for next iteration
-        dQ_per( i ) += perturbation;     // add back the perturbation for the next iteration
+        catch ( const StressUpdateFailed& ) {
+          pNewDT = 0.25;
+          return;
+        }
+
+        // cout all tangents for debugging
+        using namespace std;
+
+        const double f          = res.f( 0 );
+        const double dFddLambda = tan.dFddLambda( 0, 0 );
+        const double dFddLap    = tan.dFddLaplacian( 0, 0 );
+
+        fU -= B.transpose() * stress * qp.J0xW;
+        fL -= ( N.transpose() * f - dNdX.transpose() * augmentedForce ) * qp.J0xW;
+        fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
+
+        KUU += B.transpose() * C * B * qp.J0xW;
+        KUL += B.transpose() * dSdLambda * N * qp.J0xW;
+        KUG += B.transpose() * dSdLaplacian * divOperator * qp.J0xW;
+
+        KLU += N.transpose() * dFddE * B * qp.J0xW;
+        KLL += ( N.transpose() * dFddLambda * N + penalty * dNdX.transpose() * dNdX ) * qp.J0xW;
+        KLG += ( N.transpose() * dFddLap * divOperator - penalty * dNdX.transpose() * NVec ) * qp.J0xW;
+
+        KGU += Matrix< double, sizeDoFG, sizeDoFU >::Zero();
+        KGL += ( -penalty * NVec.transpose() * dNdX ) * qp.J0xW;
+        KGG += ( penalty * NVec.transpose() * NVec ) * qp.J0xW;
+
+        qp.managedStateVars->stress              = res.stress;
+        qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
+        qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
+        qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
+        qp.managedStateVars
+          ->strain += ContinuumMechanics::VoigtNotation::make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+        qp.managedStateVars->augLagrangeMultiplier = augmentedForce;
       }
     }
-
-    // const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
-    // const Ref< const LSizedVector > qL( QTotal.segment( sizeDoFU, sizeDoFL ) );
-    // const Ref< const GSizedVector > qG( QTotal.tail( sizeDoFG ) );
-
-    // const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
-    // const Ref< const LSizedVector > dQL( dQ.segment( sizeDoFU, sizeDoFL ) );
-    // const Ref< const GSizedVector > dQG( dQ.tail( sizeDoFG ) );
-
-    // Ref< Matrix< double, sizeDoFU, sizeDoFU > > KUU( Ke.topLeftCorner( sizeDoFU, sizeDoFU ) );
-    // Ref< Matrix< double, sizeDoFU, sizeDoFL > > KUL( Ke.block( 0, sizeDoFU, sizeDoFU, sizeDoFL ) );
-    // Ref< Matrix< double, sizeDoFU, sizeDoFG > > KUG( Ke.topRightCorner( sizeDoFU, sizeDoFG ) );
-    // Ref< Matrix< double, sizeDoFL, sizeDoFU > > KLU( Ke.block( sizeDoFU, 0, sizeDoFL, sizeDoFU ) );
-    // Ref< Matrix< double, sizeDoFL, sizeDoFL > > KLL( Ke.block( sizeDoFU, sizeDoFU, sizeDoFL, sizeDoFL ) );
-    // Ref< Matrix< double, sizeDoFL, sizeDoFG > > KLG( Ke.block( sizeDoFU, sizeDoFU + sizeDoFL, sizeDoFL, sizeDoFG ) );
-    // Ref< Matrix< double, sizeDoFG, sizeDoFU > > KGU( Ke.block( sizeDoFU + sizeDoFL, 0, sizeDoFG, sizeDoFU ) );
-    // Ref< Matrix< double, sizeDoFG, sizeDoFL > > KGL( Ke.block( sizeDoFU + sizeDoFL, sizeDoFU, sizeDoFG, sizeDoFL ) );
-    // Ref< Matrix< double, sizeDoFG, sizeDoFG > > KGG( Ke.bottomRightCorner( sizeDoFG, sizeDoFG ) );
-
-    // Ref< USizedVector > fU( Pe.head( sizeDoFU ) );
-    // Ref< LSizedVector > fL( Pe.segment( sizeDoFU, sizeDoFL ) );
-    // Ref< GSizedVector > fG( Pe.tail( sizeDoFG ) );
-
-    // using response  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::response;
-    // using tangents  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::tangents;
-    // using increment = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::increment;
-
-    // const double penalty = 1e12;
-
-    // for ( auto& qp : qps ) {
-    //   const BSizedU&     B     = qp.B_U;
-    //   const NSizedL&     N     = qp.N_L;
-    //   const dNdXiSizedL& dNdX  = qp.dNdX_L;
-    //   const auto         NVec  = localGeometryElementG.NB( qp.N_G );
-    //   const dNdXiSizedG& dNdXG = qp.dNdX_G;
-
-    //   Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
-    //   for ( int a = 0; a < nNodesG; a++ ) {
-    //     for ( int i = 0; i < nDim; i++ ) {
-    //       divOperator( 0, a * nDim + i ) = dNdXG( i, a );
-    //     }
-    //   }
-
-    //   Voigt dE = B * dQU;
-
-    //   const double lambdaIncrement        = ( N * dQL )( 0 );
-    //   const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
-
-    //   // const auto&                     gamma          = qp.managedStateVars->augLagrangeMultiplier;
-    //   const Matrix< double, nDim, 1 > cConstraint    = NVec * qG - dNdX * qL;
-    //   const Matrix< double, nDim, 1 > augmentedForce = penalty * cConstraint;
-
-    //   response  res;
-    //   tangents  tan;
-    //   increment inc;
-
-    //   res.stress = qp.managedStateVars->stress;
-    //   res.f.setZero();
-    //   res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-    //   res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
-    //   res.stateVars            = qp.managedStateVars->materialStateVars.data();
-
-    //   inc.dLambda( 0 )        = lambdaIncrement;
-    //   inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
-    //   inc.time                = time[1];
-    //   inc.dT                  = dT;
-
-    //   Voigt  stress       = Voigt::Zero();
-    //   CSized C            = CSized::Zero();
-    //   Voigt  dSdLambda    = Voigt::Zero();
-    //   Voigt  dSdLaplacian = Voigt::Zero();
-    //   Matrix< double, 1, ParentGeometryElement::voigtSize >
-    //     dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
-
-    //   try {
-    //     if constexpr ( nDim == 2 ) {
-    //       Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-    //       inc.dStrain  = dE6;
-
-    //       if ( sectionType == SectionType::PlaneStress ) {
-    //         qp.material->computePlaneStress( res, tan, inc );
-    //         stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-    //         C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
-    //         dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-    //         dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-    //         dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose()
-    //         )
-    //                   .transpose();
-    //       }
-    //       else if ( sectionType == SectionType::PlaneStrain ) {
-
-    //         qp.material->computeStress( res, tan, inc );
-    //         stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-    //         C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-    //         dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-    //         dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-    //         dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose()
-    //         )
-    //                   .transpose();
-    //       }
-    //       else {
-    //         throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain"
-    //         );
-    //       }
-    //     }
-    //     else if ( nDim == 3 ) {
-    //       if ( sectionType != SectionType::Solid )
-    //         throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
-
-    //       inc.dStrain = dE;
-    //       qp.material->computeStress( res, tan, inc );
-    //       stress       = res.stress;
-    //       C            = tan.dStressddStrain;
-    //       dSdLambda    = tan.dStressddLambda.col( 0 );
-    //       dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-    //       dFddE        = tan.dFddStrain.row( 0 );
-    //     }
-    //   }
-    //   catch ( const StressUpdateFailed& ) {
-    //     pNewDT = 0.25;
-    //     return;
-    //   }
-
-    //   // cout all tangents for debugging
-    //   using namespace std;
-
-    //   const double f     = res.f( 0 );
-    //   const double dFddLambda = tan.dFddLambda( 0, 0 );
-    //   const double dFddLap    = tan.dFddLaplacian( 0, 0 );
-
-    //   fU -= B.transpose() * stress * qp.J0xW;
-    //   fL -= ( N.transpose() * f - dNdX.transpose() * augmentedForce ) * qp.J0xW;
-    //   fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
-
-    //   KUU += B.transpose() * C * B * qp.J0xW;
-    //   KUL += B.transpose() * dSdLambda * N * qp.J0xW;
-    //   KUG += B.transpose() * dSdLaplacian * divOperator * qp.J0xW;
-
-    //   KLU += N.transpose() * dFddE * B * qp.J0xW;
-    //   KLL += ( N.transpose() * dFddLambda * N +
-    //            penalty * dNdX.transpose() * dNdX ) *
-    //          qp.J0xW;
-    //   KLG += ( N.transpose() * dFddLap * divOperator - penalty * dNdX.transpose() * NVec ) * qp.J0xW;
-
-    //   KGU += Matrix< double, sizeDoFG, sizeDoFU >::Zero();
-    //   KGL += ( -penalty * NVec.transpose() * dNdX ) * qp.J0xW;
-    //   KGG += ( penalty * NVec.transpose() * NVec ) * qp.J0xW;
-
-    //   qp.managedStateVars->stress              = res.stress;
-    //   qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
-    //   qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
-    //   qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
-    //   qp.managedStateVars
-    //     ->strain += ContinuumMechanics::VoigtNotation::make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-    //   qp.managedStateVars->augLagrangeMultiplier = augmentedForce;
-    // }
-    // }
 
     void computeYourselfExplicit( const double* QTotal_,
                                   const double* dQ_,
@@ -671,12 +670,12 @@ namespace Marmot::Elements {
             else if ( sectionType == SectionType::PlaneStrain ) {
 
               qp.material->computeStress( res, tan, inc );
-              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-              C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                        .transpose();
+              stress = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+              // C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+              // dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+              // dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+              // dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0
+              // ).transpose() ) .transpose();
             }
             else {
               throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
@@ -688,11 +687,11 @@ namespace Marmot::Elements {
 
             inc.dStrain = dE;
             qp.material->computeStress( res, tan, inc );
-            stress       = res.stress;
-            C            = tan.dStressddStrain;
-            dSdLambda    = tan.dStressddLambda.col( 0 );
-            dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-            dFddE        = tan.dFddStrain.row( 0 );
+            stress = res.stress;
+            // C            = tan.dStressddStrain;
+            // dSdLambda    = tan.dStressddLambda.col( 0 );
+            // dSdLaplacian = tan.dStressddLaplacian.col( 0 );
+            // dFddE        = tan.dFddStrain.row( 0 );
           }
         }
         catch ( const StressUpdateFailed& ) {
@@ -703,9 +702,9 @@ namespace Marmot::Elements {
         // cout all tangents for debugging
         using namespace std;
 
-        const double f          = res.f( 0 );
-        const double dFddLambda = tan.dFddLambda( 0, 0 );
-        const double dFddLap    = tan.dFddLaplacian( 0, 0 );
+        const double f = res.f( 0 );
+        // const double dFddLambda = tan.dFddLambda( 0, 0 );
+        // const double dFddLap    = tan.dFddLaplacian( 0, 0 );
 
         fU -= B.transpose() * stress * qp.J0xW;
         fL -= ( N.transpose() * f - dNdX.transpose() * augmentedForce ) * qp.J0xW;
