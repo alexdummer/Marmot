@@ -72,7 +72,7 @@ namespace Marmot::Materials {
     TensorMap33d      FpOld_map = stateLayout.getAs< TensorMap33d >( res.stateVars, "Fp" );
     Tensor33t< dual > FpOld     = Marmot::makeDual( Tensor33d( FpOld_map ) );
 
-    const dual dLambda = inc.dLambda( 0 );
+    const dual& dLambda = inc.dLambda( 0 );
 
     // Accumulate kappa and laplaceKappa from state variables
     double& kappaOld        = stateLayout.getAs< double& >( res.stateVars, "kappa" );

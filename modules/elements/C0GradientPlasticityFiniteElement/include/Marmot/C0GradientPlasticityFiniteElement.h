@@ -360,13 +360,7 @@ namespace Marmot::Elements {
       }
     }
 
-    void computeYourself( const double* QTotal_,
-                          const double* dQ_,
-                          double*       Pe_,
-                          double*       Ke_,
-                          const double* time,
-                          double        dT,
-                          double&       pNewDT )
+    void computeKernels( const double* QTotal_, const double* dQ_, double* Pe_, double* Ke_, double time, double dT )
     {
       Map< const RhsSized > QTotal( QTotal_ );
       Map< const RhsSized > dQ( dQ_ );
@@ -491,7 +485,7 @@ namespace Marmot::Elements {
 
         inc.dLambda( 0 )        = lambdaIncrement;
         inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
-        inc.time                = time[1];
+        inc.time                = time;
         inc.dT                  = dT;
 
         Voigt  stress       = Voigt::Zero();
@@ -501,50 +495,44 @@ namespace Marmot::Elements {
         Matrix< double, 1, ParentGeometryElement::voigtSize >
           dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
 
-        try {
-          if constexpr ( nDim == 2 ) {
-            Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-            inc.dStrain  = dE6;
+        if constexpr ( nDim == 2 ) {
+          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          inc.dStrain  = dE6;
 
-            if ( sectionType == SectionType::PlaneStress ) {
-              qp.material->computePlaneStress( res, tan, inc );
-              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-              C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
-              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                        .transpose();
-            }
-            else if ( sectionType == SectionType::PlaneStrain ) {
-
-              qp.material->computeStress( res, tan, inc );
-              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-              C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                        .transpose();
-            }
-            else {
-              throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
-            }
+          if ( sectionType == SectionType::PlaneStress ) {
+            qp.material->computePlaneStress( res, tan, inc );
+            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
+                      .transpose();
           }
-          else if ( nDim == 3 ) {
-            if ( sectionType != SectionType::Solid )
-              throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
+          else if ( sectionType == SectionType::PlaneStrain ) {
 
-            inc.dStrain = dE;
             qp.material->computeStress( res, tan, inc );
-            stress       = res.stress;
-            C            = tan.dStressddStrain;
-            dSdLambda    = tan.dStressddLambda.col( 0 );
-            dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-            dFddE        = tan.dFddStrain.row( 0 );
+            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
+                      .transpose();
+          }
+          else {
+            throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
           }
         }
-        catch ( const StressUpdateFailed& ) {
-          pNewDT = 0.25;
-          return;
+        else if ( nDim == 3 ) {
+          if ( sectionType != SectionType::Solid )
+            throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
+
+          inc.dStrain = dE;
+          qp.material->computeStress( res, tan, inc );
+          stress       = res.stress;
+          C            = tan.dStressddStrain;
+          dSdLambda    = tan.dStressddLambda.col( 0 );
+          dSdLaplacian = tan.dStressddLaplacian.col( 0 );
+          dFddE        = tan.dFddStrain.row( 0 );
         }
 
         // cout all tangents for debugging
@@ -580,12 +568,7 @@ namespace Marmot::Elements {
       }
     }
 
-    void computeYourselfExplicit( const double* QTotal_,
-                                  const double* dQ_,
-                                  double*       Pe_,
-                                  const double* time,
-                                  double        dT,
-                                  double&       pNewDT )
+    void computeKernelsExplicit( const double* QTotal_, const double* dQ_, double* Pe_, double time, double dT )
     {
       Map< const RhsSized > QTotal( QTotal_ );
       Map< const RhsSized > dQ( dQ_ );
@@ -643,7 +626,7 @@ namespace Marmot::Elements {
 
         inc.dLambda( 0 )        = lambdaIncrement;
         inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
-        inc.time                = time[1];
+        inc.time                = time;
         inc.dT                  = dT;
 
         Voigt  stress       = Voigt::Zero();
@@ -653,50 +636,44 @@ namespace Marmot::Elements {
         Matrix< double, 1, ParentGeometryElement::voigtSize >
           dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
 
-        try {
-          if constexpr ( nDim == 2 ) {
-            Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-            inc.dStrain  = dE6;
+        if constexpr ( nDim == 2 ) {
+          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
+          inc.dStrain  = dE6;
 
-            if ( sectionType == SectionType::PlaneStress ) {
-              qp.material->computePlaneStress( res, tan, inc );
-              stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-              C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
-              dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-              dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-              dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                        .transpose();
-            }
-            else if ( sectionType == SectionType::PlaneStrain ) {
-
-              qp.material->computeStress( res, tan, inc );
-              stress = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-              // C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-              // dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-              // dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-              // dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0
-              // ).transpose() ) .transpose();
-            }
-            else {
-              throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
-            }
+          if ( sectionType == SectionType::PlaneStress ) {
+            qp.material->computePlaneStress( res, tan, inc );
+            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
+                      .transpose();
           }
-          else if ( nDim == 3 ) {
-            if ( sectionType != SectionType::Solid )
-              throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
+          else if ( sectionType == SectionType::PlaneStrain ) {
 
-            inc.dStrain = dE;
             qp.material->computeStress( res, tan, inc );
-            stress = res.stress;
-            // C            = tan.dStressddStrain;
-            // dSdLambda    = tan.dStressddLambda.col( 0 );
-            // dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-            // dFddE        = tan.dFddStrain.row( 0 );
+            stress = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
+            // C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+            // dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
+            // dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
+            // dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0
+            // ).transpose() ) .transpose();
+          }
+          else {
+            throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
           }
         }
-        catch ( const StressUpdateFailed& ) {
-          pNewDT = 0.25;
-          return;
+        else if ( nDim == 3 ) {
+          if ( sectionType != SectionType::Solid )
+            throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
+
+          inc.dStrain = dE;
+          qp.material->computeStress( res, tan, inc );
+          stress = res.stress;
+          // C            = tan.dStressddStrain;
+          // dSdLambda    = tan.dStressddLambda.col( 0 );
+          // dSdLaplacian = tan.dStressddLaplacian.col( 0 );
+          // dFddE        = tan.dFddStrain.row( 0 );
         }
 
         // cout all tangents for debugging
@@ -726,7 +703,7 @@ namespace Marmot::Elements {
                                  int                                 elementFace,
                                  const double*                       load,
                                  const double*                       QTotal,
-                                 const double*                       time,
+                                 double                              time,
                                  double                              dT )
     {
       Map< RhsSized >     P_( P );
@@ -770,12 +747,7 @@ namespace Marmot::Elements {
       }
     }
 
-    void computeBodyForce( double*       P_,
-                           double*       K,
-                           const double* load,
-                           const double* QTotal,
-                           const double* time,
-                           double        dT )
+    void computeBodyForce( double* P_, double* K, const double* load, const double* QTotal, double time, double dT )
     {
       Map< RhsSized >                              P( P_ );
       Ref< USizedVector >                          Pe( P.head( sizeDoFU ) );
