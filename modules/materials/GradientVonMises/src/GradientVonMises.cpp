@@ -6,12 +6,17 @@
 namespace Marmot::Materials {
 
   using namespace Eigen;
+  using namespace Fastor;
   using namespace Marmot;
+  using namespace Marmot::FastorStandardTensors;
+  using namespace Marmot::FastorIndices;
 
   GradientVonMises::GradientVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber )
     : MarmotMaterialGradientPlasticityHypoElastic< 1 >( materialProperties, nMaterialProperties, materialNumber ),
       E( materialProperties[0] ),
-      C( ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( materialProperties[0], materialProperties[1] ) ),
+      nu( materialProperties[1] ),
+      lambda( E * nu / ( ( 1. - 2. * nu ) * ( 1. + nu ) ) ),
+      mu( E / ( 2. * ( 1. + nu ) ) ),
       fy0( materialProperties[2] ),
       H( materialProperties[3] ),
       g( materialProperties[4] ),
@@ -44,17 +49,18 @@ namespace Marmot::Materials {
 
   void GradientVonMises::computeStressStandard( response& res, tangents& tan, const increment& inc ) const
   {
+    using namespace Fastor;
+    using namespace Marmot::FastorStandardTensors;
     // map response and increment variables for easier access
-    mVector6d       stress( res.stress.data() );
-    const Vector6d& dStrain = inc.dStrain;
-    double&         f       = res.f( 0 ); // yield function value
+    TensorMap33d stress( res.stress.data() );
+    double&      f = res.f( 0 ); // yield function value
 
     // map to tangents
-    mMatrix6d                     dStressddStrain( tan.dStressddStrain.data() );
-    Map< Matrix< double, 6, 1 > > dStressddLambda( tan.dStressddLambda.data() );
-    Map< Matrix< double, 1, 6 > > dF_ddStrain( tan.dFddStrain.data() );
-    double&                       dF_dKappa        = tan.dFddLambda( 0, 0 );
-    double&                       dF_dLaplaceKappa = tan.dFddLaplacian( 0, 0 );
+    TensorMap3333d dStressddStrain( tan.dStressddStrain.data() );
+    TensorMap33d   dStressddLambda( tan.dStressddLambda.data() );
+    TensorMap33d   dF_ddStrain( tan.dFddStrain.data() );
+    double&        dF_dKappa        = tan.dFddLambda( 0, 0 );
+    double&        dF_dLaplaceKappa = tan.dFddLaplacian( 0, 0 );
 
     // get state variables
     double& kappa        = stateLayout.getAs< double& >( res.stateVars, "kappa" );
@@ -65,17 +71,17 @@ namespace Marmot::Materials {
     laplaceKappa += inc.laplaceDLambda( 0 );
 
     // compute trial stress
-    Vector6d trialStress = stress + C * dStrain;
+    Tensor33d trialStress;
+    trialStress     = stress + lambda * trace( inc.dStrain ) * Spatial3D::I + 2 * mu * inc.dStrain;
+    Tensor3333d Cel = lambda * outer( Spatial3D::I, Spatial3D::I ) + 2 * mu * Spatial3D::I4;
     // handle zero increment
-    if ( inc.dStrain.isZero( 1e-14 ) && inc.laplaceDLambda.isZero( 1e-14 ) && inc.dLambda.isZero( 1e-14 ) ) {
+    if ( norm( inc.dStrain ) < 1e-14 && norm( inc.laplaceDLambda ) < 1e-14 && norm( inc.dLambda ) < 1e-14 ) {
       stress           = trialStress;
       f                = 0; // ensure yield function is exactly zero for zero increment
       dF_dKappa        = E; // set hardening derivative to Young's modulus for zero increment
       dF_dLaplaceKappa = g; // set gradient hardening derivative to zero for zero increment
-      dF_ddStrain.setZero();
-      dStressddStrain = C;
-      // std::cout << "Zero increment detected, skipping return mapping and setting stress to trial stress." <<
-      // std::endl; std::exit( 0 ); //
+      dF_ddStrain      = Tensor33d( 0. );
+      dStressddStrain  = Cel;
       return;
     }
     const double& dLambda = inc.dLambda( 0 );
@@ -91,35 +97,34 @@ namespace Marmot::Materials {
       res.f( 0 )       = 0; // ensure yield function is exactly zero for elastic step
       dF_dKappa        = E; // set hardening derivative to Young's modulus for elastic step
       dF_dLaplaceKappa = dF_dLaplaceKappa_tr;
-      dF_ddStrain      = dF_dStress_tr.transpose() * C;
-      dStressddStrain  = C;
+      dF_ddStrain      = einsum< ij, ijkl >( dF_dStress_tr, Cel );
+      dStressddStrain  = Cel;
       return;
     }
     // update stress with trial return mapping direction
-    stress          = trialStress - C * ( dLambda * dF_dStress_tr );
-    dStressddStrain = C - dLambda * C * d2F_dStress2_tr * C;
-    dStressddLambda = -C * dF_dStress_tr;
-    Vector6d dF_dStress;
-    Matrix6d d2F_dStress2;
+    stress          = trialStress - Cel * ( dLambda * dF_dStress_tr );
+    dStressddStrain = Cel - dLambda * Cel * d2F_dStress2_tr * Cel;
+    dStressddLambda = -Cel * dF_dStress_tr;
+    Tensor33d   dF_dStress;
+    Tensor3333d d2F_dStress2;
     std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress, kappa, laplaceKappa );
-    dF_ddStrain                                                          = dF_dStress.transpose() * dStressddStrain;
-    dF_dKappa += dF_dStress.dot( dStressddLambda );
+    dF_ddStrain = einsum< ij, ijkl >( dF_dStress, dStressddStrain );
+    dF_dKappa += einsum< ij, ij >( dF_dStress, dStressddLambda ).toscalar();
   }
 
   void GradientVonMises::computeStressFischerBurmeister( response& res, tangents& tan, const increment& inc ) const
   {
 
     // map response and increment variables for easier access
-    mVector6d       stress( res.stress.data() );
-    const Vector6d& dStrain = inc.dStrain;
-    double&         f       = res.f( 0 ); // yield function value
+    TensorMap33d stress( res.stress.data() );
+    double&      f = res.f( 0 ); // yield function value
 
     // map to tangents
-    mMatrix6d                     dStressddStrain( tan.dStressddStrain.data() );
-    Map< Matrix< double, 6, 1 > > dStressddLambda( tan.dStressddLambda.data() );
-    Map< Matrix< double, 1, 6 > > dF_ddStrain( tan.dFddStrain.data() );
-    double&                       dF_dKappa        = tan.dFddLambda( 0, 0 );
-    double&                       dF_dLaplaceKappa = tan.dFddLaplacian( 0, 0 );
+    TensorMap3333d dStressddStrain( tan.dStressddStrain.data() );
+    TensorMap33d   dStressddLambda( tan.dStressddLambda.data() );
+    TensorMap33d   dF_ddStrain( tan.dFddStrain.data() );
+    double&        dF_dKappa        = tan.dFddLambda( 0, 0 );
+    double&        dF_dLaplaceKappa = tan.dFddLaplacian( 0, 0 );
 
     // get state variables
     double& kappa        = stateLayout.getAs< double& >( res.stateVars, "kappa" );
@@ -130,32 +135,21 @@ namespace Marmot::Materials {
     laplaceKappa += inc.laplaceDLambda( 0 );
 
     // compute trial stress
-    Vector6d trialStress = stress + C * dStrain;
-    // handle zero increment
-    // if ( inc.dStrain.norm() == 0 && inc.laplaceDLambda( 0 ) == 0 && inc.dLambda( 0 ) == 0 ) {
-    //   stress = trialStress;
-    //   Vector6d dF_dStress;
-    //   Matrix6d d2F_dStress2;
-    //   std::tie( f, dF_dStress, d2F_dStress2, dF_dKappa, dF_dLaplaceKappa ) = yieldFunction( stress,
-    //                                                                                         kappa,
-    //                                                                                         laplaceKappa );
-    //   dF_ddStrain                                                          = dF_dStress.transpose() * C;
-    //   dStressddStrain                                                      = C;
-    //   return;
-    // }
-    const double& dLambda = inc.dLambda( 0 );
+    Tensor33d     trialStress = stress + lambda * trace( inc.dStrain ) * Spatial3D::I + 2 * mu * inc.dStrain;
+    Tensor3333d   Cel         = lambda * outer( Spatial3D::I, Spatial3D::I ) + 2 * mu * Spatial3D::I4;
+    const double& dLambda     = inc.dLambda( 0 );
 
     auto [f_tr, dF_dStress_tr, d2F_dStress2_tr, dF_dKappa_tr, dF_dLaplaceKappa_tr] = yieldFunction( trialStress,
                                                                                                     kappa,
                                                                                                     laplaceKappa );
     // update stress with trial return mapping direction
-    stress = trialStress - C * ( dLambda * dF_dStress_tr );
+    stress = trialStress - Cel * ( dLambda * dF_dStress_tr );
 
-    dStressddStrain = C - dLambda * C * d2F_dStress2_tr * C;
-    dStressddLambda = -C * dF_dStress_tr;
+    dStressddStrain = Cel - dLambda * Cel * d2F_dStress2_tr * Cel;
+    dStressddLambda = -Cel * dF_dStress_tr;
 
-    Vector6d dF_dStress;
-    Matrix6d d2F_dStress2;
+    Tensor33d dF_dStress;
+    // Tensor3333d d2F_dStress2;
     std::tie( f_tr, dF_dStress_tr, d2F_dStress2_tr, dF_dKappa_tr, dF_dLaplaceKappa_tr ) = yieldFunction( stress,
                                                                                                          kappa,
                                                                                                          laplaceKappa );
@@ -168,12 +162,12 @@ namespace Marmot::Materials {
                                                    dLambda * scale,
                                                    1e-16 ); // using Fischer-Burmeister to enforce yield condition
 
-                                                            // Compute derivatives of the Fischer-Burmeister function
+    // Compute derivatives of the Fischer-Burmeister function
     dF_dStress = -df_da * dF_dStress_tr;
     dF_dKappa  = -df_da * dF_dKappa_tr + df_db * scale;
 
-    dF_ddStrain = dF_dStress.transpose() * dStressddStrain;
-    dF_dKappa += dF_dStress.dot( dStressddLambda );
+    dF_ddStrain = einsum< ij, ijkl >( dF_dStress, dStressddStrain );
+    dF_dKappa += einsum< ij, ij >( dF_dStress, dStressddLambda ).toscalar();
     dF_dLaplaceKappa = -df_da * dF_dLaplaceKappa_tr + df_db * 0;
   }
 
@@ -184,32 +178,29 @@ namespace Marmot::Materials {
   }
 
   // compute the von Mises yield function value and its derivatives with respect to stress, kappa, and laplaceKappa
-  std::tuple< double, Vector6d, Matrix6d, double, double > GradientVonMises::yieldFunction(
-    const Vector6d& stress,
-    const double&   kappa,
-    const double&   laplaceKappa ) const
+  std::tuple< double, Tensor33d, Tensor3333d, double, double > GradientVonMises::yieldFunction(
+    const Tensor33d& stress,
+    const double&    kappa,
+    const double&    laplaceKappa ) const
   {
-    using namespace Marmot::ContinuumMechanics::VoigtNotation;
-    const auto [sigmaY, dSigmaY_dKappa, dSigmaY_dLaplaceKappa] = fy( kappa, laplaceKappa );
-    const double J2                                            = Invariants::J2( stress );
-    const double f                                             = std::sqrt( 3.0 * J2 ) - sigmaY; // yield
 
-    if ( J2 < 1e-12 ) {
-      return { f, Vector6d::Zero(), Matrix6d::Zero(), -dSigmaY_dKappa, -dSigmaY_dLaplaceKappa };
+    const Tensor33d& _I = Spatial3D::I;
+
+    const auto [sigmaY, dSigmaY_dKappa, dSigmaY_dLaplaceKappa] = fy( kappa, laplaceKappa );
+    const Tensor33d devStress                                  = deviatoric( stress );
+    const double    sigmaV = Marmot::Constants::sqrt3_2 * std::sqrt( einsum_ij_ij_hardcoded( devStress, devStress ) );
+    double          f      = sigmaV - sigmaY; // yield
+
+    if ( sigmaV < 1e-12 ) {
+      return { f, 0.0, 0.0, -dSigmaY_dKappa, -dSigmaY_dLaplaceKappa };
     }
 
     // 3. Compute base derivatives if J2 is safely non-zero
-    const Vector6d dJ2_dStress   = Derivatives::dJ2_dStress( stress );
-    const Matrix6d d2J2_dStress2 = Derivatives::d2J2_dStress2( stress );
-
-    // 4. Compute correct yield function derivatives
-    const double   root3J2    = std::sqrt( 3.0 * J2 );
-    const Vector6d dF_dStress = dJ2_dStress * ( 3.0 / ( 2.0 * root3J2 ) );
-
-    // Corrected the math scalar multiplier here from 9/8 to sqrt(3)/4
-    const double   scalar2Matrix = std::sqrt( 3.0 ) / ( 4.0 * std::pow( J2, 1.5 ) );
-    const Matrix6d d2F_dStress2  = d2J2_dStress2 * ( 3.0 / ( 2.0 * root3J2 ) ) -
-                                  ( dJ2_dStress * dJ2_dStress.transpose() ) * scalar2Matrix;
+    const Tensor33d   dF_dStress   = Marmot::Constants::sqrt3_2 * devStress / sigmaV;
+    const Tensor3333d d2F_dStress2 = Marmot::Constants::sqrt3_2 *
+                                     ( -1.0 / std::pow( sigmaV, 3 ) * outer( devStress, devStress ) +
+                                       1. / sigmaV *
+                                         ( einsum< ik, jl >( _I, _I ) - 1. / 3 * einsum< ij, IK, IL >( _I, _I, _I ) ) );
 
     return { f,
              dF_dStress,

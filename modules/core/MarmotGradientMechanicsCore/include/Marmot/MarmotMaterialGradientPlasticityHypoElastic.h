@@ -25,6 +25,7 @@
 
 #pragma once
 #include "Marmot/MarmotExceptions.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
@@ -62,42 +63,44 @@ public:
 
   /// @brief Struct to hold the increment information.
   struct increment {
-    Marmot::Vector6d                        dStrain;        ///< Increment of the strain tensor in Voigt notation
-    Eigen::Vector< double, nYieldSurfaces > dLambda;        ///< Increment of the plastic multipliers
-    Eigen::Vector< double, nYieldSurfaces > laplaceDLambda; ///< Laplacian of the increment of the plastic multipliers
-    double                                  time;           ///< Current time
-    double                                  dT;             ///< Time increment
+    Marmot::FastorStandardTensors::Tensor33d dStrain;        ///< Increment of the strain tensor in Voigt notation
+    Fastor::Tensor< double, nYieldSurfaces > dLambda;        ///< Increment of the plastic multipliers
+    Fastor::Tensor< double, nYieldSurfaces > laplaceDLambda; ///< Laplacian of the increment of the plastic multipliers
+    double                                   time;           ///< Current time
+    double                                   dT;             ///< Time increment
   };
 
   /// @brief Struct to hold the material response information.
   struct response {
-    Marmot::Vector6d                        stress;    ///< Stress tensor in Voigt notation
-    Eigen::Vector< double, nYieldSurfaces > f;         ///< Local yield function values at the current increment
-    double*                                 stateVars; ///< Pointer to the array of state variables
-    double                                  elasticEnergyDensity; ///< Elastic strain energy density
-    double                                  dissipation;          ///< Dissipation (if applicable)
+    Marmot::FastorStandardTensors::Tensor33d stress;    ///< Stress tensor in Voigt notation
+    Fastor::Tensor< double, nYieldSurfaces > f;         ///< Local yield function values at the current increment
+    double*                                  stateVars; ///< Pointer to the array of state variables
+    double                                   elasticEnergyDensity; ///< Elastic strain energy density
+    double                                   dissipation;          ///< Dissipation (if applicable)
   };
 
   /// @brief Struct to hold the algorithmic tangent matrices for the material model.
   struct tangents {
     /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of strain.
-    Marmot::Matrix6d dStressddStrain = Marmot::Matrix6d::Zero();
+    Marmot::FastorStandardTensors::Tensor3333d dStressddStrain = Marmot::FastorStandardTensors::Tensor3333d( 0.0 );
     /// @brief Algorithmic tangent matrix relating the increment of stress to the increment of the plastic multipliers.
-    Eigen::Matrix< double, 6, nYieldSurfaces > dStressddLambda = Eigen::Matrix< double, 6, nYieldSurfaces >::Zero();
+    Fastor::Tensor< double, 3, 3, nYieldSurfaces > dStressddLambda = Fastor::Tensor< double, 3, 3, nYieldSurfaces >(
+      0.0 );
     /// @brief Algorithmic tangent relating the increment of stress to the increment of the laplacian of the plastic
     /// multipliers.
-    Eigen::Matrix< double, 6, nYieldSurfaces > dStressddLaplacian = Eigen::Matrix< double, 6, nYieldSurfaces >::Zero();
+    Fastor::Tensor< double, 3, 3, nYieldSurfaces > dStressddLaplacian = Fastor::Tensor< double, 3, 3, nYieldSurfaces >(
+      0.0 );
     /// @brief Algorithmic tangent matrix relating the increment of the local yield function values to the increment of
     /// strain.
-    Eigen::Matrix< double, nYieldSurfaces, 6 > dFddStrain = Eigen::Matrix< double, nYieldSurfaces, 6 >::Zero();
+    Fastor::Tensor< double, nYieldSurfaces, 3, 3 > dFddStrain = Fastor::Tensor< double, nYieldSurfaces, 3, 3 >( 0.0 );
     /// @brief Algorithmic tangent matrix relating the increment of the local yield function values to the increment of
     /// the plastic multipliers.
-    Eigen::Matrix< double, nYieldSurfaces, nYieldSurfaces >
-      dFddLambda = Eigen::Matrix< double, nYieldSurfaces, nYieldSurfaces >::Zero();
+    Fastor::Tensor< double, nYieldSurfaces, nYieldSurfaces >
+      dFddLambda = Fastor::Tensor< double, nYieldSurfaces, nYieldSurfaces >( 0.0 );
     /// @brief Algorithmic tangent matrix relating the increment of the local yield function values to the increment of
     /// the laplacian of the plastic multipliers.
-    Eigen::Matrix< double, nYieldSurfaces, nYieldSurfaces >
-      dFddLaplacian = Eigen::Matrix< double, nYieldSurfaces, nYieldSurfaces >::Zero();
+    Fastor::Tensor< double, nYieldSurfaces, nYieldSurfaces >
+      dFddLaplacian = Fastor::Tensor< double, nYieldSurfaces, nYieldSurfaces >( 0.0 );
   };
 
   /**
@@ -165,8 +168,8 @@ public:
     double residual          = 1;
     double tangentCompliance = 1.;
     // assumption of isochoric deformation for initial guess
-    double strainIncrement = ( -incTemp.dStrain( 0 ) - incTemp.dStrain( 1 ) );
-    incTemp.dStrain( 2 )   = strainIncrement;
+    double strainIncrement  = ( -incTemp.dStrain( 0, 0 ) - incTemp.dStrain( 1, 1 ) );
+    incTemp.dStrain( 2, 2 ) = strainIncrement;
 
     int planeStressCount = 1;
     while ( true ) {
@@ -183,19 +186,19 @@ public:
       computeStress( resTemp, tan, incTemp );
 
       // evauate residual
-      residual = std::abs( resTemp.stress.array().abs()[2] / std::max( resTemp.stress.array().abs().maxCoeff(), 1. ) );
+      residual = std::abs( resTemp.stress( 2, 2 ) / std::max( max( abs( resTemp.stress ) ), 1. ) );
       if ( ( residual < 1e-10 && std::abs( strainIncrement ) < 1e-8 ) || ( planeStressCount > 7 && residual < 1e-5 ) ) {
         break;
       }
 
       // correct strain increment
-      tangentCompliance = 1. / tan.dStressddStrain( 2, 2 );
+      tangentCompliance = 1. / tan.dStressddStrain( 2, 2, 2, 2 );
       if ( Math::isNaN( tangentCompliance ) || std::abs( tangentCompliance ) > 1e10 ) {
         tangentCompliance = 1e10;
       }
 
-      strainIncrement = -resTemp.stress( 2 ) * tangentCompliance;
-      incTemp.dStrain( 2 ) += strainIncrement;
+      strainIncrement = -resTemp.stress( 2, 2 ) * tangentCompliance;
+      incTemp.dStrain( 2, 2 ) += strainIncrement;
 
       planeStressCount += 1;
       if ( planeStressCount > 13 ) {
@@ -284,20 +287,23 @@ public:
 
     tangents  tan;
     increment inc;
-    inc.dStrain        = Marmot::Vector6d::Zero();
-    inc.dLambda        = Eigen::Vector< double, nYieldSurfaces >::Zero();
-    inc.laplaceDLambda = Eigen::Vector< double, nYieldSurfaces >::Zero();
+    inc.dStrain        = Marmot::FastorStandardTensors::Tensor33d( 0.0 );
+    inc.dLambda        = Fastor::Tensor< double, nYieldSurfaces >( 0.0 );
+    inc.laplaceDLambda = Fastor::Tensor< double, nYieldSurfaces >( 0.0 );
     inc.time           = 0.0;
     inc.dT             = 1.0;
 
     computeStress( responseCopy, tan, inc );
 
-    const double maxStiffnessDiagonal = std::max( { tan.dStressddStrain( 0, 0 ),
-                                                    tan.dStressddStrain( 1, 1 ),
-                                                    tan.dStressddStrain( 2, 2 ),
-                                                    tan.dStressddStrain( 3, 3 ),
-                                                    tan.dStressddStrain( 4, 4 ),
-                                                    tan.dStressddStrain( 5, 5 ) } );
+    const double maxStiffnessDiagonal = std::max( { tan.dStressddStrain( 0, 0, 0, 0 ),
+                                                    tan.dStressddStrain( 1, 1, 1, 1 ),
+                                                    tan.dStressddStrain( 2, 2, 2, 2 ),
+                                                    tan.dStressddStrain( 0, 1, 0, 1 ),
+                                                    tan.dStressddStrain( 1, 0, 1, 0 ),
+                                                    tan.dStressddStrain( 0, 2, 0, 2 ),
+                                                    tan.dStressddStrain( 2, 0, 2, 0 ),
+                                                    tan.dStressddStrain( 1, 2, 1, 2 ),
+                                                    tan.dStressddStrain( 2, 1, 2, 1 ) } );
     const double density              = getDensity( responseCopy.stateVars );
 
     return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;

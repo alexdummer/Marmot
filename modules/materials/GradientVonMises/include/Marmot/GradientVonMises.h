@@ -52,19 +52,21 @@ namespace Marmot::Materials {
 
   private:
     const double& E; // Young's modulus
-    /// @brief Elastic stiffness tensor
-    const Marmot::Matrix6d C;
-    const double&          fy0; // initial yield strength
-    const double&          H;   // hardening modulus
-    const double&          g;   // gradient influence parameter
+    const double& nu;
+    const double  lambda;
+    const double  mu;
+    const double& fy0; // initial yield strength
+    const double& H;   // hardening modulus
+    const double& g;   // gradient influence parameter
 
     enum class Implementation { standard, fischer_burmeister } implementation = Implementation::fischer_burmeister;
 
     std::tuple< double, double, double > fy( double kappa, double laplaceKappa ) const;
 
-    std::tuple< double, Vector6d, Matrix6d, double, double > yieldFunction( const Vector6d& stress,
-                                                                            const double&   kappa,
-                                                                            const double&   laplaceKappa ) const;
+    std::tuple< double, Marmot::FastorStandardTensors::Tensor33d, Marmot::FastorStandardTensors::Tensor3333d, double, double > yieldFunction(
+      const Marmot::FastorStandardTensors::Tensor33d& stress,
+      const double&                                   kappa,
+      const double&                                   laplaceKappa ) const;
 
     std::tuple< double, double, double > fischerBurmeisterFunction( const double a,
                                                                     const double b,

@@ -44,8 +44,14 @@ namespace Marmot::Materials {
     std::vector< double > getNonlocalViscosity( const double* stateVars ) const override;
 
   private:
-    /// @brief Elastic stiffness tensor
-    const Marmot::Matrix6d C;
+    /// @brief Young's modulus
+    const double& E;
+    /// @brief Poisson's ratio
+    const double& nu;
+    /// @brief First Lame parameter
+    const double lambda;
+    /// @brief Second Lame parameter
+    const double mu;
   };
 
 } // namespace Marmot::Materials

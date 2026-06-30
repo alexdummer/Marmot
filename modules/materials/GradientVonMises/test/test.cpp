@@ -10,6 +10,30 @@ using namespace Marmot;
 using namespace Marmot::Materials;
 using namespace Marmot::Testing;
 
+static Matrix6d tensor3333ToVoigt( const Fastor::Tensor< double, 3, 3, 3, 3 >& C )
+{
+  Matrix6d V;
+  int      map[6][2] = { { 0, 0 }, { 1, 1 }, { 2, 2 }, { 0, 1 }, { 0, 2 }, { 1, 2 } };
+  for ( int i = 0; i < 6; ++i ) {
+    for ( int j = 0; j < 6; ++j ) {
+      V( i, j ) = C( map[i][0], map[i][1], map[j][0], map[j][1] );
+    }
+  }
+  return V;
+}
+
+static Vector6d tensor331ToVoigt( const Fastor::Tensor< double, 3, 3, 1 >& D )
+{
+  Vector6d V;
+  V( 0 ) = D( 0, 0, 0 );
+  V( 1 ) = D( 1, 1, 0 );
+  V( 2 ) = D( 2, 2, 0 );
+  V( 3 ) = D( 0, 1, 0 );
+  V( 4 ) = D( 0, 2, 0 );
+  V( 5 ) = D( 1, 2, 0 );
+  return V;
+}
+
 using Mat = MarmotMaterialGradientPlasticityHypoElastic< 1 >;
 using Res = Mat::response;
 using Tan = Mat::tangents;
@@ -23,8 +47,8 @@ static GradientVonMises makeMaterial( const std::vector< double >& props )
 static void initializeResponse( const GradientVonMises& mat, Res& res, std::vector< double >& stateVars )
 {
   stateVars.assign( mat.getNumberOfRequiredStateVars(), 0.0 );
-  res.stress               = Vector6d::Zero();
-  res.f                    = Eigen::Vector< double, 1 >::Zero();
+  res.stress               = 0.0;
+  res.f                    = 0.0;
   res.stateVars            = stateVars.data();
   res.elasticEnergyDensity = 0.0;
   res.dissipation          = 0.0;
@@ -41,7 +65,15 @@ static std::tuple< Vector6d, double, Tan > evaluateModel( const GradientVonMises
 
   initializeResponse( mat, res, stateVars );
 
-  inc.dStrain             = dStrain;
+  Fastor::Tensor< double, 3, 3 > strainTensor;
+  strainTensor( 0, 0 ) = dStrain( 0 );
+  strainTensor( 1, 1 ) = dStrain( 1 );
+  strainTensor( 2, 2 ) = dStrain( 2 );
+  strainTensor( 0, 1 ) = strainTensor( 1, 0 ) = dStrain( 3 ) * 0.5;
+  strainTensor( 0, 2 ) = strainTensor( 2, 0 ) = dStrain( 4 ) * 0.5;
+  strainTensor( 1, 2 ) = strainTensor( 2, 1 ) = dStrain( 5 ) * 0.5;
+  inc.dStrain                                 = strainTensor;
+
   inc.dLambda( 0 )        = dLambda;
   inc.laplaceDLambda( 0 ) = 0.0;
   inc.time                = 0.0;
@@ -49,7 +81,14 @@ static std::tuple< Vector6d, double, Tan > evaluateModel( const GradientVonMises
 
   mat.computeStress( res, tan, inc );
 
-  return { res.stress, res.f( 0 ), tan };
+  Vector6d stressVoigt;
+  stressVoigt( 0 ) = res.stress( 0, 0 );
+  stressVoigt( 1 ) = res.stress( 1, 1 );
+  stressVoigt( 2 ) = res.stress( 2, 2 );
+  stressVoigt( 3 ) = res.stress( 0, 1 );
+  stressVoigt( 4 ) = res.stress( 0, 2 );
+  stressVoigt( 5 ) = res.stress( 1, 2 );
+  return { stressVoigt, res.f( 0 ), tan };
 }
 
 void testGradientVonMisesTangentByNumericalDifferentiation()
@@ -87,11 +126,15 @@ void testGradientVonMisesTangentByNumericalDifferentiation()
   const Matrix6d dStressddStrainNum = jacNum.block< 6, 6 >( 0, 0 );
   const Vector6d dStressddLambdaNum = jacNum.block< 6, 1 >( 0, 6 );
 
-  throwExceptionOnFailure( checkIfEqual< double >( tanRef.dStressddStrain, dStressddStrainNum, 5e-5 ),
+  throwExceptionOnFailure( checkIfEqual< double >( tensor3333ToVoigt( tanRef.dStressddStrain ),
+                                                   dStressddStrainNum,
+                                                   5e-5 ),
                            "Mismatch in dStressddStrain vs numerical Jacobian in " +
                              std::string( __PRETTY_FUNCTION__ ) );
 
-  throwExceptionOnFailure( checkIfEqual< double >( tanRef.dStressddLambda.col( 0 ), dStressddLambdaNum, 5e-5 ),
+  throwExceptionOnFailure( checkIfEqual< double >( tensor331ToVoigt( tanRef.dStressddLambda ),
+                                                   dStressddLambdaNum,
+                                                   5e-5 ),
                            "Mismatch in dStressddLambda vs numerical Jacobian in " +
                              std::string( __PRETTY_FUNCTION__ ) );
 
@@ -136,10 +179,10 @@ void testGradientVonMisesPlasticTangentByNumericalDifferentiation()
   xLambda( 0 )                       = dLambda;
   const Eigen::MatrixXd jacLambdaNum = centralDifference( stressOfLambda, xLambda );
 
-  const double relErrStrain = ( tanRef.dStressddStrain - jacStrainNum ).norm() /
-                              std::max( tanRef.dStressddStrain.norm(), 1.0 );
-  const double relErrLambda = ( tanRef.dStressddLambda.col( 0 ) - jacLambdaNum.col( 0 ) ).norm() /
-                              std::max( tanRef.dStressddLambda.col( 0 ).norm(), 1.0 );
+  const double relErrStrain = ( tensor3333ToVoigt( tanRef.dStressddStrain ) - jacStrainNum ).norm() /
+                              std::max( tensor3333ToVoigt( tanRef.dStressddStrain ).norm(), 1.0 );
+  const double relErrLambda = ( tensor331ToVoigt( tanRef.dStressddLambda ) - jacLambdaNum.col( 0 ) ).norm() /
+                              std::max( tensor331ToVoigt( tanRef.dStressddLambda ).norm(), 1.0 );
 
   throwExceptionOnFailure( relErrStrain < 5e-2,
                            MakeString() << "Mismatch in plastic dStressddStrain vs numerical Jacobian (rel err = "

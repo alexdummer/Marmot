@@ -44,6 +44,7 @@
 
 using namespace Marmot;
 using namespace Eigen;
+using namespace FastorStandardTensors;
 
 namespace Marmot::Elements {
 
@@ -119,23 +120,21 @@ namespace Marmot::Elements {
       class QPStateVarManager : public MarmotStateVarVectorManager {
 
         inline const static auto layout = makeLayout( {
-          { .name = "stress", .length = 6 },
-          { .name = "strain", .length = 6 },
+          { .name = "stress", .length = 9 },
+          { .name = "strain", .length = 9 },
           { .name = "total strain energy", .length = 1 },
           { .name = "elastic strain energy", .length = 1 },
           { .name = "dissipation", .length = 1 },
-          { .name = "augLagrangeMultiplier", .length = nDim },
           { .name = "begin of material state", .length = 0 },
         } );
 
       public:
-        mVector6d                                   stress;
-        mVector6d                                   strain;
-        double&                                     totalStrainEnergy;
-        double&                                     elasticStrainEnergy;
-        double&                                     dissipation;
-        Eigen::Map< Eigen::Vector< double, nDim > > augLagrangeMultiplier;
-        Eigen::Map< Eigen::VectorXd >               materialStateVars;
+        TensorMap33d                  stress;
+        TensorMap33d                  strain;
+        double&                       totalStrainEnergy;
+        double&                       elasticStrainEnergy;
+        double&                       dissipation;
+        Eigen::Map< Eigen::VectorXd > materialStateVars;
 
         static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
 
@@ -146,7 +145,6 @@ namespace Marmot::Elements {
             totalStrainEnergy( find( "total strain energy" ) ),
             elasticStrainEnergy( find( "elastic strain energy" ) ),
             dissipation( find( "dissipation" ) ),
-            augLagrangeMultiplier( &find( "augLagrangeMultiplier" ) ),
             materialStateVars( &find( "begin of material state" ),
                                nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() )
         {
@@ -362,73 +360,25 @@ namespace Marmot::Elements {
 
     void computeKernels( const double* QTotal_, const double* dQ_, double* Pe_, double* Ke_, double time, double dT )
     {
+      using namespace Marmot::FastorIndices;
+
+      using Bijk    = Fastor::Index< B_, i_, j_, k_ >;
+      using to_iAkB = Fastor::OIndex< i_, A_, k_, B_ >;
+      using to_iAB  = Fastor::OIndex< i_, A_, B_ >;
+      using to_AiB  = Fastor::OIndex< A_, i_, B_ >;
+      using to_iAjB = Fastor::OIndex< i_, A_, j_, B_ >;
+
       Map< const RhsSized > QTotal( QTotal_ );
       Map< const RhsSized > dQ( dQ_ );
       Map< KeSizedMatrix >  Ke( Ke_ );
       Map< RhsSized >       Pe( Pe_ );
 
-      //   // call computeYourselfExplicit size of QTotal times to compute Ke with finite difference
+      const auto qU_np = Fastor::TensorMap< const double, nNodesU, nDim >( dQ.data() );
+      const auto qL_np = Fastor::TensorMap< const double, nNodesL >( dQ.data() + sizeDoFU );
+      const auto qG_np = Fastor::TensorMap< const double, nNodesG, nDim >( dQ.data() + sizeDoFU + sizeDoFL );
 
-      //   const int nStateVarsPerQp = getNumberOfRequiredStateVars() / qps.size();
-
-      //   // copy state variables to restore after finite difference perturbation
-      //   std::vector< double > stateVarsBackup( qps.size() * nStateVarsPerQp );
-      //   for ( size_t i = 0; i < qps.size(); i++ ) {
-      //     const auto& qp = qps[i];
-      //     std::copy( qp.managedStateVars->stress.data(),
-      //                qp.managedStateVars->stress.data() + nStateVarsPerQp,
-      //                stateVarsBackup.data() + ( i * nStateVarsPerQp ) );
-      //   }
-
-      //   auto resetStateVars = [&]() {
-      //     for ( size_t i = 0; i < qps.size(); i++ ) {
-      //       auto& qp = qps[i];
-      //       std::copy( stateVarsBackup.data() + ( i * nStateVarsPerQp ),
-      //                  stateVarsBackup.data() + ( ( i + 1 ) * nStateVarsPerQp ),
-      //                  qp.managedStateVars->stress.data() );
-      //     }
-      //   };
-
-      //   RhsSized dQ_per     = dQ;
-      //   RhsSized QTotal_per = QTotal;
-      //   for ( int i = 0; i < sizeLoadVector; i++ ) {
-      //     double volatile perturbation = 1e-8;
-      //     dQ_per( i ) += perturbation;     // perturb the i-th DoF
-      //     QTotal_per( i ) += perturbation; // also perturb QTotal to ensure consistent state for
-      //     computeYourselfExplicit RhsSized PePlus( Pe ); RhsSized PeMinus( Pe );
-      //     // restore state variables to ensure consistent state for each evaluation of computeYourselfExplicit
-      //     // VectorXd stateVarsBeforeReset= Eigen::Map<Eigen::VectorXd>( qps[0].managedStateVars->stress.data(),
-      //     nStateVarsPerQp );
-      //     // std::cout << "statevars before reset: " << stateVarsBeforeReset.transpose() << std::endl;
-      //     resetStateVars();
-      //     // VectorXd stateVarsAfterReset= Eigen::Map<Eigen::VectorXd>( qps[0].managedStateVars->stress.data(),
-      //     nStateVarsPerQp );
-      //     // std::cout << "statevars after reset: " << stateVarsAfterReset.transpose() << std::endl;
-
-      //     computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PePlus.data(), time, dT, pNewDT );
-      //     dQ_per( i ) -= 2 * perturbation;     // perturb in the negative direction for central difference
-      //     QTotal_per( i ) -= 2 * perturbation; // also perturb QTotal in the negative direction for consistent state
-
-      //     resetStateVars(); // reset state variables again before the next evaluation of computeYourselfExplicit with
-      //                       // negative perturbation
-      //     computeYourselfExplicit( QTotal_per.data(), dQ_per.data(), PeMinus.data(), time, dT, pNewDT );
-      //     for ( int j = 0; j < sizeLoadVector; j++ ) {
-      //       Ke( j, i ) = -( PePlus( j ) - PeMinus( j ) ) / ( 2 * perturbation );
-      //     }
-      //     QTotal_per( i ) += perturbation; // reset QTotal for next iteration
-      //     dQ_per( i ) += perturbation;     // add back the perturbation for the next iteration
-      //   }
-      //   resetStateVars(); // final reset of state variables to original state after finite difference approximation
-      //   is done computeYourselfExplicit( QTotal_, dQ_, Pe_, time, dT, pNewDT );
-      // }
-
-      const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
-      const Ref< const LSizedVector > qL( QTotal.segment( sizeDoFU, sizeDoFL ) );
-      const Ref< const GSizedVector > qG( QTotal.tail( sizeDoFG ) );
-
-      const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
-      const Ref< const LSizedVector > dQL( dQ.segment( sizeDoFU, sizeDoFL ) );
-      const Ref< const GSizedVector > dQG( dQ.tail( sizeDoFG ) );
+      const auto QG_np = Fastor::TensorMap< const double, nNodesG, nDim >( QTotal.data() + sizeDoFU + sizeDoFL );
+      const auto QL_np = Fastor::TensorMap< const double, nNodesL >( QTotal.data() + sizeDoFU );
 
       Ref< Matrix< double, sizeDoFU, sizeDoFU > > KUU( Ke.topLeftCorner( sizeDoFU, sizeDoFU ) );
       Ref< Matrix< double, sizeDoFU, sizeDoFL > > KUL( Ke.block( 0, sizeDoFU, sizeDoFU, sizeDoFL ) );
@@ -440,9 +390,19 @@ namespace Marmot::Elements {
       Ref< Matrix< double, sizeDoFG, sizeDoFL > > KGL( Ke.block( sizeDoFU + sizeDoFL, sizeDoFU, sizeDoFG, sizeDoFL ) );
       Ref< Matrix< double, sizeDoFG, sizeDoFG > > KGG( Ke.bottomRightCorner( sizeDoFG, sizeDoFG ) );
 
-      Ref< USizedVector > fU( Pe.head( sizeDoFU ) );
-      Ref< LSizedVector > fL( Pe.segment( sizeDoFU, sizeDoFL ) );
-      Ref< GSizedVector > fG( Pe.tail( sizeDoFG ) );
+      Fastor::TensorMap< double, nNodesU, nDim > r_U( Pe.data() );
+      Fastor::TensorMap< double, nNodesL >       r_L( Pe.data() + sizeDoFU );
+      Fastor::TensorMap< double, nNodesG, nDim > r_G( Pe.data() + sizeDoFU + sizeDoFL );
+
+      Fastor::Tensor< double, nDim, nNodesU, nDim, nNodesU > k_UU( 0.0 );
+      Fastor::Tensor< double, nDim, nNodesU, nNodesL >       k_UL( 0.0 );
+      Fastor::Tensor< double, nDim, nNodesU, nDim, nNodesG > k_UG( 0.0 );
+      Fastor::Tensor< double, nNodesL, nDim, nNodesU >       k_LU( 0.0 );
+      Fastor::Tensor< double, nNodesL, nNodesL >             k_LL( 0.0 );
+      Fastor::Tensor< double, nNodesL, nDim, nNodesG >       k_LG( 0.0 );
+      Fastor::Tensor< double, nDim, nNodesG, nDim, nNodesU > k_GU( 0.0 );
+      Fastor::Tensor< double, nDim, nNodesG, nNodesL >       k_GL( 0.0 );
+      Fastor::Tensor< double, nDim, nNodesG, nDim, nNodesG > k_GG( 0.0 );
 
       using response  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::response;
       using tangents  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::tangents;
@@ -451,34 +411,48 @@ namespace Marmot::Elements {
       const double penalty = 1e11;
 
       for ( auto& qp : qps ) {
-        const BSizedU&     B     = qp.B_U;
-        const NSizedL&     N     = qp.N_L;
-        const dNdXiSizedL& dNdX  = qp.dNdX_L;
-        const auto         NVec  = localGeometryElementG.NB( qp.N_G );
-        const dNdXiSizedG& dNdXG = qp.dNdX_G;
+        const auto dNdX_U = Fastor::Tensor< double, nDim, nNodesU >( qp.dNdX_U.data(), Fastor::ColumnMajor );
+        const auto N_L    = Fastor::Tensor< double, nNodesL >( qp.N_L.data() );
+        const auto dNdX_L = Fastor::Tensor< double, nDim, nNodesL >( qp.dNdX_L.data(), Fastor::ColumnMajor );
+        const auto N_G    = Fastor::Tensor< double, nNodesG >( qp.N_G.data() );
+        const auto dNdX_G = Fastor::Tensor< double, nDim, nNodesG >( qp.dNdX_G.data(), Fastor::ColumnMajor );
 
-        Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
-        for ( int a = 0; a < nNodesG; a++ ) {
-          for ( int i = 0; i < nDim; i++ ) {
-            divOperator( 0, a * nDim + i ) = dNdXG( i, a );
+        const auto gradU = Fastor::evaluate( Fastor::einsum< Ai, jA >( qU_np, dNdX_U ) );
+
+        Tensor33d dStrain = Tensor33d( 0.0 );
+        for ( int i = 0; i < nDim; i++ ) {
+          for ( int j = 0; j < nDim; j++ ) {
+            dStrain( i, j ) = 0.5 * ( gradU( i, j ) + gradU( j, i ) );
           }
         }
 
-        Voigt dE = B * dQU;
+        Fastor::Tensor< double, nDim, nDim, nNodesU, nDim > dStrain_dU;
+        for ( int i = 0; i < nDim; i++ ) {
+          for ( int j = 0; j < nDim; j++ ) {
+            for ( int n = 0; n < nNodesU; n++ ) {
+              for ( int d = 0; d < nDim; d++ ) {
+                dStrain_dU( i, j, n, d ) = 0.5 * ( dNdX_U( d, n ) * Spatial3D::I( i, j ) +
+                                                   dNdX_U( i, n ) * Spatial3D::I( j, d ) );
+              }
+            }
+          }
+        }
 
-        const double lambdaIncrement        = ( N * dQL )( 0 );
-        const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
+        const double lambdaIncrement        = Fastor::evaluate( Fastor::einsum< A, A >( N_L, qL_np ) ).toscalar();
+        const double laplaceLambdaIncrement = Fastor::evaluate( Fastor::einsum< iA, Ai >( dNdX_G, qG_np ) ).toscalar();
 
-        // const auto&                     gamma          = qp.managedStateVars->augLagrangeMultiplier;
-        const Matrix< double, nDim, 1 > cConstraint    = NVec * dQG - dNdX * dQL;
-        const Matrix< double, nDim, 1 > augmentedForce = penalty * cConstraint;
+        auto N_times_qG    = Fastor::evaluate( Fastor::einsum< A, Ai >( N_G, qG_np ) );
+        auto dNdX_times_qL = Fastor::evaluate( Fastor::einsum< iA, A >( dNdX_L, qL_np ) );
+
+        Fastor::Tensor< double, nDim > cConstraint    = N_times_qG - dNdX_times_qL;
+        Fastor::Tensor< double, nDim > augmentedForce = penalty * cConstraint;
 
         response  res;
         tangents  tan;
         increment inc;
 
-        res.stress = qp.managedStateVars->stress;
-        res.f.setZero();
+        res.stress               = qp.managedStateVars->stress;
+        res.f                    = 0.0;
         res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
         res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
         res.stateVars            = qp.managedStateVars->materialStateVars.data();
@@ -487,139 +461,170 @@ namespace Marmot::Elements {
         inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
         inc.time                = time;
         inc.dT                  = dT;
-
-        Voigt  stress       = Voigt::Zero();
-        CSized C            = CSized::Zero();
-        Voigt  dSdLambda    = Voigt::Zero();
-        Voigt  dSdLaplacian = Voigt::Zero();
-        Matrix< double, 1, ParentGeometryElement::voigtSize >
-          dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
+        inc.dStrain             = dStrain;
 
         if constexpr ( nDim == 2 ) {
-          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-          inc.dStrain  = dE6;
-
           if ( sectionType == SectionType::PlaneStress ) {
             qp.material->computePlaneStress( res, tan, inc );
-            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-            C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
-            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                      .transpose();
           }
           else if ( sectionType == SectionType::PlaneStrain ) {
-
             qp.material->computeStress( res, tan, inc );
-            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-            C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                      .transpose();
           }
           else {
             throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
           }
         }
-        else if ( nDim == 3 ) {
+        else if constexpr ( nDim == 3 ) {
           if ( sectionType != SectionType::Solid )
             throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
-
-          inc.dStrain = dE;
           qp.material->computeStress( res, tan, inc );
-          stress       = res.stress;
-          C            = tan.dStressddStrain;
-          dSdLambda    = tan.dStressddLambda.col( 0 );
-          dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-          dFddE        = tan.dFddStrain.row( 0 );
         }
 
-        // cout all tangents for debugging
-        using namespace std;
+        Fastor::Tensor< double, nDim, nDim > stress_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            stress_nDim( i, j ) = res.stress( i, j );
+
+        Fastor::Tensor< double, nDim, nDim, nDim, nDim > C_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            for ( int k = 0; k < nDim; ++k )
+              for ( int l = 0; l < nDim; ++l )
+                C_nDim( i, j, k, l ) = tan.dStressddStrain( i, j, k, l );
+
+        Fastor::Tensor< double, nDim, nDim > dSdLambda_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            dSdLambda_nDim( i, j ) = tan.dStressddLambda( i, j, 0 );
+
+        Fastor::Tensor< double, nDim, nDim > dSdLaplacian_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            dSdLaplacian_nDim( i, j ) = tan.dStressddLaplacian( i, j, 0 );
+
+        Fastor::Tensor< double, nDim, nDim > dFddE_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            dFddE_nDim( i, j ) = tan.dFddStrain( 0, i, j );
 
         const double f          = res.f( 0 );
         const double dFddLambda = tan.dFddLambda( 0, 0 );
         const double dFddLap    = tan.dFddLaplacian( 0, 0 );
 
-        fU -= B.transpose() * stress * qp.J0xW;
-        fL -= ( N.transpose() * f - dNdX.transpose() * augmentedForce ) * qp.J0xW;
-        fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
+        r_U += Fastor::evaluate( Fastor::einsum< iA, ij >( dNdX_U, stress_nDim ) ) * qp.J0xW;
+        r_L += ( N_L * f - Fastor::evaluate( Fastor::einsum< iA, i >( dNdX_L, augmentedForce ) ) ) * qp.J0xW;
+        r_G += Fastor::evaluate( Fastor::einsum< A, i >( N_G, augmentedForce ) ) * qp.J0xW;
 
-        KUU += B.transpose() * C * B * qp.J0xW;
-        KUL += B.transpose() * dSdLambda * N * qp.J0xW;
-        KUG += B.transpose() * dSdLaplacian * divOperator * qp.J0xW;
+        auto dStress_dU = Fastor::evaluate( Fastor::einsum< ijkl, klmn >( C_nDim, dStrain_dU ) );
+        k_UU += Fastor::evaluate( Fastor::einsum< iA, ijkB, to_jAkB >( dNdX_U, dStress_dU ) ) * qp.J0xW;
 
-        KLU += N.transpose() * dFddE * B * qp.J0xW;
-        KLL += ( N.transpose() * dFddLambda * N + penalty * dNdX.transpose() * dNdX ) * qp.J0xW;
-        KLG += ( N.transpose() * dFddLap * divOperator - penalty * dNdX.transpose() * NVec ) * qp.J0xW;
+        k_UL += Fastor::evaluate( Fastor::einsum< jA, ij, B, to_iAB >( dNdX_U, dSdLambda_nDim, N_L ) ) * qp.J0xW;
 
-        KGU += Matrix< double, sizeDoFG, sizeDoFU >::Zero();
-        KGL += ( -penalty * NVec.transpose() * dNdX ) * qp.J0xW;
-        KGG += ( penalty * NVec.transpose() * NVec ) * qp.J0xW;
+        auto divOp_G_trans = Fastor::evaluate( Fastor::einsum< jB, ij >( dNdX_G, dSdLaplacian_nDim ) );
+        k_UG += Fastor::evaluate( Fastor::einsum< jA, iB, to_iAkB >( dNdX_U, divOp_G_trans ) ) * qp.J0xW;
+
+        auto dF_dU = Fastor::evaluate( Fastor::einsum< ij, jB >( dFddE_nDim, dNdX_U ) );
+        k_LU += Fastor::evaluate( Fastor::einsum< A, iB, to_AiB >( N_L, dF_dU ) ) * qp.J0xW;
+
+        k_LL += ( Fastor::evaluate( Fastor::einsum< A, B >( N_L, N_L ) ) * dFddLambda +
+                  penalty * Fastor::evaluate( Fastor::einsum< iA, iB >( dNdX_L, dNdX_L ) ) ) *
+                qp.J0xW;
+
+        k_LG += ( Fastor::evaluate( Fastor::einsum< A, iB >( N_L, dNdX_G ) ) * dFddLap -
+                  penalty * Fastor::evaluate( Fastor::einsum< iA, B, to_AiB >( dNdX_L, N_G ) ) ) *
+                qp.J0xW;
+
+        k_GU += Fastor::Tensor< double, nDim, nNodesG, nDim, nNodesU >( 0.0 );
+
+        k_GL += ( -penalty * Fastor::evaluate( Fastor::einsum< A, iB, to_iAB >( N_G, dNdX_L ) ) ) * qp.J0xW;
+
+        k_GG += ( penalty *
+                  Fastor::evaluate( Fastor::einsum< A, B, ij, to_iAjB >( N_G,
+                                                                         N_G,
+                                                                         Fastor::Tensor< double, nDim, nDim >(
+                                                                           Marmot::FastorStandardTensors::Spatial3D::
+                                                                             I( Fastor::fseq< 0, nDim >(),
+                                                                                Fastor::fseq< 0, nDim >() ) ) ) ) ) *
+                qp.J0xW;
 
         qp.managedStateVars->stress              = res.stress;
         qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
         qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
         qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
-        qp.managedStateVars
-          ->strain += ContinuumMechanics::VoigtNotation::make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-        qp.managedStateVars->augLagrangeMultiplier = augmentedForce;
+        qp.managedStateVars->strain += dStrain;
       }
+
+      KUU += Map< Matrix< double, sizeDoFU, sizeDoFU > >( Fastor::torowmajor( k_UU ).data() );
+      KUL += Map< Matrix< double, sizeDoFU, sizeDoFL > >( Fastor::torowmajor( k_UL ).data() );
+      KUG += Map< Matrix< double, sizeDoFU, sizeDoFG > >( Fastor::torowmajor( k_UG ).data() );
+      KLU += Map< Matrix< double, sizeDoFL, sizeDoFU > >( Fastor::torowmajor( k_LU ).data() );
+      KLL += Map< Matrix< double, sizeDoFL, sizeDoFL > >( Fastor::torowmajor( k_LL ).data() );
+      KLG += Map< Matrix< double, sizeDoFL, sizeDoFG > >( Fastor::torowmajor( k_LG ).data() );
+      KGU += Map< Matrix< double, sizeDoFG, sizeDoFU > >( Fastor::torowmajor( k_GU ).data() );
+      KGL += Map< Matrix< double, sizeDoFG, sizeDoFL > >( Fastor::torowmajor( k_GL ).data() );
+      KGG += Map< Matrix< double, sizeDoFG, sizeDoFG > >( Fastor::torowmajor( k_GG ).data() );
     }
 
     void computeKernelsExplicit( const double* QTotal_, const double* dQ_, double* Pe_, double time, double dT )
     {
+      using namespace Marmot::FastorIndices;
+
+      using Bijk    = Fastor::Index< B_, i_, j_, k_ >;
+      using to_iAkB = Fastor::OIndex< i_, A_, k_, B_ >;
+      using to_iAB  = Fastor::OIndex< i_, A_, B_ >;
+      using to_AiB  = Fastor::OIndex< A_, i_, B_ >;
+      using to_iAjB = Fastor::OIndex< i_, A_, j_, B_ >;
+
       Map< const RhsSized > QTotal( QTotal_ );
       Map< const RhsSized > dQ( dQ_ );
       Map< RhsSized >       Pe( Pe_ );
 
-      const Ref< const USizedVector > qU( QTotal.head( sizeDoFU ) );
-      const Ref< const LSizedVector > qL( QTotal.segment( sizeDoFU, sizeDoFL ) );
-      const Ref< const GSizedVector > qG( QTotal.tail( sizeDoFG ) );
+      const auto qU_np = Fastor::TensorMap< const double, nNodesU, nDim >( dQ.data() );
+      const auto qL_np = Fastor::TensorMap< const double, nNodesL >( dQ.data() + sizeDoFU );
+      const auto qG_np = Fastor::TensorMap< const double, nNodesG, nDim >( dQ.data() + sizeDoFU + sizeDoFL );
 
-      const Ref< const USizedVector > dQU( dQ.head( sizeDoFU ) );
-      const Ref< const LSizedVector > dQL( dQ.segment( sizeDoFU, sizeDoFL ) );
-      const Ref< const GSizedVector > dQG( dQ.tail( sizeDoFG ) );
-      Ref< USizedVector >             fU( Pe.head( sizeDoFU ) );
-      Ref< LSizedVector >             fL( Pe.segment( sizeDoFU, sizeDoFL ) );
-      Ref< GSizedVector >             fG( Pe.tail( sizeDoFG ) );
+      const auto QG_np = Fastor::TensorMap< const double, nNodesG, nDim >( QTotal.data() + sizeDoFU + sizeDoFL );
+      const auto QL_np = Fastor::TensorMap< const double, nNodesL >( QTotal.data() + sizeDoFU );
+
+      Fastor::TensorMap< double, nNodesU, nDim > r_U( Pe.data() );
+      Fastor::TensorMap< double, nNodesL >       r_L( Pe.data() + sizeDoFU );
+      Fastor::TensorMap< double, nNodesG, nDim > r_G( Pe.data() + sizeDoFU + sizeDoFL );
 
       using response  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::response;
-      using tangents  = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::tangents;
       using increment = typename MarmotMaterialGradientPlasticityHypoElastic< 1 >::increment;
 
-      const double penalty = 1e12;
+      const double penalty = 1e11;
 
       for ( auto& qp : qps ) {
-        const BSizedU&     B     = qp.B_U;
-        const NSizedL&     N     = qp.N_L;
-        const dNdXiSizedL& dNdX  = qp.dNdX_L;
-        const auto         NVec  = localGeometryElementG.NB( qp.N_G );
-        const dNdXiSizedG& dNdXG = qp.dNdX_G;
+        const auto dNdX_U = Fastor::Tensor< double, nDim, nNodesU >( qp.dNdX_U.data(), Fastor::ColumnMajor );
+        const auto N_L    = Fastor::Tensor< double, nNodesL >( qp.N_L.data() );
+        const auto dNdX_L = Fastor::Tensor< double, nDim, nNodesL >( qp.dNdX_L.data(), Fastor::ColumnMajor );
+        const auto N_G    = Fastor::Tensor< double, nNodesG >( qp.N_G.data() );
+        const auto dNdX_G = Fastor::Tensor< double, nDim, nNodesG >( qp.dNdX_G.data(), Fastor::ColumnMajor );
 
-        Matrix< double, 1, sizeDoFG > divOperator = Matrix< double, 1, sizeDoFG >::Zero();
-        for ( int a = 0; a < nNodesG; a++ ) {
-          for ( int i = 0; i < nDim; i++ ) {
-            divOperator( 0, a * nDim + i ) = dNdXG( i, a );
+        const auto gradU = Fastor::evaluate( Fastor::einsum< Ai, jA >( qU_np, dNdX_U ) );
+
+        Tensor33d dStrain = Tensor33d( 0.0 );
+        for ( int i = 0; i < nDim; i++ ) {
+          for ( int j = 0; j < nDim; j++ ) {
+            dStrain( i, j ) = 0.5 * ( gradU( i, j ) + gradU( j, i ) );
           }
         }
 
-        Voigt dE = B * dQU;
+        const double lambdaIncrement        = Fastor::evaluate( Fastor::einsum< A, A >( N_L, qL_np ) ).toscalar();
+        const double laplaceLambdaIncrement = Fastor::evaluate( Fastor::einsum< iA, Ai >( dNdX_G, qG_np ) ).toscalar();
 
-        const double lambdaIncrement        = ( N * dQL )( 0 );
-        const double laplaceLambdaIncrement = ( divOperator * dQG )( 0 );
+        auto N_times_qG    = Fastor::evaluate( Fastor::einsum< A, Ai >( N_G, QG_np ) );
+        auto dNdX_times_qL = Fastor::evaluate( Fastor::einsum< iA, A >( dNdX_L, QL_np ) );
 
-        // const auto&                     gamma          = qp.managedStateVars->augLagrangeMultiplier;
-        const Matrix< double, nDim, 1 > cConstraint    = NVec * qG - dNdX * qL;
-        const Matrix< double, nDim, 1 > augmentedForce = penalty * cConstraint;
+        Fastor::Tensor< double, nDim > cConstraint    = N_times_qG - dNdX_times_qL;
+        Fastor::Tensor< double, nDim > augmentedForce = penalty * cConstraint;
 
         response  res;
-        tangents  tan;
         increment inc;
 
-        res.stress = qp.managedStateVars->stress;
-        res.f.setZero();
+        res.stress               = qp.managedStateVars->stress;
+        res.f                    = 0.0;
         res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
         res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
         res.stateVars            = qp.managedStateVars->materialStateVars.data();
@@ -628,75 +633,38 @@ namespace Marmot::Elements {
         inc.laplaceDLambda( 0 ) = laplaceLambdaIncrement;
         inc.time                = time;
         inc.dT                  = dT;
-
-        Voigt  stress       = Voigt::Zero();
-        CSized C            = CSized::Zero();
-        Voigt  dSdLambda    = Voigt::Zero();
-        Voigt  dSdLaplacian = Voigt::Zero();
-        Matrix< double, 1, ParentGeometryElement::voigtSize >
-          dFddE = Matrix< double, 1, ParentGeometryElement::voigtSize >::Zero();
+        inc.dStrain             = dStrain;
 
         if constexpr ( nDim == 2 ) {
-          Vector6d dE6 = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-          inc.dStrain  = dE6;
-
           if ( sectionType == SectionType::PlaneStress ) {
-            qp.material->computePlaneStress( res, tan, inc );
-            stress       = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-            C            = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
-            dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-            dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-            dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0 ).transpose() )
-                      .transpose();
+            qp.material->computePlaneStressExplicit( res, inc );
           }
           else if ( sectionType == SectionType::PlaneStrain ) {
-
-            qp.material->computeStress( res, tan, inc );
-            stress = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-            // C            = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
-            // dSdLambda    = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLambda.col( 0 ) );
-            // dSdLaplacian = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dStressddLaplacian.col( 0 ) );
-            // dFddE        = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( tan.dFddStrain.row( 0
-            // ).transpose() ) .transpose();
-          }
-          else {
-            throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );
+            qp.material->computeStressExplicit( res, inc );
           }
         }
-        else if ( nDim == 3 ) {
-          if ( sectionType != SectionType::Solid )
-            throw std::invalid_argument( "Invalid section type for 3D element, expected Solid" );
-
-          inc.dStrain = dE;
-          qp.material->computeStress( res, tan, inc );
-          stress = res.stress;
-          // C            = tan.dStressddStrain;
-          // dSdLambda    = tan.dStressddLambda.col( 0 );
-          // dSdLaplacian = tan.dStressddLaplacian.col( 0 );
-          // dFddE        = tan.dFddStrain.row( 0 );
+        else if constexpr ( nDim == 3 ) {
+          qp.material->computeStressExplicit( res, inc );
         }
 
-        // cout all tangents for debugging
-        using namespace std;
+        Fastor::Tensor< double, nDim, nDim > stress_nDim;
+        for ( int i = 0; i < nDim; ++i )
+          for ( int j = 0; j < nDim; ++j )
+            stress_nDim( i, j ) = res.stress( i, j );
 
         const double f = res.f( 0 );
-        // const double dFddLambda = tan.dFddLambda( 0, 0 );
-        // const double dFddLap    = tan.dFddLaplacian( 0, 0 );
 
-        fU -= B.transpose() * stress * qp.J0xW;
-        fL -= ( N.transpose() * f - dNdX.transpose() * augmentedForce ) * qp.J0xW;
-        fG -= ( NVec.transpose() * augmentedForce ) * qp.J0xW;
+        r_U -= Fastor::evaluate( Fastor::einsum< jA, ij >( dNdX_U, stress_nDim ) ) * qp.J0xW;
+        r_L -= ( N_L * f - Fastor::evaluate( Fastor::einsum< iA, i >( dNdX_L, augmentedForce ) ) ) * qp.J0xW;
+        r_G -= Fastor::evaluate( Fastor::einsum< A, i >( N_G, augmentedForce ) ) * qp.J0xW;
 
         qp.managedStateVars->stress              = res.stress;
         qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
         qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
         qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
-        qp.managedStateVars
-          ->strain += ContinuumMechanics::VoigtNotation::make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-        qp.managedStateVars->augLagrangeMultiplier = augmentedForce;
+        qp.managedStateVars->strain += dStrain;
       }
     }
-
     void computeDistributedLoad( MarmotElement::DistributedLoadTypes loadType,
                                  double*                             P,
                                  double*                             K,
@@ -836,8 +804,8 @@ namespace Marmot::Elements {
           characteristicElementLength = 2 * qp.detJ;
 
         response waveSpeedResponse;
-        waveSpeedResponse.stress = qp.managedStateVars->stress;
-        waveSpeedResponse.f.setZero();
+        waveSpeedResponse.stress               = Tensor33d( qp.managedStateVars->stress.data() );
+        waveSpeedResponse.f                    = 0;
         waveSpeedResponse.stateVars            = qp.managedStateVars->materialStateVars.data();
         waveSpeedResponse.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
         waveSpeedResponse.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
@@ -875,9 +843,9 @@ namespace Marmot::Elements {
             const double y2    = values[3];
 
             using namespace Math;
-            qp.managedStateVars->stress( 1 ) = linearInterpolation( coordAtGauss[1], y1, y2, sigY1, sigY2 );
-            qp.managedStateVars->stress( 0 ) = values[4] * qp.managedStateVars->stress( 1 );
-            qp.managedStateVars->stress( 2 ) = values[5] * qp.managedStateVars->stress( 1 );
+            qp.managedStateVars->stress( 1, 1 ) = linearInterpolation( coordAtGauss[1], y1, y2, sigY1, sigY2 );
+            qp.managedStateVars->stress( 0, 0 ) = values[4] * qp.managedStateVars->stress( 1, 1 );
+            qp.managedStateVars->stress( 2, 2 ) = values[5] * qp.managedStateVars->stress( 1, 1 );
           }
           break;
         }

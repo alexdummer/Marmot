@@ -220,6 +220,7 @@ namespace Marmot {
     using kJ     = Fastor::Index< k_, J_ >;
     using kl     = Fastor::Index< k_, l_ >;
     using klmn   = Fastor::Index< k_, l_, m_, n_ >;
+    using klB    = Fastor::Index< k_, l_, B_ >;
     using km     = Fastor::Index< k_, m_ >;
     using l      = Fastor::Index< l_ >;
     using lB     = Fastor::Index< l_, B_ >;
