@@ -149,6 +149,21 @@ public:
     std::size_t offset; ///< Byte-offset (in units of `double`) from the beginning of the state vector.
   };
 
+  struct VarDef {
+    std::string name;
+    std::size_t length;
+  };
+
+  static MarmotStateLayoutDynamic makeLayout( std::initializer_list< VarDef > vars )
+  {
+    MarmotStateLayoutDynamic layout;
+    for ( const auto& v : vars ) {
+      layout.add( v.name, v.length );
+    }
+    layout.finalize();
+    return layout;
+  }
+
   /**
    * @brief Register a new named state variable.
    *
@@ -216,6 +231,20 @@ public:
   {
     const auto& v = getInfo( name );
     return { v.offset, v.size };
+  }
+
+  /**
+   * @brief Check if the layout contains a variable with the given name.
+   */
+  bool contains( const std::string& name ) const { return name_to_index.contains( name ); }
+
+  /**
+   * @brief Return the size/length (in units of `double`) of a registered variable.
+   */
+  std::size_t getLength( const std::string& name ) const
+  {
+    const auto& v = getInfo( name );
+    return v.size;
   }
 
   /**

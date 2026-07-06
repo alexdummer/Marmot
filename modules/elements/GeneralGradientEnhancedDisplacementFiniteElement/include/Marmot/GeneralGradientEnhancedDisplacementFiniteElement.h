@@ -133,65 +133,25 @@ namespace Marmot::Elements {
       dNdXiSizedK dNdX_K;
       BSizedK     B_K;
 
-      /**
-       * @brief Manager for per-quadrature-point state variables.
-       * @details Provides named accessors to stress \f$\sigma\f$, strain \f$\varepsilon\f$
-       * and the material state vector. The layout is [stress(6), strain(6), begin of material state(...)]
-       * in 3D Voigt notation.
-       */
-      class QPStateVarManager : public MarmotStateVarVectorManager {
+      static inline const MarmotStateLayoutDynamic stateLayout = MarmotStateLayoutDynamic::makeLayout( {
+        { .name = "stress", .length = 6 },
+        { .name = "strain", .length = 6 },
+        { .name = "total strain energy", .length = 1 },
+        { .name = "elastic strain energy", .length = 1 },
+        { .name = "dissipation", .length = 1 },
+        { .name = "begin of material state", .length = 0 },
+      } );
 
-        /// \hideinitializer
-        inline const static auto layout = makeLayout( {
-          { .name = "stress", .length = 6 },
-          { .name = "strain", .length = 6 },
-          { .name = "total strain energy", .length = 1 },
-          { .name = "elastic strain energy", .length = 1 },
-          { .name = "dissipation", .length = 1 },
-          { .name = "begin of material state", .length = 0 },
-        } );
-
-      public:
-        mVector6d                     stress;
-        mVector6d                     strain;
-        double&                       totalStrainEnergy;
-        double&                       elasticStrainEnergy;
-        double&                       dissipation;
-        Eigen::Map< Eigen::VectorXd > materialStateVars;
-
-        static int getNumberOfRequiredStateVarsQuadraturePointOnly() { return layout.nRequiredStateVars; };
-
-        QPStateVarManager( double* theStateVarVector, int nStateVars )
-          : MarmotStateVarVectorManager( theStateVarVector, layout ),
-            stress( &find( "stress" ) ),
-            strain( &find( "strain" ) ),
-            totalStrainEnergy( find( "total strain energy" ) ),
-            elasticStrainEnergy( find( "elastic strain energy" ) ),
-            dissipation( find( "dissipation" ) ),
-            materialStateVars( &find( "begin of material state" ),
-                               nStateVars - getNumberOfRequiredStateVarsQuadraturePointOnly() ){};
-      };
-
-      std::unique_ptr< QPStateVarManager > managedStateVars;
+      int stateVarOffset = 0;
 
       std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > > material;
 
-      int getNumberOfRequiredStateVarsQuadraturePointOnly()
-      {
-        return QPStateVarManager::getNumberOfRequiredStateVarsQuadraturePointOnly();
-      };
+      int getNumberOfRequiredStateVarsQuadraturePointOnly() const { return stateLayout.totalSize(); };
 
-      int getNumberOfRequiredStateVars()
+      int getNumberOfRequiredStateVars() const
       {
         return getNumberOfRequiredStateVarsQuadraturePointOnly() + material->getNumberOfRequiredStateVars();
       };
-
-      void assignStateVars( double* stateVars, int nStateVars )
-      {
-        managedStateVars = std::make_unique< QPStateVarManager >( stateVars, nStateVars );
-        /* material->assignStateVars( managedStateVars->materialStateVars.data(), */
-        /*                            managedStateVars->materialStateVars.size() ); */
-      }
 
       QuadraturePoint( XiSized xi, double weight )
         : xi( xi ),
@@ -243,7 +203,6 @@ namespace Marmot::Elements {
     std::string getElementShape() { return localGeometryElement.getElementShape(); }
 
     /** @brief Map the provided element state vector to all quadrature points. */
-    void assignStateVars( double* stateVars, int nStateVars );
 
     /** @brief Assign element properties (e.g., thickness in 2D, area in 1D). */
     void assignProperty( const ElementProperties& marmotElementProperty );
@@ -261,8 +220,9 @@ namespace Marmot::Elements {
      * @brief Initialize state or materials.
      * @param state MarmotMaterialInitialization, GeostaticStress or MarmotMaterialStateVars.
      * @param values For GeostaticStress: [sigmaY(z1), y1, sigmaY(z2), y2, kx, kz].
+     * @param stateVars Pointer to the element's state variables.
      */
-    void setInitialConditions( StateTypes state, const double* values );
+    void setInitialConditions( StateTypes state, const double* values, double* stateVars );
 
     /**
      * @brief Assemble distributed surface loads on a boundary face.
@@ -278,6 +238,7 @@ namespace Marmot::Elements {
      * @param QTotal Total DOF vector (unused).
      * @param time Current time data forwarded to materials.
      * @param dT Time increment.
+     * @param stateVars Pointer to the element's state variables.
      */
     void computeDistributedLoad( MarmotElement::DistributedLoadTypes loadType,
                                  double*                             P,
@@ -286,12 +247,14 @@ namespace Marmot::Elements {
                                  const double*                       load,
                                  const double*                       QTotal,
                                  double                              time,
-                                 double                              dT );
+                                 double                              dT,
+                                 double*                             stateVars );
 
     /**
      * @brief Assemble body force contribution.
      * @details Integrates \f$\mathbf{\fextb} = \int_{\Omega_e} \mathbf{N}^\mathsf{T} \mathbf{f}\,
      * \mathrm{d}\Omega\f$.
+     * @param stateVars Pointer to the element's state variables.
      */
     void computeBodyForce( double* P,
                            double* K,
@@ -299,7 +262,8 @@ namespace Marmot::Elements {
                            const double* load,
                            const double* QTotal,
                            double        time,
-                           double        dT );
+                           double        dT,
+                           double*       stateVars );
 
     /**
      * @brief Compute internal force and consistent tangent stiffness.
@@ -335,8 +299,15 @@ namespace Marmot::Elements {
      * @param Ke Tangent stiffness matrix (accumulated).
      * @param time Time data forwarded to materials.
      * @param dT Time increment.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeKernels( const double* QTotal, const double* dQ, double* Pe, double* Ke, double time, double dT );
+    void computeKernels( const double* QTotal,
+                         const double* dQ,
+                         double*       Pe,
+                         double*       Ke,
+                         double        time,
+                         double        dT,
+                         double*       stateVars );
 
     /**
      * @brief Compute internal force without tangents.
@@ -354,13 +325,20 @@ namespace Marmot::Elements {
      * @param Pe Internal force vector (accumulated).
      * @param time Time data forwarded to materials.
      * @param dT Time increment.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeKernelsExplicit( const double* QTotal, const double* dQ, double* Pe, double time, double dT );
+    void computeKernelsExplicit( const double* QTotal,
+                                 const double* dQ,
+                                 double*       Pe,
+                                 double        time,
+                                 double        dT,
+                                 double*       stateVars );
     /**
      * @brief Compute consistent mass matrix using material density.
      * @details \f$\mathbf{M}_e = \sum_{qp} \rho\, \mathbf{N}^\mathsf{T}\mathbf{N}\, J_0 w\f$.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeConsistentInertia( double* M );
+    void computeConsistentInertia( double* M, double* stateVars );
 
     /**
      * @brief Compute the lumped (diagonal) mass matrix.
@@ -370,8 +348,9 @@ namespace Marmot::Elements {
      * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$,
      * where \f$N\f$ is the high-order shape function and \f$N_\mathrm{lin}\f$ is the corresponding
      * linear (corner-node) shape function on the same element.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeLumpedInertia( double* M );
+    void computeLumpedInertia( double* M, double* stateVars );
 
     /**
      * @brief Compute the critical time step for explicit dynamics based on
@@ -381,21 +360,26 @@ namespace Marmot::Elements {
      * where \f$l_\mathrm{min}\f$ is the minimum characteristic element length and \f$c_\mathrm{dil}\f$
      * is the dilatational wave speed computed from the material properties at the quadrature points.
      * The minimum time step across all quadrature points is returned.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal );
+    void computeCriticalTimeStepForExplicitDynamics( double&       criticalTimeStep,
+                                                     const double* QTotal,
+                                                     double*       stateVars );
 
     /**
      * @brief Compute the internal energy of the element by summing the strain energy contributions from all quadrature
      * points.
      * @param internalEnergy Output parameter for the computed internal energy.
+     * @param stateVars Pointer to the element's state variables.
      */
-    void computeInternalEnergy( double& internalEnergy );
+    void computeInternalEnergy( double& internalEnergy, double* stateVars );
 
     /**
      * @brief Access a named state view at a quadrature point.
      * @note Using "sdv" returns the raw material state vector and is deprecated.
+     * @param stateVars Pointer to the element's state variables.
      */
-    StateView getStateView( const std::string& stateName, int qpNumber )
+    StateView getStateView( const std::string& stateName, int qpNumber, double* stateVars )
     {
       const auto& qp = qps[qpNumber];
 
@@ -403,15 +387,18 @@ namespace Marmot::Elements {
         MarmotJournal::warningToMSG( MakeString()
                                      << __PRETTY_FUNCTION__
                                      << " on 'sdv' is discouraged and deprecated, please use precise state name" );
-        return { qp.managedStateVars->materialStateVars.data(),
-                 static_cast< int >( qp.managedStateVars->materialStateVars.size() ) };
+        return { qp.stateLayout.getPtr( stateVars + qp.stateVarOffset, "begin of material state" ),
+                 qp.material->getNumberOfRequiredStateVars() };
       }
 
-      if ( qp.managedStateVars->contains( stateName ) ) {
-        return qp.managedStateVars->getStateView( stateName );
+      if ( qp.stateLayout.contains( stateName ) ) {
+        return StateView( qp.stateLayout.getPtr( stateVars + qp.stateVarOffset, stateName ),
+                          qp.stateLayout.getLength( stateName ) );
       }
       else {
-        return qp.material->getStateView( stateName, qp.managedStateVars->materialStateVars.data() );
+        return qp.material->getStateView( stateName,
+                                          qp.stateLayout.getPtr( stateVars + qp.stateVarOffset,
+                                                                 "begin of material state" ) );
       }
     }
 
@@ -443,19 +430,6 @@ namespace Marmot::Elements {
     getNumberOfRequiredStateVars()
   {
     return qps[0].getNumberOfRequiredStateVars() * qps.size();
-  }
-
-  template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
-  void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    assignStateVars( double* stateVars, int nStateVars )
-  {
-    const int nQpStateVars = nStateVars / qps.size();
-
-    for ( size_t i = 0; i < qps.size(); i++ ) {
-      auto&   qp          = qps[i];
-      double* qpStateVars = stateVars + ( i * nQpStateVars );
-      qp.assignStateVars( qpStateVars, nQpStateVars );
-    }
   }
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
@@ -570,7 +544,13 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeKernels( const double* QTotal_, const double* dQ_, double* Pe_, double* Ke_, double time, double dT )
+    computeKernels( const double* QTotal_,
+                    const double* dQ_,
+                    double*       Pe_,
+                    double*       Ke_,
+                    double        time,
+                    double        dT,
+                    double*       stateVars )
   {
 
     Map< const RhsSized > QTotal( QTotal_ );
@@ -605,7 +585,14 @@ namespace Marmot::Elements {
 
     for ( size_t i = 0; i < this->qps.size(); i++ ) {
 
-      QuadraturePoint& qp = this->qps[i];
+      QuadraturePoint&  qp          = this->qps[i];
+      double*           qpStateVars = stateVars + qp.stateVarOffset;
+      Marmot::mVector6d qpStress( qp.stateLayout.getPtr( qpStateVars, "stress" ) );
+      Marmot::mVector6d qpStrain( qp.stateLayout.getPtr( qpStateVars, "strain" ) );
+      double& qpElasticEnergy     = qp.stateLayout.template getAs< double& >( qpStateVars, "elastic strain energy" );
+      double& qpDissipation       = qp.stateLayout.template getAs< double& >( qpStateVars, "dissipation" );
+      double& qpTotalStrainEnergy = qp.stateLayout.template getAs< double& >( qpStateVars, "total strain energy" );
+      double* materialStateVars   = qp.stateLayout.getPtr( qpStateVars, "begin of material state" );
 
       const BSized&      B      = qp.B;
       const NSizedK&     N_K    = qp.N_K;
@@ -628,10 +615,10 @@ namespace Marmot::Elements {
       increment inc;
       if constexpr ( nDim == 2 ) {
         Vector6d dE6             = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-        res.stress               = qp.managedStateVars->stress;
-        res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-        res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
-        res.stateVars            = qp.managedStateVars->materialStateVars.data();
+        res.stress               = qpStress;
+        res.elasticEnergyDensity = qpElasticEnergy / qp.J0xW;
+        res.dissipation          = qpDissipation / qp.J0xW;
+        res.stateVars            = materialStateVars;
         inc                      = { dE6, K, dK, time, dT };
         CSized C                 = CSized::Zero();
         Voigt  S                 = Voigt::Zero();
@@ -678,10 +665,10 @@ namespace Marmot::Elements {
       else if ( nDim == 3 ) {
         if ( sectionType == Solid ) {
 
-          res.stress               = qp.managedStateVars->stress;
-          res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-          res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
-          res.stateVars            = qp.managedStateVars->materialStateVars.data();
+          res.stress               = qpStress;
+          res.elasticEnergyDensity = qpElasticEnergy / qp.J0xW;
+          res.dissipation          = qpDissipation / qp.J0xW;
+          res.stateVars            = materialStateVars;
           inc                      = { dE, K, dK, time, dT };
           qp.material->computeStress( res, tan, inc );
 
@@ -712,17 +699,22 @@ namespace Marmot::Elements {
         else
           throw std::invalid_argument( "Invalid section type for 3D element! Must be Solid" );
       }
-      qp.managedStateVars->stress              = res.stress;
-      qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
-      qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
-      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
-      qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+      qpStress            = res.stress;
+      qpElasticEnergy     = res.elasticEnergyDensity * qp.J0xW;
+      qpDissipation       = res.dissipation * qp.J0xW;
+      qpTotalStrainEnergy = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
+      qpStrain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
     }
   }
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeKernelsExplicit( const double* QTotal_, const double* dQ_, double* Pe_, double time, double dT )
+    computeKernelsExplicit( const double* QTotal_,
+                            const double* dQ_,
+                            double*       Pe_,
+                            double        time,
+                            double        dT,
+                            double*       stateVars )
   {
 
     Map< const RhsSized > QTotal( QTotal_ );
@@ -747,7 +739,14 @@ namespace Marmot::Elements {
 
     for ( size_t i = 0; i < this->qps.size(); i++ ) {
 
-      QuadraturePoint& qp = this->qps[i];
+      QuadraturePoint&  qp          = this->qps[i];
+      double*           qpStateVars = stateVars + qp.stateVarOffset;
+      Marmot::mVector6d qpStress( qp.stateLayout.getPtr( qpStateVars, "stress" ) );
+      Marmot::mVector6d qpStrain( qp.stateLayout.getPtr( qpStateVars, "strain" ) );
+      double& qpElasticEnergy     = qp.stateLayout.template getAs< double& >( qpStateVars, "elastic strain energy" );
+      double& qpDissipation       = qp.stateLayout.template getAs< double& >( qpStateVars, "dissipation" );
+      double& qpTotalStrainEnergy = qp.stateLayout.template getAs< double& >( qpStateVars, "total strain energy" );
+      double* materialStateVars   = qp.stateLayout.getPtr( qpStateVars, "begin of material state" );
 
       const BSized&      B      = qp.B;
       const NSizedK&     N_K    = qp.N_K;
@@ -769,10 +768,10 @@ namespace Marmot::Elements {
       increment inc;
       if constexpr ( nDim == 2 ) {
         Vector6d dE6             = ContinuumMechanics::VoigtNotation::planeVoigtToVoigt( dE );
-        res.stress               = qp.managedStateVars->stress;
-        res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-        res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
-        res.stateVars            = qp.managedStateVars->materialStateVars.data();
+        res.stress               = qpStress;
+        res.elasticEnergyDensity = qpElasticEnergy / qp.J0xW;
+        res.dissipation          = qpDissipation / qp.J0xW;
+        res.stateVars            = materialStateVars;
         inc                      = { dE6, K, dK, time, dT };
         Voigt S                  = Voigt::Zero();
 
@@ -803,10 +802,10 @@ namespace Marmot::Elements {
       else if ( nDim == 3 ) {
         if ( sectionType == Solid ) {
 
-          res.stress               = qp.managedStateVars->stress;
-          res.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-          res.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
-          res.stateVars            = qp.managedStateVars->materialStateVars.data();
+          res.stress               = qpStress;
+          res.elasticEnergyDensity = qpElasticEnergy / qp.J0xW;
+          res.dissipation          = qpDissipation / qp.J0xW;
+          res.stateVars            = materialStateVars;
           inc                      = { dE, K, dK, time, dT };
           qp.material->computeStressExplicit( res, inc );
 
@@ -824,27 +823,28 @@ namespace Marmot::Elements {
         else
           throw std::invalid_argument( "Invalid section type for 3D element! Must be Solid" );
       }
-      qp.managedStateVars->stress = res.stress;
-      qp.managedStateVars->strain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
-      qp.managedStateVars->elasticStrainEnergy = res.elasticEnergyDensity * qp.J0xW;
-      qp.managedStateVars->dissipation         = res.dissipation * qp.J0xW;
-      qp.managedStateVars->totalStrainEnergy   = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
+      qpStress = res.stress;
+      qpStrain += make3DVoigt< ParentGeometryElement::voigtSize >( dE );
+      qpElasticEnergy     = res.elasticEnergyDensity * qp.J0xW;
+      qpDissipation       = res.dissipation * qp.J0xW;
+      qpTotalStrainEnergy = ( res.elasticEnergyDensity + res.dissipation ) * qp.J0xW;
     }
   }
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeConsistentInertia( double* M )
+    computeConsistentInertia( double* M, double* stateVars )
   {
     Map< KeSizedMatrix > Me( M );
     Me.setZero();
 
     for ( const auto& qp : qps ) {
-      const auto                  N_  = localGeometryElement.NB( localGeometryElement.N( qp.xi ) );
-      const NSizedK&              N_K = qp.N_K;
-      const double                rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
+      double*        qpStateVars = stateVars + qp.stateVarOffset;
+      const auto     N_          = localGeometryElement.NB( localGeometryElement.N( qp.xi ) );
+      const NSizedK& N_K         = qp.N_K;
+      const double   rho = qp.material->getDensity( qp.stateLayout.getPtr( qpStateVars, "begin of material state" ) );
       const std::vector< double > eta = qp.material->getNonlocalViscosity(
-        qp.managedStateVars->materialStateVars.data() );
+        qp.stateLayout.getPtr( qpStateVars, "begin of material state" ) );
       Me.topLeftCorner( sizeDoFU, sizeDoFU ) += N_.transpose() * N_ * qp.J0xW * rho;
       for ( int n = 0; n < nNonlocalVariables; n++ ) {
         Eigen::Index idx = n * nNonLocalNodes;
@@ -856,7 +856,7 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeLumpedInertia( double* M )
+    computeLumpedInertia( double* M, double* stateVars )
   {
     Map< RhsSized > LMM( M );
     LMM.setZero();
@@ -864,8 +864,9 @@ namespace Marmot::Elements {
     constexpr int nNodesLinear  = ( 1 << nDim );
     auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
-      const auto N_    = localGeometryElement.N( qp.xi );
-      const auto N_lin = linGeometryEl.N( qp.xi );
+      double*    qpStateVars = stateVars + qp.stateVarOffset;
+      const auto N_          = localGeometryElement.N( qp.xi );
+      const auto N_lin       = linGeometryEl.N( qp.xi );
 
       VectorXd N_weighted = 0.5 * ( N_ );
       N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
@@ -880,9 +881,9 @@ namespace Marmot::Elements {
         N_weighted_nonlocal = N_weighted;
       }
 
-      const double                rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
+      const double rho = qp.material->getDensity( qp.stateLayout.getPtr( qpStateVars, "begin of material state" ) );
       const std::vector< double > eta = qp.material->getNonlocalViscosity(
-        qp.managedStateVars->materialStateVars.data() );
+        qp.stateLayout.getPtr( qpStateVars, "begin of material state" ) );
       VectorXd m_ = N_weighted * qp.J0xW * rho;
       for ( int i = 0; i < nNodes; i++ ) {
         for ( int d = 0; d < nDim; d++ )
@@ -899,13 +900,19 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
+    computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal, double* stateVars )
   {
     using response = typename MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables >::response;
 
     // TODO: current implementation ignores nonlocal variables
     criticalTimeStep = std::numeric_limits< double >::max();
     for ( const auto& qp : qps ) {
+      double*           qpStateVars = stateVars + qp.stateVarOffset;
+      Marmot::mVector6d qpStress( qp.stateLayout.getPtr( qpStateVars, "stress" ) );
+      double& qpElasticEnergy   = qp.stateLayout.template getAs< double& >( qpStateVars, "elastic strain energy" );
+      double& qpDissipation     = qp.stateLayout.template getAs< double& >( qpStateVars, "dissipation" );
+      double* materialStateVars = qp.stateLayout.getPtr( qpStateVars, "begin of material state" );
+
       double characteristicElementLength = 0.0;
       if constexpr ( nDim == 3 )
         characteristicElementLength = std::cbrt( 8 * qp.detJ );
@@ -914,12 +921,12 @@ namespace Marmot::Elements {
       if constexpr ( nDim == 1 )
         characteristicElementLength = ( 2 * qp.detJ );
       response waveSpeedResponse;
-      waveSpeedResponse.stress = qp.managedStateVars->stress;
+      waveSpeedResponse.stress = qpStress;
       waveSpeedResponse.KLocal.setZero();
       waveSpeedResponse.c.setZero();
-      waveSpeedResponse.stateVars            = qp.managedStateVars->materialStateVars.data();
-      waveSpeedResponse.elasticEnergyDensity = qp.managedStateVars->elasticStrainEnergy / qp.J0xW;
-      waveSpeedResponse.dissipation          = qp.managedStateVars->dissipation / qp.J0xW;
+      waveSpeedResponse.stateVars            = materialStateVars;
+      waveSpeedResponse.elasticEnergyDensity = qpElasticEnergy / qp.J0xW;
+      waveSpeedResponse.dissipation          = qpDissipation / qp.J0xW;
 
       const double c = qp.material->getMaximumWaveSpeed( waveSpeedResponse );
       if ( c <= 0.0 )
@@ -933,11 +940,12 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    computeInternalEnergy( double& internalEnergy )
+    computeInternalEnergy( double& internalEnergy, double* stateVars )
   {
     internalEnergy = 0.0;
     for ( const auto& qp : qps ) {
-      internalEnergy += qp.managedStateVars->totalStrainEnergy;
+      double* qpStateVars = stateVars + qp.stateVarOffset;
+      internalEnergy += qp.stateLayout.template getAs< double& >( qpStateVars, "total strain energy" );
     }
   }
 
@@ -950,7 +958,8 @@ namespace Marmot::Elements {
                             const double*                       load,
                             const double*                       QTotal,
                             double                              time,
-                            double                              dT )
+                            double                              dT,
+                            double*                             stateVars )
   {
 
     Map< RhsSized >     P_( P );
@@ -983,12 +992,14 @@ namespace Marmot::Elements {
 
   template < int nDim, int nNodes, int nNonlocalVariables, int nNonLocalNodes >
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
-    setInitialConditions( StateTypes state, const double* values )
+    setInitialConditions( StateTypes state, const double* values, double* stateVars )
   {
     if constexpr ( nDim > 1 ) {
       switch ( state ) {
       case MarmotElement::GeostaticStress: {
         for ( QuadraturePoint& qp : qps ) {
+          double*           qpStateVars = stateVars + qp.stateVarOffset;
+          Marmot::mVector6d qpStress( qp.stateLayout.getPtr( qpStateVars, "stress" ) );
 
           XiSized coordAtGauss = localGeometryElement.NB( localGeometryElement.N( qp.xi ) ) *
                                  localGeometryElement.coordinates;
@@ -999,9 +1010,9 @@ namespace Marmot::Elements {
           const double y2    = values[3];
 
           using namespace Math;
-          qp.managedStateVars->stress( 1 ) = linearInterpolation( coordAtGauss[1], y1, y2, sigY1, sigY2 ); // sigma_y
-          qp.managedStateVars->stress( 0 ) = values[4] * qp.managedStateVars->stress( 1 );                 // sigma_x
-          qp.managedStateVars->stress( 2 ) = values[5] * qp.managedStateVars->stress( 1 );                 // sigma_z
+          qpStress( 1 ) = linearInterpolation( coordAtGauss[1], y1, y2, sigY1, sigY2 ); // sigma_y
+          qpStress( 0 ) = values[4] * qpStress( 1 );                                    // sigma_x
+          qpStress( 2 ) = values[5] * qpStress( 1 );                                    // sigma_z
         }
         break;
       }
@@ -1010,8 +1021,9 @@ namespace Marmot::Elements {
       }
       case MarmotElement::MarmotMaterialInitialization: {
         for ( QuadraturePoint& qp : qps ) {
-          qp.material->initializeYourself( qp.managedStateVars->materialStateVars.data(),
-                                           qp.managedStateVars->materialStateVars.size() );
+          double* qpStateVars = stateVars + qp.stateVarOffset;
+          qp.material->initializeYourself( qp.stateLayout.getPtr( qpStateVars, "begin of material state" ),
+                                           qp.material->getNumberOfRequiredStateVars() );
         }
         break;
       }
@@ -1028,7 +1040,8 @@ namespace Marmot::Elements {
 
                       const double* QTotal,
                       double        time,
-                      double        dT )
+                      double        dT,
+                      double*       stateVars )
   {
     Map< RhsSized >                              P( P_ );
     Ref< USizedVector >                          Pe( P.head( sizeDoFU ) );

@@ -93,13 +93,6 @@ public:
   virtual std::string getElementShape() = 0;
 
   /**
-   * @brief Assign state variable array to element.
-   * @param[in,out] stateVars Pointer to state variable array.
-   * @param[in] nStateVars Number of state variables.
-   */
-  virtual void assignStateVars( double* stateVars, int nStateVars ) = 0;
-
-  /**
    * @brief Assign element property set.
    * @param[in] property Element property object containing material, geometry, etc.
    */
@@ -122,13 +115,15 @@ public:
 
   /**
    * @brief Apply initial conditions to the element.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in] state State type to be set.
    * @param[in] values Array of initial values.
    */
-  virtual void setInitialConditions( StateTypes state, const double* values ) = 0;
+  virtual void setInitialConditions( StateTypes state, const double* values, double* stateVars ) = 0;
 
   /**
    * @brief Perform element computations (stiffness, residual, etc.).
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in] QTotal Total dof vector.
    * @param[in] dQ Incremental dof vector.
    * @param[out] Pint Internal force vector.
@@ -141,10 +136,12 @@ public:
                                double*       Pint,
                                double*       K,
                                double        time,
-                               double        dT ) = 0;
+                               double        dT,
+                               double*       stateVars ) = 0;
 
   /**
    * @brief Perform element computations for explicit time integration.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in] QTotal Total dof vector.
    * @param[in] dQ Incremental dof vector.
    * @param[out] Pint Internal force vector.
@@ -153,12 +150,18 @@ public:
    *
    * @note Default implementation throws an exception.
    */
-  virtual void computeKernelsExplicit( const double* QTotal, const double* dQ, double* Pint, double time, double dT )
+  virtual void computeKernelsExplicit( const double* QTotal,
+                                       const double* dQ,
+                                       double*       Pint,
+                                       double        time,
+                                       double        dT,
+                                       double*       stateVars )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
   /**
    * @brief Compute contribution from distributed surface loads.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in] loadType Type of load.
    * @param[out] Pext External load vector.
    * @param[out] K Stiffness matrix.
@@ -175,10 +178,12 @@ public:
                                        const double*        load,
                                        const double*        QTotal,
                                        double               time,
-                                       double               dT ) = 0;
+                                       double               dT,
+                                       double*              stateVars ) = 0;
 
   /**
    * @brief Compute contribution from body forces.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] Pext External load vector.
    * @param[out] K Stiffness matrix.
    * @param[in] load Body force vector.
@@ -191,56 +196,64 @@ public:
                                  const double* load,
                                  const double* QTotal,
                                  double        time,
-                                 double        dT ) = 0;
+                                 double        dT,
+                                 double*       stateVars ) = 0;
 
   /**
    * @brief Compute lumped inertia matrix.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] I Inertia matrix.
    * @note Default implementation throws an exception.
    */
-  virtual void computeLumpedInertia( double* I )
+  virtual void computeLumpedInertia( double* I, double* stateVars )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
   /**
    * @brief Compute consistent inertia matrix.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] I Inertia matrix.
    * @note Default implementation throws an exception.
    */
-  virtual void computeConsistentInertia( double* I )
+  virtual void computeConsistentInertia( double* I, double* stateVars )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
   /**
    * @brief Compute critical time step for explicit dynamics.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] criticalTimeStep Suggested critical time step size.
    * @param[in] QTotal Total dof vector.
    * @note Default implementation throws an exception.
    */
-  virtual void computeCriticalTimeStepForExplicitDynamics( double& criticalTimeStep, const double* QTotal )
+  virtual void computeCriticalTimeStepForExplicitDynamics( double&       criticalTimeStep,
+                                                           const double* QTotal,
+                                                           double*       stateVars )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
   /**
    * @brief Compute internal energy of the element.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] internalEnergy Computed internal energy.
    * @note Default implementation throws an exception.
    */
-  virtual void computeInternalEnergy( double& internalEnergy )
+  virtual void computeInternalEnergy( double& internalEnergy, double* stateVars )
   {
     throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << " not yet implemented" );
   };
 
   /**
    * @brief Access element state at a quadrature point.
+   * @param[in] stateVars Pointer to the state variables.
    * @param[in] stateName Name of the state variable.
    * @param[in] quadraturePoint Index of quadrature point.
    * @return View into state variable.
    */
-  virtual StateView getStateView( const std::string& stateName, int quadraturePoint ) = 0;
+  virtual StateView getStateView( const std::string& stateName, int quadraturePoint, double* stateVars ) = 0;
 
   /**
    * @brief Get coordinates of element center.

@@ -94,9 +94,6 @@ public:
   /// @copydoc MarmotElement::getElementShape
   std::string getElementShape();
 
-  /// @copydoc MarmotElement::assignStateVars
-  void assignStateVars( double* stateVars, int nStateVars );
-
   /// @copydoc MarmotElement::assignProperty(const ElementProperties&)
   void assignProperty( const ElementProperties& property );
 
@@ -111,6 +108,7 @@ public:
 
   /**
    * @brief Perform element computations with coordinate transformation.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in]  QTotal  Total dof vector in the ambient (parent) space.
    * @param[in]  dQ      Incremental dof vector in the ambient space.
    * @param[out] Pe      Internal force vector in the ambient space.
@@ -118,13 +116,20 @@ public:
    * @param[in]  time    Current time.
    * @param[in]  dT      Time step size.
    */
-  void computeKernels( const double* QTotal, const double* dQ, double* Pe, double* Ke, double time, double dT );
+  void computeKernels( const double* QTotal,
+                       const double* dQ,
+                       double*       Pe,
+                       double*       Ke,
+                       double        time,
+                       double        dT,
+                       double*       stateVars );
 
   /// @copydoc MarmotElement::setInitialConditions
-  void setInitialConditions( StateTypes state, const double* values );
+  void setInitialConditions( StateTypes state, const double* values, double* stateVars );
 
   /**
    * @brief Compute contribution from distributed surface loads with coordinate transformation.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[in]  loadType    Type of distributed load.
    * @param[out] P           External load vector in the ambient space.
    * @param[out] K           Load stiffness matrix in the ambient space.
@@ -141,10 +146,12 @@ public:
                                const double*        load,
                                const double*        QTotal,
                                double               time,
-                               double               dT );
+                               double               dT,
+                               double*              stateVars );
 
   /**
    * @brief Compute body force contribution with coordinate transformation.
+   * @param[in,out] stateVars Pointer to the state variables.
    * @param[out] P      External load vector in the ambient space.
    * @param[out] K      Load stiffness matrix in the ambient space.
    * @param[in]  load   Applied body force values.
@@ -152,10 +159,16 @@ public:
    * @param[in]  time   Current time.
    * @param[in]  dT     Time step size.
    */
-  void computeBodyForce( double* P, double* K, const double* load, const double* QTotal, double time, double dT );
+  void computeBodyForce( double*       P,
+                         double*       K,
+                         const double* load,
+                         const double* QTotal,
+                         double        time,
+                         double        dT,
+                         double*       stateVars );
 
   /// @copydoc MarmotElement::getStateView
-  StateView getStateView( const std::string& stateName, int quadraturePoint );
+  StateView getStateView( const std::string& stateName, int quadraturePoint, double* stateVars );
 
   /// @copydoc MarmotElement::getCoordinatesAtCenter
   std::vector< double > getCoordinatesAtCenter();

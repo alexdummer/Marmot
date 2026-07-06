@@ -32,7 +32,6 @@ void testInstantiationAndBasicProperties()
 
   const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVarsTotal, 0.0 );
-  element->assignStateVars( stateVars.data(), nStateVarsTotal );
 
   element->initializeYourself();
 
@@ -100,7 +99,6 @@ void testStiffnessMatrixCalculationPlaneStress()
 
   const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVarsTotal, 0.0 );
-  element->assignStateVars( stateVars.data(), nStateVarsTotal );
 
   element->initializeYourself();
 
@@ -113,7 +111,7 @@ void testStiffnessMatrixCalculationPlaneStress()
   double currentTime = 0.0;
   double dt          = 1.0; // Dummy time step (not critical for linear elastic stiffness)
   // Compute the stiffness matrix K and internal force vector P
-  element->computeKernels( u.data(), dQ.data(), P.data(), K.data(), currentTime, dt );
+  element->computeKernels( u.data(), dQ.data(), P.data(), K.data(), currentTime, dt, stateVars.data() );
 
   // --- Stiffness Matrix Checks ---
   // The stiffness matrix K should be symmetric for linear elastic materials.
@@ -174,7 +172,6 @@ void testInitializeYourselfAndShapeFunctions()
   // Assign dummy state variables
   const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
   std::vector< double > stateVars( nStateVarsTotal, 0.0 );
-  element->assignStateVars( stateVars.data(), nStateVarsTotal );
 
   element->initializeYourself();
 
