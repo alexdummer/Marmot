@@ -512,7 +512,11 @@ namespace Marmot::Elements {
   void GeneralGradientEnhancedDisplacementFiniteElement< nDim, nNodes, nNonlocalVariables, nNonLocalNodes >::
     initializeYourself()
   {
+    int currentOffset = 0;
     for ( QuadraturePoint& qp : qps ) {
+      qp.stateVarOffset = currentOffset;
+      currentOffset += qp.getNumberOfRequiredStateVars();
+
       const auto          dNdXi = localGeometryElement.dNdXi( qp.xi );
       const JacobianSized J     = localGeometryElement.Jacobian( dNdXi );
       const JacobianSized JInv  = J.inverse();

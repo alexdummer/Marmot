@@ -387,14 +387,14 @@ namespace Marmot::Elements {
   {
     const auto& qp = qps[qpNumber];
     if ( qp.stateLayout.contains( stateName ) ) {
-      return StateView( qp.stateLayout.getPtr( stateVars + qp.stateVarOffset, stateName ),
-                        qp.stateLayout.getLength( stateName ) );
+      const auto len = qp.stateLayout.getLength( stateName );
+      if ( len > 0 )
+        return StateView( qp.stateLayout.getPtr( stateVars + qp.stateVarOffset, stateName ),
+                          static_cast< int >( len ) );
     }
-    else {
-      return qp.material->getStateView( stateName,
-                                        qp.stateLayout.getPtr( stateVars + qp.stateVarOffset,
-                                                               "begin of material state" ) );
-    }
+    return qp.material->getStateView( stateName,
+                                      qp.stateLayout.getPtr( stateVars + qp.stateVarOffset,
+                                                             "begin of material state" ) );
   }
 
   template < int nDim, int nNodes >
