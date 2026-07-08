@@ -12,10 +12,15 @@ solver = marmot.solvers.HypoElasticSolver("VONMISES", properties, options)
 
 # Setup a loading step
 step = marmot.solvers.HypoElasticSolver.Step()
-step.strainIncrementTarget = np.array([0.01, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
-step.isStrainComponentControlled = np.array([True, True, True, True, True, True])
+step.timeStart = 0.0
+step.timeEnd = 1.0
+step.dTStart = 0.1
+step.strainIncrementTarget = np.zeros(6, dtype=np.float64)
+step.isStrainComponentControlled = np.array([False, False, False, True, True, True])
 step.isStressComponentControlled = np.logical_not(step.isStrainComponentControlled)
-step.stressIncrementTarget = np.zeros(6, dtype=np.float64)
+s = np.zeros(6, dtype=np.float64)
+s[0] = 10.0
+step.stressIncrementTarget = s
 
 solver.addStep(step)
 solver.solve()

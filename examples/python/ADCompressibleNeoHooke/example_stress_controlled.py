@@ -12,11 +12,17 @@ solver = marmot.solvers.FiniteStrainSolver("ADCOMPRESSIBLENEOHOOKE", properties,
 
 # Setup a loading step
 step = marmot.solvers.FiniteStrainSolver.Step()
-step.gradUIncrementTarget = np.array([[0.01, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], dtype=np.float64)
-
-step.isGradUComponentControlled = np.array([[True, True, True], [True, True, True], [True, True, True]])
+step.timeStart = 0.0
+step.timeEnd = 1.0
+step.dTStart = 0.1
+step.gradUIncrementTarget = np.zeros((3, 3), dtype=np.float64)
+step.isGradUComponentControlled = np.array([[False, True, True], 
+                                            [True, False, True], 
+                                            [True, True, False]])
 step.isStressComponentControlled = np.logical_not(step.isGradUComponentControlled)
-step.stressIncrementTarget = np.zeros((3, 3), dtype=np.float64)
+s = np.zeros((3, 3), dtype=np.float64)
+s[0,0] = 10.0
+step.stressIncrementTarget = s
 
 solver.addStep(step)
 solver.solve()
