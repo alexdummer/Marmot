@@ -1,12 +1,5 @@
-import os
-import sys
-
-import numpy as np
-
-# Add the build lib directory to PYTHONPATH to find marmot extension
-sys.path.insert(0, os.path.abspath("../../build/lib"))
-
 import marmot
+import numpy as np
 
 print("Running example for FiniteStrain material: FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY_SUBSTEPPED")
 

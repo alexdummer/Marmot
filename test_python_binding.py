@@ -1,9 +1,3 @@
-import os
-import sys
-
-# Add the build lib directory to PYTHONPATH to find marmot extension
-sys.path.insert(0, os.path.abspath("build/lib"))
-
 import marmot
 import numpy as np
 
