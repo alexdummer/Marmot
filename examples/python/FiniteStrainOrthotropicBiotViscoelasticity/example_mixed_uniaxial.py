@@ -4,7 +4,9 @@ import numpy as np
 print("Running example for FiniteStrain material: FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY")
 
 # Material properties extracted from C++ tests
-properties = np.array([20000.0, 10000.0, 15000.0, 0.25, 0.35, 0.30, 4000.0, 6000.0, 5000.0, 1.0, 0.3, 10.0], dtype=np.float64)
+properties = np.array(
+    [20000.0, 10000.0, 15000.0, 0.25, 0.35, 0.30, 4000.0, 6000.0, 5000.0, 1.0, 0.3, 10.0], dtype=np.float64
+)
 
 # Setup solver
 options = marmot.solvers.FiniteStrainSolver.SolverOptions()
@@ -16,15 +18,13 @@ step.timeStart = 0.0
 step.timeEnd = 1.0
 step.dTStart = 0.1
 
-step.isGradUComponentControlled = np.array([[True, True, True], 
-                                            [True, False, True], 
-                                            [True, True, False]], dtype=bool)
-step.isStressComponentControlled = np.array([[False, False, False],
-                                             [False, True, False],
-                                             [False, False, True]], dtype=bool)
+step.isGradUComponentControlled = np.array([[True, True, True], [True, False, True], [True, True, False]], dtype=bool)
+step.isStressComponentControlled = np.array(
+    [[False, False, False], [False, True, False], [False, False, True]], dtype=bool
+)
 
 gradu_target = np.zeros((3, 3), dtype=np.float64)
-gradu_target[0,0] = 0.1
+gradu_target[0, 0] = 0.1
 step.gradUIncrementTarget = gradu_target
 
 stress_target = np.zeros((3, 3), dtype=np.float64)
@@ -34,5 +34,24 @@ solver.addStep(step)
 solver.solve()
 
 history = solver.getHistory()
-if len(history) > 0:
-    print(f"Final Stress XX: {history[-1].stress[0,0]}\nFinal F XX: {history[-1].F[0,0]}\nFinal F YY: {history[-1].F[1,1]}")
+if len(history) == 0:
+    raise RuntimeError("Solver history is empty!")
+
+import os
+
+reference_file = os.path.splitext(__file__)[0] + "_reference.npz"
+
+stress = np.array([h.stress for h in history])
+if hasattr(history[0], "F"):
+    strain = np.array([h.F for h in history])
+else:
+    strain = np.array([h.strain for h in history])
+
+if not os.path.exists(reference_file):
+    np.savez(reference_file, stress=stress, strain=strain)
+    print(f"Reference solution created: {reference_file}")
+else:
+    ref = np.load(reference_file)
+    np.testing.assert_allclose(stress, ref["stress"], atol=1e-6, rtol=1e-5)
+    np.testing.assert_allclose(strain, ref["strain"], atol=1e-6, rtol=1e-5)
+    print(f"Reference solution passed: {reference_file}")
