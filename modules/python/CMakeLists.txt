@@ -29,4 +29,10 @@ set_target_properties(marmot PROPERTIES
 # Add include directory for fastor_nanobind_caster.h
 target_include_directories(marmot PRIVATE src)
 
-install(TARGETS marmot DESTINATION ${Python_SITEARCH})
+execute_process(
+    COMMAND "${Python_EXECUTABLE}" -c "import sysconfig, os; print(os.path.relpath(sysconfig.get_path('platlib'), sysconfig.get_path('data')))"
+    OUTPUT_VARIABLE PYTHON_RELATIVE_INSTALL_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+install(TARGETS marmot DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR})
