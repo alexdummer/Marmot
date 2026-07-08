@@ -248,6 +248,10 @@ foreach(MODULEPATH IN LISTS INSTALLED_MODULEPATHS)
     endif()
 endforeach()
 
+# ── Python bindings ───────────────────────────────────────────────────────────
+
+add_subdirectory(modules/python)
+
 # ── Install ───────────────────────────────────────────────────────────────────
 
 install(TARGETS ${PROJECT_NAME}
