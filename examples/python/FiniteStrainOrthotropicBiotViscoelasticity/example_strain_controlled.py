@@ -1,4 +1,5 @@
 import marmot
+import marmot.testing
 import numpy as np
 
 print("Running example for FiniteStrain material: FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY")
@@ -27,9 +28,4 @@ solver.addStep(step)
 solver.solve()
 
 history = solver.getHistory()
-
-import os
-import marmot
-
-reference_file = os.path.splitext(__file__)[0] + "_reference.npz"
-marmot.compareHistoryToReferenceSolution(history, reference_file)
+marmot.testing.run_test(history, __file__)
