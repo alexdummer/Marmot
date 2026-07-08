@@ -6,7 +6,7 @@ void bind_materials( nb::module_& m );
 void bind_finite_strain_solver( nb::module_& m );
 void bind_hypo_elastic_solver( nb::module_& m );
 
-NB_MODULE( marmot, m )
+NB_MODULE( _marmot, m )
 {
   m.doc() = "Marmot Python bindings";
 

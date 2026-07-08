@@ -10,7 +10,7 @@ FetchContent_MakeAvailable(nanobind)
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Define the python extension module
-nanobind_add_module(marmot
+nanobind_add_module(_marmot
     src/bind_main.cpp
     src/bind_materials.cpp
     src/bind_solver_finite_strain.cpp
@@ -18,16 +18,16 @@ nanobind_add_module(marmot
 )
 
 # Link against the Marmot C++ library
-target_link_libraries(marmot PRIVATE Marmot)
+target_link_libraries(_marmot PRIVATE Marmot)
 
 # Set RPATH so it finds libMarmot.so in the build tree instead of conda env
-set_target_properties(marmot PROPERTIES
+set_target_properties(_marmot PROPERTIES
     BUILD_RPATH "${CMAKE_BINARY_DIR}/lib"
     INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
 )
 
 # Add include directory for fastor_nanobind_caster.h
-target_include_directories(marmot PRIVATE src)
+target_include_directories(_marmot PRIVATE src)
 
 execute_process(
     COMMAND "${Python_EXECUTABLE}" -c "import sysconfig, os; print(os.path.relpath(sysconfig.get_path('platlib'), sysconfig.get_path('data')))"
@@ -35,4 +35,5 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-install(TARGETS marmot DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR})
+install(TARGETS _marmot DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR}/marmot)
+install(DIRECTORY marmot/ DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR}/marmot)
