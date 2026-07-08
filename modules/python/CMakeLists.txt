@@ -4,8 +4,10 @@ FetchContent_Declare(
   nanobind
   GIT_REPOSITORY https://github.com/wjakob/nanobind.git
   GIT_TAG        v1.9.2
+  PATCH_COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/patch_nanobind.py" "include/nanobind/nb_attr.h"
 )
 FetchContent_MakeAvailable(nanobind)
+
 
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
 
@@ -37,3 +39,6 @@ execute_process(
 
 install(TARGETS _marmot DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR}/marmot)
 install(DIRECTORY marmot/ DESTINATION ${PYTHON_RELATIVE_INSTALL_DIR}/marmot)
+
+
+
