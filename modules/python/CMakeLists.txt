@@ -28,4 +28,5 @@ set_target_properties(marmot PROPERTIES
 
 # Add include directory for fastor_nanobind_caster.h
 target_include_directories(marmot PRIVATE src)
-target_link_options(marmot PRIVATE "LINKER:-rpath,${CMAKE_BINARY_DIR}/lib")
+
+install(TARGETS marmot DESTINATION ${Python_SITEARCH})
