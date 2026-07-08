@@ -11,7 +11,7 @@ import marmot
 print("Running example for FiniteStrain material: FINITESTRAINJ2PLASTICITY_SUBSTEPPED")
 
 # Material properties extracted from C++ tests
-properties = np.array([1.0, 0.3], dtype=np.float64)
+properties = np.array([10.0, 175000.0, 80800.0, 260.0, 580.0, 9.0, 70.0, 1.0], dtype=np.float64)
 
 # Setup solver
 options = marmot.solvers.FiniteStrainSolver.SolverOptions()

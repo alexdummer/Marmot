@@ -11,7 +11,7 @@ import marmot
 print("Running example for HypoElastic material: LINEARVISCOELASTICPOWERLAW")
 
 # Material properties extracted from C++ tests
-properties = np.array([1.0, 0.3], dtype=np.float64)
+properties = np.array([2e5, 0.2, 0.5, 0.1, 10.0, 0.0001, 1.0], dtype=np.float64)
 
 # Setup solver
 options = marmot.solvers.HypoElasticSolver.SolverOptions()

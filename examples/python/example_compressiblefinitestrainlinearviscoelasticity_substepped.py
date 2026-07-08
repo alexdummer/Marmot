@@ -11,7 +11,7 @@ import marmot
 print("Running example for FiniteStrain material: COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED")
 
 # Material properties extracted from C++ tests
-properties = np.array([1.0, 0.3], dtype=np.float64)
+properties = np.array([10.0, 0.0, 0.0, 3500.0, 1500.0, 1.0, 0.3, 10.0], dtype=np.float64)
 
 # Setup solver
 options = marmot.solvers.FiniteStrainSolver.SolverOptions()
