@@ -92,6 +92,8 @@ namespace Marmot::Materials {
     C                    = ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( 1. / effectiveCompliance, nu );
     Vector6d deltaStress = C * ( dE - creepStrainIncrement );
     nomStress            = nomStress + deltaStress;
+    state.elasticEnergyDensity += 0.5 * ( dE - creepStrainIncrement ).dot( deltaStress );
+    state.dissipation += 0.5 * creepStrainIncrement.dot( deltaStress );
 
     KelvinChain::updateStateVarMatrix( dTimeDays,
                                        elasticModuli,

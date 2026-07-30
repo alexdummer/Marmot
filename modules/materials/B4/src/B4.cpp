@@ -155,6 +155,10 @@ namespace Marmot::Materials {
     Vector6d deltaStress = C *
                            ( dE - basicCreepStrainIncrement - dryingCreepStrainIncrement - shrinkageStrainIncrement );
     nomStress = nomStress + deltaStress;
+    state.elasticEnergyDensity += 0.5 * ( dE - basicCreepStrainIncrement - dryingCreepStrainIncrement -
+                                          shrinkageStrainIncrement )
+                                          .dot( deltaStress );
+    state.dissipation += 0.5 * ( basicCreepStrainIncrement + dryingCreepStrainIncrement ).dot( deltaStress );
 
     KelvinChain::updateStateVarMatrix( dTimeDays / dryingShrinkageHalfTime,
                                        dryingCreepElasticModuli,
