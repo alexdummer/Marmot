@@ -112,6 +112,27 @@ public:
   virtual void assignProperty( const MarmotMaterialSection& property );
 
   /**
+   * @brief Assign a single property of the element by name.
+   * @param[in] propertyName Name of the property.
+   * @param[in] properties Pointer to the array of property values.
+   * @note Default implementation throws an exception, as an element not overriding this
+   * interface does not support any named properties.
+   */
+  virtual void assignProperty( const std::string& propertyName, const double* properties )
+  {
+    throw std::invalid_argument( MakeString()
+                                 << __PRETTY_FUNCTION__ << ": unsupported named property '" << propertyName << "'" );
+  };
+
+  /**
+   * @brief Get the names of all the valid properties of the element.
+   * @return Vector of strings containing the property names.
+   * @note Default implementation returns an empty vector, as an element not overriding this
+   * interface does not expose any named properties.
+   */
+  virtual std::vector< std::string > getPropertyNames() const { return {}; };
+
+  /**
    * @brief Assign nodal coordinates to element.
    * @param[in] coordinates Pointer to array of nodal coordinates.
    */

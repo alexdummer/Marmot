@@ -63,6 +63,16 @@ void MarmotElementSpatialWrapper::assignProperty( const ElementProperties& prope
   childElement->assignProperty( property );
 }
 
+void MarmotElementSpatialWrapper::assignProperty( const std::string& propertyName, const double* properties )
+{
+  childElement->assignProperty( propertyName, properties );
+}
+
+std::vector< std::string > MarmotElementSpatialWrapper::getPropertyNames() const
+{
+  return childElement->getPropertyNames();
+}
+
 std::vector< int > MarmotElementSpatialWrapper::getDofIndicesPermutationPattern()
 {
   std::vector< int > permutationPattern;
