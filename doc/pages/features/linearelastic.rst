@@ -37,6 +37,16 @@ with
 .. math::
    \displaystyle G = \frac{E}{2\,(1 + \nu)}
 
+For the transversely isotropic and orthotropic cases below, Poisson's ratio :math:`\nu_{ij}`
+is defined as the negative ratio of the lateral strain in direction :math:`x_j` to the axial
+strain in direction :math:`x_i` when a uniaxial stress is applied in direction :math:`x_i`,
+
+.. math::
+   \nu_{ij} = -\frac{\varepsilon_j}{\varepsilon_i},
+
+so that the corresponding compliance entry reads :math:`\CelInv_{ji} = -\nu_{ij} / E_i`.
+Symmetry of the compliance tensor implies :math:`\nu_{ij} / E_i = \nu_{ji} / E_j`.
+
 Transversely Isotropic Behavior
 ...............................
 In case of transversely isotropic behavior, the user defined normal vector specifies the :math:`x_1` - axis
