@@ -48,9 +48,9 @@ Number of independent material parameters:	5
 
 .. math::
   \Cel^{-1} = \begin{bmatrix}
-				    	\frac{1}{E_1} & \frac{-\nu_{12}}{E_2} & \frac{-\nu_{12}}{E_2} & 0 & 0 & 0 \\
-				    	\frac{-\nu_{12}}{E_2} & \frac{1}{E_2} & \frac{-\nu_{23}}{E_2} & 0 & 0 & 0 \\
-				    	\frac{-\nu_{12}}{E_2} & \frac{-\nu_{12}}{E_2} & \frac{1}{E_2} & 0 & 0 & 0 \\
+				    	\frac{1}{E_1} & \frac{-\nu_{12}}{E_1} & \frac{-\nu_{12}}{E_1} & 0 & 0 & 0 \\
+				    	\frac{-\nu_{12}}{E_1} & \frac{1}{E_2} & \frac{-\nu_{23}}{E_2} & 0 & 0 & 0 \\
+				    	\frac{-\nu_{12}}{E_1} & \frac{-\nu_{23}}{E_2} & \frac{1}{E_2} & 0 & 0 & 0 \\
 					0 & 0 & 0 & \frac{1}{G_{12}} & 0 & 0 \\
 					0 & 0 & 0 & 0 & \frac{1}{G_{12}} & 0 \\
 					0 & 0 & 0 & 0 & 0 & \frac{1}{G_{23}}
@@ -73,9 +73,9 @@ Number of independent material parameters:	9
 
 .. math::
   \mathbb{ C }^{-1} = \begin{bmatrix}
-				    	\frac{1}{E_1} & \frac{-\nu_{12}}{E_2} & \frac{-\nu_{13}}{E_3} & 0 & 0 & 0 \\
-				    	\frac{-\nu_{12}}{E_2} & \frac{1}{E_2} & \frac{-\nu_{23}}{E_3} & 0 & 0 & 0 \\
-				    	\frac{-\nu_{13}}{E_3} & \frac{-\nu_{23}}{E_3} & \frac{1}{E_3} & 0 & 0 & 0 \\
+				    	\frac{1}{E_1} & \frac{-\nu_{12}}{E_1} & \frac{-\nu_{13}}{E_1} & 0 & 0 & 0 \\
+				    	\frac{-\nu_{12}}{E_1} & \frac{1}{E_2} & \frac{-\nu_{23}}{E_2} & 0 & 0 & 0 \\
+				    	\frac{-\nu_{13}}{E_1} & \frac{-\nu_{23}}{E_2} & \frac{1}{E_3} & 0 & 0 & 0 \\
 					0 & 0 & 0 & \frac{1}{G_{12}} & 0 & 0 \\
 					0 & 0 & 0 & 0 & \frac{1}{G_{13}} & 0 \\
 					0 & 0 & 0 & 0 & 0 & \frac{1}{G_{23}}
