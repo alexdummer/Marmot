@@ -4,9 +4,12 @@ import numpy as np
 
 print("Running example for FiniteStrain material: FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY_SUBSTEPPED")
 
-# Material properties extracted from C++ tests
+# Material properties extracted from C++ tests. The substepped variant reads the number of
+# substeps from the first entry and passes the remaining ones on to the base material.
+nSubsteps = 1.0
 properties = np.array(
-    [20000.0, 10000.0, 15000.0, 0.25, 0.35, 0.30, 4000.0, 6000.0, 5000.0, 1.0, 0.3, 10.0], dtype=np.float64
+    [nSubsteps, 20000.0, 10000.0, 15000.0, 0.25, 0.35, 0.30, 4000.0, 6000.0, 5000.0, 1.0, 0.3, 10.0],
+    dtype=np.float64,
 )
 
 # Setup solver
