@@ -52,10 +52,12 @@ void bind_hypo_elastic_solver( nb::module_& m )
 
   solver
     .def( "__init__",
-          []( Solver*                             t,
-              std::string                         name,
-              nb::ndarray< double, nb::c_contig > props,
-              const Solver::SolverOptions& opts ) { new ( t ) Solver( name, props.data(), props.size(), opts ); } )
+          []( Solver*                                            t,
+              std::string                                        name,
+              nb::ndarray< double, nb::ndim< 1 >, nb::c_contig > props,
+              const Solver::SolverOptions&                       opts ) {
+            new ( t ) Solver( name, props.data(), static_cast< int >( props.size() ), opts );
+          } )
     .def( "addStep", &Solver::addStep )
     .def( "getSteps", &Solver::getSteps )
     .def( "clearSteps", &Solver::clearSteps )

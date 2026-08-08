@@ -250,7 +250,14 @@ endforeach()
 
 # ── Python bindings ───────────────────────────────────────────────────────────
 
-add_subdirectory(modules/python)
+# Opt-in: building the bindings requires the Python development headers and
+# fetches nanobind, neither of which should be a hard dependency of the C++ library.
+option(MARMOT_BUILD_PYTHON_BINDINGS "Build the Marmot Python bindings" OFF)
+
+if(MARMOT_BUILD_PYTHON_BINDINGS)
+    message(STATUS "Building the Marmot Python bindings")
+    add_subdirectory(modules/python)
+endif()
 
 # ── Install ───────────────────────────────────────────────────────────────────
 

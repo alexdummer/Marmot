@@ -1,15 +1,15 @@
+# Find Python first, so that the very same interpreter is used to patch nanobind
+find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
+
 # Fetch nanobind
 include(FetchContent)
 FetchContent_Declare(
   nanobind
   GIT_REPOSITORY https://github.com/wjakob/nanobind.git
   GIT_TAG        v1.9.2
-  PATCH_COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/patch_nanobind.py" "include/nanobind/nb_attr.h"
+  PATCH_COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_nanobind.py" "include/nanobind/nb_attr.h"
 )
 FetchContent_MakeAvailable(nanobind)
-
-
-find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Define the python extension module
 nanobind_add_module(_marmot

@@ -22,8 +22,10 @@ namespace Marmot {
       for ( int i = 0; i < nMaxwell; ++i ) {
         const double gammaValue = gammaTauPairVector[i * 2];
         const double tauValue   = gammaTauPairVector[i * 2 + 1];
+        // A vanishing relaxation time is admissible and handled in the evaluation routines,
+        // where the corresponding Maxwell element simply does not contribute.
         if ( tauValue < 0.0 )
-          throw std::invalid_argument( "Relaxation times of Maxwell elements must be positive." );
+          throw std::invalid_argument( "Relaxation times of Maxwell elements must not be negative." );
 
         gamma[i] = gammaValue;
         tau[i]   = tauValue;
