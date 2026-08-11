@@ -5,4 +5,6 @@ list(APPEND publicheaders
     "${CMAKE_CURRENT_LIST_DIR}/include/Marmot/MarmotStateHelpers.h"
     "${CMAKE_CURRENT_LIST_DIR}/include/Marmot/MarmotUtils.h"
     "${CMAKE_CURRENT_LIST_DIR}/include/Marmot/MarmotJournal.h"
+    # included by the installed gradient enhanced and gradient plasticity material headers
+    "${CMAKE_CURRENT_LIST_DIR}/include/Marmot/MarmotExceptions.h"
     )
