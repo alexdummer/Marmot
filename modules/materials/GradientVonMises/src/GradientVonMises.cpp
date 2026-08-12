@@ -17,6 +17,10 @@ namespace Marmot::Materials {
       g( materialProperties[4] ),
       implementation( materialProperties[5] == 0 ? Implementation::standard : Implementation::fischer_burmeister )
   {
+    // optional, so that existing property vectors of six to eight entries keep working
+    if ( nMaterialProperties > 8 && materialProperties[8] > 0.0 )
+      fbSmoothingRelative = materialProperties[8];
+
     initializeStateLayout();
   }
 
@@ -161,14 +165,20 @@ namespace Marmot::Materials {
                                                                                                          laplaceKappa );
 
     double df_da, df_db;
-    double scale      = 1e4; // scaling factor to improve conditioning of the Fischer-Burmeister function derivatives
+    double scale = 1e4; // scaling factor to improve conditioning of the Fischer-Burmeister function derivatives
+
+    // The corner of the complementarity function has to be blunt enough that a residual sized
+    // perturbation of the yield function does not swing its derivative, see fbSmoothingRelative.
+    // Scaled by the yield strength because the first argument is a stress.
+    const double epsilon = std::pow( fbSmoothingRelative * fy0, 2 );
+
     std::tie( f,
               df_da,
               df_db ) = fischerBurmeisterFunction( -f_tr,
                                                    dLambda * scale,
-                                                   1e-16 ); // using Fischer-Burmeister to enforce yield condition
+                                                   epsilon ); // using Fischer-Burmeister to enforce yield condition
 
-                                                            // Compute derivatives of the Fischer-Burmeister function
+                                                              // Compute derivatives of the Fischer-Burmeister function
     dF_dStress = -df_da * dF_dStress_tr;
     dF_dKappa  = -df_da * dF_dKappa_tr + df_db * scale;
 
