@@ -40,7 +40,7 @@ std::tuple< Tensor33d, Tensor33d, double, double, double, double > computationPa
 
 auto testPenceGouPotentialA()
 {
-  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions;
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Compressible;
   // get computation parameters
   std::tuple< Tensor33d, Tensor33d, double, double, double, double > params = computationParameters();
   Tensor33d                                                          C      = get< 0 >( params );
@@ -55,7 +55,7 @@ auto testPenceGouPotentialA()
 
 auto testPenceGouPotentialB()
 {
-  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions;
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Compressible;
   // get computation parameters
   std::tuple< Tensor33d, Tensor33d, double, double, double, double > params = computationParameters();
   Tensor33d                                                          C      = get< 0 >( params );
@@ -70,7 +70,7 @@ auto testPenceGouPotentialB()
 
 auto testPenceGouPotentialC()
 {
-  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions;
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Compressible;
   // get computation parameters
   std::tuple< Tensor33d, Tensor33d, double, double, double, double > params = computationParameters();
   Tensor33d                                                          C      = get< 0 >( params );
@@ -85,7 +85,7 @@ auto testPenceGouPotentialC()
 
 auto testFirstOrderDerivedB()
 {
-  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::FirstOrderDerived;
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Compressible::FirstOrderDerived;
   // get computation parameters
   std::tuple< Tensor33d, Tensor33d, double, double, double, double > params = computationParameters();
   Tensor33d                                                          C      = get< 0 >( params );
@@ -118,7 +118,7 @@ auto testFirstOrderDerivedB()
 
 auto testSecondOrderDerivedB()
 {
-  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::SecondOrderDerived;
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Compressible::SecondOrderDerived;
   // get computation parameters
   std::tuple< Tensor33d, Tensor33d, double, double, double, double > params = computationParameters();
   Tensor33d                                                          C      = get< 0 >( params );

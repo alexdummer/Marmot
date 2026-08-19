@@ -1,7 +1,6 @@
 #include "Marmot/FiniteStrainIsotropicBiotViscoelasticity.h"
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotDeformationMeasures.h"
-#include "Marmot/MarmotEigenSystems.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
@@ -38,9 +37,10 @@ namespace Marmot::Materials {
                                                                                     &materialProperties[3] ) ),
 
       initialCompliance( makeDual( invertMinorSymmetricFourthOrderTensor( std::get< 2 >(
-        ContinuumMechanics::EnergyDensityFunctions::SecondOrderDerived::BiotNeoHooke( evaluate( Spatial3D::I ),
-                                                                                      K,
-                                                                                      G ) ) ) ) )
+        ContinuumMechanics::EnergyDensityFunctions::Compressible::SecondOrderDerived::BiotNeoHooke( evaluate(
+                                                                                                      Spatial3D::I ),
+                                                                                                    K,
+                                                                                                    G ) ) ) ) )
 
   {
     initializeStateLayout();
@@ -56,21 +56,18 @@ namespace Marmot::Materials {
 
     using namespace ContinuumMechanics;
 
-    // compute Cauchy-Green deformation
-    const Tensor33t< scalar > C = DeformationMeasures::rightCauchyGreen( F );
-
-    // compute eigenvalues and eigenvectors of C
-    auto [lam, Q] = Math::computeEigenSystemJacobi( C );
+    // compute principal stretches and eigenvectors of the right Cauchy-Green tensor C
+    auto [lambda, Q] = DeformationMeasures::principalStretches( F );
     Tensor33t< scalar > principalStretch( 0. );
     for ( int i = 0; i < 3; ++i ) {
-      principalStretch( i, i ) = sqrt( lam( i ) );
+      principalStretch( i, i ) = lambda( i );
     }
 
     // compute the right stretch tensor U
     const Tensor33t< scalar > U = Q % principalStretch % transpose( Q );
 
     // compute Biot stress and its derivative with respect to the right stretch tensor
-    auto [psi, S_biot, dS_biot_dU] = EnergyDensityFunctions::SecondOrderDerived::BiotNeoHooke( U, K, G );
+    auto [psi, S_biot, dS_biot_dU] = EnergyDensityFunctions::Compressible::SecondOrderDerived::BiotNeoHooke( U, K, G );
 
     // retrieve Biot stress from the previous increment
     Tensor33d S_biot_old( stateLayout.getPtr( response.stateVars, "S0_old" ) );
