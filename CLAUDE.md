@@ -132,6 +132,9 @@ silently no-ops when the path is missing.
 
 ## Commit & PR conventions (from CONTRIBUTING.md)
 
+- In practice, PRs are usually opened against the current `next_v*` integration branch (e.g.
+  `next_v26.11`), not `master`, even though CONTRIBUTING.md describes branching from `master`. Check
+  which `next_v*` branch is currently active (`git branch -r | grep next_v`) before opening a PR.
 - Commits **must** follow [Conventional Commits](https://www.conventionalcommits.org)
   (`feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `style`, `build`, `ci`, `chore`, `revert`), with
   an optional scope, e.g. `fix(mechanicscore): guard haighWestergaard() rho derivative singularity`.
