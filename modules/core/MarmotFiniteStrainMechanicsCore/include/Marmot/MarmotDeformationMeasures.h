@@ -115,6 +115,31 @@ namespace Marmot::ContinuumMechanics {
       return determinant( F );
     }
 
+    /** @brief Computes the F-bar modified deformation gradient
+     * \f$\bar{\boldsymbol{F}} = (J_0/J)^{1/3}\,\boldsymbol{F}\f$ (de Souza Neto et al., 1996).
+     *
+     * @details Replacing \f$\boldsymbol{F}\f$ by \f$\bar{\boldsymbol{F}}\f$ before evaluating a
+     * material's constitutive response decouples the volumetric response (sampled once via
+     * \f$J_0\f$, e.g. at the element centroid) from the deviatoric response (sampled at each
+     * quadrature point via \f$J\f$), which alleviates volumetric locking of nearly incompressible
+     * materials on low-order displacement elements (e.g. Marmot::Elements::
+     * DisplacementFiniteStrainFBarElement). This is the value only; the element-level consistent
+     * tangent additionally needs a correction term coupling \f$J_0\f$'s dependence on every
+     * node's degrees of freedom, which is not a per-quadrature-point quantity and is therefore
+     * assembled in the element itself rather than here.
+     *
+     * @tparam T Scalar type (e.g., double, autodiff::dual)
+     * @param F Deformation gradient tensor at the current quadrature point.
+     * @param J Volume ratio \f$J=\det\boldsymbol F\f$ at the current quadrature point.
+     * @param J0 Volume ratio sampled at the element centroid (or another single reference point).
+     * @return The F-bar modified deformation gradient \f$\bar{\boldsymbol{F}}\f$.
+     */
+    template < typename T >
+    Tensor33t< T > FBarDeformationGradient( const Tensor33t< T >& F, const T& J, const T& J0 )
+    {
+      return pow( J0 / J, 1. / 3. ) * F;
+    }
+
     namespace FirstOrderDerived {
 
       /** @brief Computes the right Cauchy-Green tensor \f$\boldsymbol{C}\f$ and its derivative with respect to
