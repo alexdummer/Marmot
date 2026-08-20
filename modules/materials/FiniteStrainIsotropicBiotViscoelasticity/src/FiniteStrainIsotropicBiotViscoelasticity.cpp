@@ -87,15 +87,7 @@ namespace Marmot::Materials {
                 stateLayout.getPtr( response.stateVars, "creepStateVars" ) );
 
     // compute the second Piola-Kirchhoff stress from the Biot stress
-    Tensor33t< scalar > S_biot_rotated = transpose( Q ) % S_biot % Q;
-    Tensor33t< scalar > PK2_rotated( 0 );
-
-    for ( int i = 0; i < 3; ++i ) {
-      for ( int j = 0; j < 3; ++j ) {
-        PK2_rotated( i, j ) = 2.0 * S_biot_rotated( i, j ) / ( principalStretch( i, i ) + principalStretch( j, j ) );
-      }
-    }
-    Tensor33t< scalar > PK2 = Q % PK2_rotated % transpose( Q );
+    const Tensor33t< scalar > PK2 = StressMeasures::PK2FromRotatedBiotStress( S_biot, lambda, Q );
 
     // push forward the second Piola-Kirchhoff stress to get the Kirchhoff stress
     const Tensor33t< scalar > tau = StressMeasures::KirchhoffStressFromPK2( PK2, F );

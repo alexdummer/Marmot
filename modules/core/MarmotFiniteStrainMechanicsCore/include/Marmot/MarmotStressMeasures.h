@@ -97,6 +97,49 @@ namespace Marmot::ContinuumMechanics {
       return KirchhoffStressFromPK2( PK2, F );
     }
 
+    /**
+     * @brief Converts a Biot stress given in the eigenbasis of the right stretch tensor to the
+     * second Piola-Kirchhoff stress.
+     *
+     * @details For an isotropic hyperelastic (or hyperelastic-viscoelastic) material formulated in
+     * terms of the Biot stress \f$\boldsymbol S_0\f$ work-conjugate to the right stretch tensor
+     * \f$\boldsymbol U=\boldsymbol Q\,\mathrm{diag}(\lambda_i)\,\boldsymbol Q^T\f$, the second
+     * Piola-Kirchhoff stress follows from rotating \f$\boldsymbol S_0\f$ into the eigenbasis
+     * \f$\boldsymbol Q\f$ of \f$\boldsymbol U\f$ (and of \f$\boldsymbol C=\boldsymbol
+     * F^T\boldsymbol F\f$), converting via \f$S_{ij} = 2\,(S_0)^{\rm rot}_{ij}/(\lambda_i+
+     * \lambda_j)\f$, and rotating back:
+     * \f[
+     *   \boldsymbol S = \boldsymbol Q\,\mathrm{diag\_pair}\!\left(\frac{2\,(\boldsymbol
+     *   Q^T\boldsymbol S_0\boldsymbol Q)_{ij}}{\lambda_i+\lambda_j}\right)\boldsymbol Q^T .
+     * \f]
+     * Unlike KirchhoffStressFromPrincipalKirchhoffStress(), \f$\boldsymbol S_0\f$ need not be
+     * diagonal in the \f$\boldsymbol Q\f$ basis (e.g. after a history-dependent/viscoelastic
+     * update), hence the pairwise \f$\lambda_i+\lambda_j\f$ conversion rather than a per-component
+     * \f$\lambda_i^2\f$ one - the two helpers are not interchangeable.
+     *
+     * @tparam T Scalar type, e.g. double, autodiff::dual.
+     * @param biotStress Biot stress \f$\boldsymbol S_0\f$, in the reference (unrotated) basis.
+     * @param principalStretches Principal stretches \f$\lambda_i\f$ of \f$\boldsymbol U\f$ (same
+     * ordering/eigenbasis as \p Q).
+     * @param Q Eigenvector matrix of \f$\boldsymbol U\f$ (e.g. from
+     * DeformationMeasures::principalStretches()).
+     * @return Second Piola-Kirchhoff stress \f$\boldsymbol S\f$.
+     */
+    template < typename T >
+    Tensor33t< T > PK2FromRotatedBiotStress( const Tensor33t< T >& biotStress,
+                                             const Tensor3t< T >&  principalStretches,
+                                             const Tensor33t< T >& Q )
+    {
+      const Tensor33t< T > biotStressRotated = transpose( Q ) % biotStress % Q;
+
+      Tensor33t< T > PK2_rotated( 0. );
+      for ( int i = 0; i < 3; ++i )
+        for ( int j = 0; j < 3; ++j )
+          PK2_rotated( i, j ) = 2.0 * biotStressRotated( i, j ) / ( principalStretches( i ) + principalStretches( j ) );
+
+      return Q % PK2_rotated % transpose( Q );
+    }
+
     namespace FirstOrderDerived {
 
       /** @brief Computes the Kirchhoff stress from the 2nd Piola-Kirchhoff stress and the deformation gradient and the
