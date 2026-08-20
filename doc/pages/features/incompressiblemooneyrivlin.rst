@@ -25,10 +25,14 @@ displacement-pressure element, e.g. :ref:`displacementpressurefinitestrainelemen
 incompressibility as an independent constraint.
 
 This is exactly the two-term :ref:`ogden` model with :math:`(\mu_1,\alpha_1)=(2C_1,2)` and
-:math:`(\mu_2,\alpha_2)=(-2C_2,-2)`, and is implemented as such: rather than re-deriving the same
-principal-stretch stress and tangent, this material reuses Marmot::Materials::Ogden's validated
-spectral machinery internally, exposing only the familiar two-parameter Mooney-Rivlin interface.
-Setting :math:`C_2=0` recovers :ref:`incompressibleneohooke`.
+:math:`(\mu_2,\alpha_2)=(-2C_2,-2)`. Unlike Ogden's general (non-integer) exponents, however, this
+potential is quadratic in the isochoric stretches and can therefore be expressed directly in terms
+of the invariants of :math:`\boldsymbol C=\boldsymbol F^{\mathsf T}\boldsymbol F` exactly as the
+compressible Mooney-Rivlin potential is - so, unlike Ogden, **no spectral decomposition of**
+:math:`\boldsymbol C` **is required or performed**. The second Piola-Kirchhoff stress
+:math:`\boldsymbol S = 2\,\partial\Psi_{\rm iso}/\partial\boldsymbol C` is pushed forward to the
+Kirchhoff stress, and the consistent algorithmic tangent is obtained via automatic
+differentiation. Setting :math:`C_2=0` recovers :ref:`incompressibleneohooke`.
 
 Implementation
 --------------

@@ -162,13 +162,77 @@ auto testSecondOrderDerivedB()
     }
 }
 
+// Verifies the analytic first derivative of the (purely isochoric) Incompressible::NeoHookePotential
+// against a central-difference approximation.
+auto testIncompressibleNeoHookeFirstOrderDerived()
+{
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Incompressible;
+
+  Tensor33d    C  = get< 0 >( computationParameters() );
+  const double mu = 1000.;
+
+  const auto [psi, dPsi_dC] = FirstOrderDerived::NeoHookePotential( C, mu );
+
+  throwExceptionOnFailure( checkIfEqual( psi, NeoHookePotential( C, mu ), 1e-14 ),
+                           MakeString() << __PRETTY_FUNCTION__ << " energy density mismatch between the bare "
+                                        << "potential and its FirstOrderDerived variant." );
+
+  const double h = 1e-7;
+  for ( int i = 0; i < 3; i++ )
+    for ( int j = 0; j < 3; j++ ) {
+      Tensor33d Cp = C, Cm = C;
+      Cp( i, j ) += h;
+      Cm( i, j ) -= h;
+
+      const double dPsi_dC_numeric = ( NeoHookePotential( Cp, mu ) - NeoHookePotential( Cm, mu ) ) / ( 2 * h );
+
+      throwExceptionOnFailure( checkIfEqual( dPsi_dC( i, j ), dPsi_dC_numeric, 1e-6 ),
+                               MakeString()
+                                 << __PRETTY_FUNCTION__ << " derivative mismatch at (" << i << ", " << j << ")" );
+    }
+}
+
+// Verifies the analytic first derivative of the (purely isochoric) Incompressible::MooneyRivlinPotential
+// against a central-difference approximation.
+auto testIncompressibleMooneyRivlinFirstOrderDerived()
+{
+  using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Incompressible;
+
+  Tensor33d    C  = get< 0 >( computationParameters() );
+  const double C1 = 800.;
+  const double C2 = 200.;
+
+  const auto [psi, dPsi_dC] = FirstOrderDerived::MooneyRivlinPotential( C, C1, C2 );
+
+  throwExceptionOnFailure( checkIfEqual( psi, MooneyRivlinPotential( C, C1, C2 ), 1e-14 ),
+                           MakeString() << __PRETTY_FUNCTION__ << " energy density mismatch between the bare "
+                                        << "potential and its FirstOrderDerived variant." );
+
+  const double h = 1e-7;
+  for ( int i = 0; i < 3; i++ )
+    for ( int j = 0; j < 3; j++ ) {
+      Tensor33d Cp = C, Cm = C;
+      Cp( i, j ) += h;
+      Cm( i, j ) -= h;
+
+      const double dPsi_dC_numeric = ( MooneyRivlinPotential( Cp, C1, C2 ) - MooneyRivlinPotential( Cm, C1, C2 ) ) /
+                                     ( 2 * h );
+
+      throwExceptionOnFailure( checkIfEqual( dPsi_dC( i, j ), dPsi_dC_numeric, 1e-6 ),
+                               MakeString()
+                                 << __PRETTY_FUNCTION__ << " derivative mismatch at (" << i << ", " << j << ")" );
+    }
+}
+
 int main()
 {
   auto tests = std::vector< std::function< void() > >{ testPenceGouPotentialA,
                                                        testPenceGouPotentialB,
                                                        testPenceGouPotentialC,
                                                        testFirstOrderDerivedB,
-                                                       testSecondOrderDerivedB };
+                                                       testSecondOrderDerivedB,
+                                                       testIncompressibleNeoHookeFirstOrderDerived,
+                                                       testIncompressibleMooneyRivlinFirstOrderDerived };
 
   executeTestsAndCollectExceptions( tests );
   return 0;

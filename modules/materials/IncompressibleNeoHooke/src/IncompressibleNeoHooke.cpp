@@ -29,29 +29,21 @@ namespace Marmot::Materials {
                                                 const DeformationAD< 3 >&    deformation,
                                                 const TimeIncrement&         timeIncrement ) const
   {
-    using scalar  = autodiff::dual;
-    const auto& F = deformation.F;
+    const double& mu = materialProperties[0];
+    const auto&   F_ = deformation.F;
 
     using namespace ContinuumMechanics;
 
-    // principal stretches lambda_i and eigenvectors Q of the right Cauchy-Green tensor C
-    const auto [lambda, Q] = DeformationMeasures::principalStretches( F );
-    const scalar J         = DeformationMeasures::volumeRatio( F );
+    // Unlike Ogden's general (non-integer) exponents, the classical Neo-Hookean potential is
+    // quadratic in the isochoric stretches and can therefore be expressed directly in terms of the
+    // invariants of C - no spectral decomposition of C is required.
+    const auto C = DeformationMeasures::rightCauchyGreen( F_ );
 
-    // the classical incompressible Neo-Hookean potential is exactly the one-term Ogden model
-    // Psi_iso = (mu/2) * (lambda_bar_1^2 + lambda_bar_2^2 + lambda_bar_3^2 - 3), i.e. mu=materialProperties[0],
-    // alpha=2 - reuse the validated Ogden potential/stress rather than re-deriving the same math.
-    const double mu[1]    = { materialProperties[0] };
-    const double alpha[1] = { 2.0 };
+    const auto [psi_, dPsi_dC] = EnergyDensityFunctions::Incompressible::FirstOrderDerived::NeoHookePotential( C, mu );
 
-    const auto [psi_, tauPrincipal] = EnergyDensityFunctions::Incompressible::OgdenPrincipalKirchhoffStress( lambda,
-                                                                                                             J,
-                                                                                                             mu,
-                                                                                                             alpha,
-                                                                                                             1 );
+    Tensor33t< autodiff::dual > PK2 = multiplyFastorTensorWithScalar( dPsi_dC, autodiff::dual( 2.0 ) );
 
-    const auto tau = StressMeasures::KirchhoffStressFromPrincipalKirchhoffStress( tauPrincipal, lambda, Q, F );
-
+    const auto tau                = StressMeasures::KirchhoffStressFromPK2( PK2, F_ );
     response.tau                  = tau;
     response.elasticEnergyDensity = Math::makeReal( psi_ );
     response.dissipation          = 0.0;

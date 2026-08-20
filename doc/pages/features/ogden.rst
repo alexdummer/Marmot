@@ -26,8 +26,10 @@ isochoric principal stretches :math:`\bar\lambda_i = J^{-1/3}\lambda_i` (so that
 
 where :math:`\mu_p` and :math:`\alpha_p` are the :math:`N` pairs of Ogden moduli and exponents. The
 classical incompressible Neo-Hookean (:ref:`incompressibleneohooke`) and Mooney-Rivlin
-(:ref:`incompressiblemooneyrivlin`) models are special one- and two-term cases of this potential,
-and are implemented as thin wrappers reusing this material's spectral machinery.
+(:ref:`incompressiblemooneyrivlin`) models are mathematically special one- and two-term cases of
+this potential, but - unlike the general (non-integer) Ogden exponents, which require the spectral
+decomposition below - are quadratic in the stretches and are implemented directly in terms of the
+invariants of :math:`\boldsymbol C`, without spectral decomposition; see those pages for details.
 
 Because the model carries no volumetric stiffness, it cannot be driven by a plain displacement
 element: the discrete problem would be under-constrained in volumetric response. It must instead be

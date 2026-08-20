@@ -46,13 +46,15 @@ namespace Marmot::Materials {
    *   \right),
    * \f]
    * with isochoric principal stretches \f$\bar\lambda_i = J^{-1/3}\lambda_i\f$,
-   * \f$\bar I_1 = \bar\lambda_1^2+\bar\lambda_2^2+\bar\lambda_3^2\f$ and, using
-   * \f$\bar\lambda_1\bar\lambda_2\bar\lambda_3=1\f$,
-   * \f$\bar I_2 = \bar\lambda_1^{-2}+\bar\lambda_2^{-2}+\bar\lambda_3^{-2}\f$. This is exactly the
-   * two-term Ogden model with \f$(\mu_1,\alpha_1)=(2C_1,2)\f$ and
-   * \f$(\mu_2,\alpha_2)=(-2C_2,-2)\f$, and is implemented as such (see
-   * Marmot::Materials::Ogden), reusing the same validated spectral machinery instead of
-   * duplicating it.
+   * \f$\bar I_1 = \bar\lambda_1^2+\bar\lambda_2^2+\bar\lambda_3^2 = I_1 J^{-2/3}\f$ and
+   * \f$\bar I_2 = I_2 J^{-4/3}\f$, with \f$I_1=\operatorname{tr}\boldsymbol C\f$ and
+   * \f$I_2=\tfrac12\left(I_1^2-\operatorname{tr}\boldsymbol C^2\right)\f$. Although mathematically
+   * equivalent to the two-term Ogden model with \f$(\mu_1,\alpha_1)=(2C_1,2)\f$ and
+   * \f$(\mu_2,\alpha_2)=(-2C_2,-2)\f$ (see Marmot::Materials::Ogden), the potential is quadratic in
+   * the stretches and is therefore evaluated directly from the invariants of \f$\boldsymbol C\f$
+   * (EnergyDensityFunctions::Incompressible::MooneyRivlinPotential()) - no spectral decomposition
+   * of \f$\boldsymbol C\f$ is performed, matching the efficiency of the compressible Mooney-Rivlin
+   * potential.
    *
    * There is no volumetric energy term \f$U(J)\f$: this material resists no volumetric deformation
    * on its own and must therefore not be used with a plain displacement element. It is intended

@@ -45,10 +45,13 @@ namespace Marmot::Materials {
    *   \bar\lambda_3^2 - 3 \right) = \frac{\mu}{2} \left( \bar I_1 - 3 \right),
    * \f]
    * with isochoric principal stretches \f$\bar\lambda_i = J^{-1/3}\lambda_i\f$ and isochoric first
-   * invariant \f$\bar I_1 = \bar\lambda_1^2+\bar\lambda_2^2+\bar\lambda_3^2\f$. This is exactly the
-   * one-term Ogden model with exponent 2, and is implemented as such (see
-   * Marmot::Materials::Ogden), reusing the same validated spectral machinery instead of
-   * duplicating it.
+   * invariant \f$\bar I_1 = \bar\lambda_1^2+\bar\lambda_2^2+\bar\lambda_3^2 = I_1 J^{-2/3}\f$
+   * (\f$I_1=\operatorname{tr}\boldsymbol C\f$). Although mathematically equivalent to the one-term
+   * Ogden model with exponent 2 (see Marmot::Materials::Ogden), the potential is quadratic in the
+   * stretches and is therefore evaluated directly from the invariants of \f$\boldsymbol C\f$
+   * (EnergyDensityFunctions::Incompressible::NeoHookePotential()) - no spectral decomposition of
+   * \f$\boldsymbol C\f$ is performed, matching the efficiency of the compressible Neo-Hookean
+   * potentials.
    *
    * There is no volumetric energy term \f$U(J)\f$: this material resists no volumetric deformation
    * on its own and must therefore not be used with a plain displacement element. It is intended

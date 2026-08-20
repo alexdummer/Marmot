@@ -528,8 +528,127 @@ namespace Marmot::ContinuumMechanics {
         return { psi, tauPrincipal };
       }
 
-    } // namespace Incompressible
+      /** @brief Classical isochoric Neo-Hookean hyperelastic potential.
+       *
+       * \f[
+       *   \Psi_\mathrm{iso}(\boldsymbol C) = \frac{\mu}{2} \left( I_1 J^{-2/3} - 3 \right)
+       * \f]
+       * with \f$I_1=\operatorname{tr}\boldsymbol C\f$ and \f$J=\sqrt{\det\boldsymbol C}\f$. Unlike
+       * Ogden's principal-stretch formulation, this potential is expressed directly in terms of
+       * \f$\boldsymbol C\f$'s invariants (it is the special case of a quadratic, i.e. integer,
+       * exponent), so no spectral decomposition of \f$\boldsymbol C\f$ is required or performed -
+       * matching the efficiency of the compressible potentials in EnergyDensityFunctions::Compressible.
+       *
+       * @tparam T Scalar type, e.g. double, autodiff::dual.
+       * @param C Right Cauchy-Green tensor.
+       * @param mu Shear modulus.
+       * @return Energy density.
+       */
+      template < typename T >
+      T NeoHookePotential( const Tensor33t< T >& C, const double mu )
+      {
+        const T J  = sqrt( determinant( C ) );
+        const T I1 = trace( C );
 
-  }   // namespace EnergyDensityFunctions
+        return mu / 2. * ( I1 * pow( J, -2. / 3. ) - 3. );
+      }
+
+      /** @brief Classical isochoric Mooney-Rivlin hyperelastic potential.
+       *
+       * \f[
+       *   \Psi_\mathrm{iso}(\boldsymbol C) = C_1 \left( \bar I_1 - 3 \right) + C_2 \left( \bar I_2 -
+       *   3 \right)
+       * \f]
+       * with \f$\bar I_1 = I_1 J^{-2/3}\f$, \f$\bar I_2 = I_2 J^{-4/3}\f$,
+       * \f$I_1=\operatorname{tr}\boldsymbol C\f$, \f$I_2=\tfrac12\left(I_1^2-\operatorname{tr}
+       * \boldsymbol C^2\right)\f$ and \f$J=\sqrt{\det\boldsymbol C}\f$. As for
+       * NeoHookePotential(), no spectral decomposition of \f$\boldsymbol C\f$ is required.
+       *
+       * @tparam T Scalar type, e.g. double, autodiff::dual.
+       * @param C Right Cauchy-Green tensor.
+       * @param C1 First Mooney-Rivlin modulus.
+       * @param C2 Second Mooney-Rivlin modulus.
+       * @return Energy density.
+       */
+      template < typename T >
+      T MooneyRivlinPotential( const Tensor33t< T >& C, const double C1, const double C2 )
+      {
+        const T J  = sqrt( determinant( C ) );
+        const T I1 = trace( C );
+        const T I2 = 0.5 * ( I1 * I1 - trace( C % C ) );
+
+        return C1 * ( I1 * pow( J, -2. / 3. ) - 3. ) + C2 * ( I2 * pow( J, -4. / 3. ) - 3. );
+      }
+
+      namespace FirstOrderDerived {
+
+        /** @brief Classical isochoric Neo-Hookean hyperelastic potential and its first derivative
+         * w.r.t. \f$\boldsymbol C\f$.
+         * @tparam T Scalar type, e.g. double, autodiff::dual.
+         * @param C Right Cauchy-Green tensor.
+         * @param mu Shear modulus.
+         * @return A tuple containing the energy density and its first derivative w.r.t. C.
+         */
+        template < typename T >
+        std::tuple< T, Tensor33t< T > > NeoHookePotential( const Tensor33t< T >& C, const double mu )
+        {
+          const T J  = sqrt( determinant( C ) );
+          const T I1 = trace( C );
+
+          const T psi = mu / 2. * ( I1 * pow( J, -2. / 3. ) - 3. );
+
+          const T dPsi_dJ  = -mu / 3. * I1 * pow( J, -5. / 3. );
+          const T dPsi_dI1 = mu / 2. * pow( J, -2. / 3. );
+
+          const Tensor33t< T > CInv   = inverse( C );
+          const Tensor33t< T > dJ_dC  = multiplyFastorTensorWithScalar( transpose( CInv ), T( J / 2. ) );
+          const Tensor33t< T > dI1_dC = fastorTensorFromDoubleTensor< T >( Spatial3D::I );
+
+          const Tensor33t< T > dPsi_dC = multiplyFastorTensorWithScalar( dJ_dC, dPsi_dJ ) +
+                                         multiplyFastorTensorWithScalar( dI1_dC, dPsi_dI1 );
+
+          return { psi, dPsi_dC };
+        }
+
+        /** @brief Classical isochoric Mooney-Rivlin hyperelastic potential and its first derivative
+         * w.r.t. \f$\boldsymbol C\f$.
+         * @tparam T Scalar type, e.g. double, autodiff::dual.
+         * @param C Right Cauchy-Green tensor.
+         * @param C1 First Mooney-Rivlin modulus.
+         * @param C2 Second Mooney-Rivlin modulus.
+         * @return A tuple containing the energy density and its first derivative w.r.t. C.
+         */
+        template < typename T >
+        std::tuple< T, Tensor33t< T > > MooneyRivlinPotential( const Tensor33t< T >& C,
+                                                               const double          C1,
+                                                               const double          C2 )
+        {
+          const T J  = sqrt( determinant( C ) );
+          const T I1 = trace( C );
+          const T I2 = 0.5 * ( I1 * I1 - trace( C % C ) );
+
+          const T psi = C1 * ( I1 * pow( J, -2. / 3. ) - 3. ) + C2 * ( I2 * pow( J, -4. / 3. ) - 3. );
+
+          const T dPsi_dJ  = C1 * I1 * ( -2. / 3. ) * pow( J, -5. / 3. ) + C2 * I2 * ( -4. / 3. ) * pow( J, -7. / 3. );
+          const T dPsi_dI1 = C1 * pow( J, -2. / 3. );
+          const T dPsi_dI2 = C2 * pow( J, -4. / 3. );
+
+          const Tensor33t< T > CInv   = inverse( C );
+          const Tensor33t< T > dJ_dC  = multiplyFastorTensorWithScalar( transpose( CInv ), T( J / 2. ) );
+          const Tensor33t< T > dI1_dC = fastorTensorFromDoubleTensor< T >( Spatial3D::I );
+          const Tensor33t< T > dI2_dC = multiplyFastorTensorWithScalar( dI1_dC, I1 ) - C;
+
+          const Tensor33t< T > dPsi_dC = multiplyFastorTensorWithScalar( dJ_dC, dPsi_dJ ) +
+                                         multiplyFastorTensorWithScalar( dI1_dC, dPsi_dI1 ) +
+                                         multiplyFastorTensorWithScalar( dI2_dC, dPsi_dI2 );
+
+          return { psi, dPsi_dC };
+        }
+
+      } // namespace FirstOrderDerived
+
+    }   // namespace Incompressible
+
+  }     // namespace EnergyDensityFunctions
 
 } // namespace Marmot::ContinuumMechanics

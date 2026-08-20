@@ -29,34 +29,24 @@ namespace Marmot::Materials {
                                                     const DeformationAD< 3 >&    deformation,
                                                     const TimeIncrement&         timeIncrement ) const
   {
-    using scalar  = autodiff::dual;
-    const auto& F = deformation.F;
+    const double& C1 = materialProperties[0];
+    const double& C2 = materialProperties[1];
+    const auto&   F_ = deformation.F;
 
     using namespace ContinuumMechanics;
 
-    // principal stretches lambda_i and eigenvectors Q of the right Cauchy-Green tensor C
-    const auto [lambda, Q] = DeformationMeasures::principalStretches( F );
-    const scalar J         = DeformationMeasures::volumeRatio( F );
+    // Unlike Ogden's general (non-integer) exponents, the classical Mooney-Rivlin potential is
+    // quadratic in the isochoric stretches and can therefore be expressed directly in terms of the
+    // invariants of C - no spectral decomposition of C is required.
+    const auto C = DeformationMeasures::rightCauchyGreen( F_ );
 
-    // the classical incompressible Mooney-Rivlin potential
-    //   Psi_iso = C1*(I1bar-3) + C2*(I2bar-3)
-    // is exactly the two-term Ogden model with (mu_1,alpha_1)=(2*C1,2), (mu_2,alpha_2)=(-2*C2,-2)
-    // (using I2bar = sum_i lambda_bar_i^-2 for incompressible stretches) - reuse the validated
-    // Ogden potential/stress rather than re-deriving the same math.
-    const double C1 = materialProperties[0];
-    const double C2 = materialProperties[1];
+    const auto [psi_, dPsi_dC] = EnergyDensityFunctions::Incompressible::FirstOrderDerived::MooneyRivlinPotential( C,
+                                                                                                                   C1,
+                                                                                                                   C2 );
 
-    const double mu[2]    = { 2.0 * C1, -2.0 * C2 };
-    const double alpha[2] = { 2.0, -2.0 };
+    Tensor33t< autodiff::dual > PK2 = multiplyFastorTensorWithScalar( dPsi_dC, autodiff::dual( 2.0 ) );
 
-    const auto [psi_, tauPrincipal] = EnergyDensityFunctions::Incompressible::OgdenPrincipalKirchhoffStress( lambda,
-                                                                                                             J,
-                                                                                                             mu,
-                                                                                                             alpha,
-                                                                                                             2 );
-
-    const auto tau = StressMeasures::KirchhoffStressFromPrincipalKirchhoffStress( tauPrincipal, lambda, Q, F );
-
+    const auto tau                = StressMeasures::KirchhoffStressFromPK2( PK2, F_ );
     response.tau                  = tau;
     response.elasticEnergyDensity = Math::makeReal( psi_ );
     response.dissipation          = 0.0;
