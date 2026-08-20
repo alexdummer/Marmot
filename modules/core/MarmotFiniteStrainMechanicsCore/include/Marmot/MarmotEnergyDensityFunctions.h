@@ -580,18 +580,27 @@ namespace Marmot::ContinuumMechanics {
         return C1 * ( I1 * pow( J, -2. / 3. ) - 3. ) + C2 * ( I2 * pow( J, -4. / 3. ) - 3. );
       }
 
-      namespace FirstOrderDerived {
+      namespace SecondOrderDerived {
 
-        /** @brief Classical isochoric Neo-Hookean hyperelastic potential and its first derivative
-         * w.r.t. \f$\boldsymbol C\f$.
-         * @tparam T Scalar type, e.g. double, autodiff::dual.
+        /** @brief Classical isochoric Neo-Hookean hyperelastic potential and its first and second
+         * derivative w.r.t. \f$\boldsymbol C\f$.
+         *
+         * @details Mirrors EnergyDensityFunctions::Compressible::SecondOrderDerived::PenceGouPotentialB(),
+         * dropping its volumetric (\f$K\f$-dependent) terms - the \f$J\f$/\f$I_1\f$ chain-rule
+         * building blocks (\f$\partial J/\partial\boldsymbol C\f$,
+         * \f$\partial^2 J/\partial\boldsymbol C\partial\boldsymbol C\f$,
+         * \f$\partial I_1/\partial\boldsymbol C\f$) are identical.
+         *
+         * @tparam T Scalar type, e.g. double, float.
          * @param C Right Cauchy-Green tensor.
          * @param mu Shear modulus.
-         * @return A tuple containing the energy density and its first derivative w.r.t. C.
+         * @return A tuple containing the energy density, its first and second derivative w.r.t. C.
          */
         template < typename T >
-        std::tuple< T, Tensor33t< T > > NeoHookePotential( const Tensor33t< T >& C, const double mu )
+        std::tuple< T, Tensor33t< T >, Tensor3333t< T > > NeoHookePotential( const Tensor33t< T >& C, const double mu )
         {
+          using namespace FastorIndices;
+
           const T J  = sqrt( determinant( C ) );
           const T I1 = trace( C );
 
@@ -601,28 +610,50 @@ namespace Marmot::ContinuumMechanics {
           const T dPsi_dI1 = mu / 2. * pow( J, -2. / 3. );
 
           const Tensor33t< T > CInv   = inverse( C );
-          const Tensor33t< T > dJ_dC  = multiplyFastorTensorWithScalar( transpose( CInv ), T( J / 2. ) );
-          const Tensor33t< T > dI1_dC = fastorTensorFromDoubleTensor< T >( Spatial3D::I );
+          const Tensor33t< T > dJ_dC  = 0.5 * J * transpose( CInv );
+          const Tensor33t< T > dI1_dC = Spatial3D::I;
 
-          const Tensor33t< T > dPsi_dC = multiplyFastorTensorWithScalar( dJ_dC, dPsi_dJ ) +
-                                         multiplyFastorTensorWithScalar( dI1_dC, dPsi_dI1 );
+          const Tensor33t< T > dPsi_dC = dPsi_dJ * dJ_dC + dPsi_dI1 * dI1_dC;
 
-          return { psi, dPsi_dC };
+          const T d2Psi_dJdJ  = 5. / 9. * mu * I1 * pow( J, -8. / 3. );
+          const T d2Psi_dJdI1 = -mu / 3. * pow( J, -5. / 3. );
+
+          const Tensor3333t< T > d2J_dCdC = J / 4. * einsum< JI, LK, to_IJKL >( CInv, CInv ) -
+                                            J / 2. * einsum< JK, LI, to_IJKL >( CInv, CInv );
+
+          const Tensor3333t< T > d2Psi_dCdC = d2Psi_dJdJ * einsum< IJ, KL >( dJ_dC, dJ_dC ) + dPsi_dJ * d2J_dCdC +
+                                              d2Psi_dJdI1 * ( einsum< IJ, KL >( dJ_dC, dI1_dC ) +
+                                                              einsum< IJ, KL >( dI1_dC, dJ_dC ) );
+
+          return { psi, dPsi_dC, d2Psi_dCdC };
         }
 
-        /** @brief Classical isochoric Mooney-Rivlin hyperelastic potential and its first derivative
-         * w.r.t. \f$\boldsymbol C\f$.
-         * @tparam T Scalar type, e.g. double, autodiff::dual.
+        /** @brief Classical isochoric Mooney-Rivlin hyperelastic potential and its first and second
+         * derivative w.r.t. \f$\boldsymbol C\f$.
+         *
+         * @details Reuses the same \f$J\f$/\f$I_1\f$ building blocks as NeoHookePotential() (in
+         * turn identical to those in
+         * EnergyDensityFunctions::Compressible::SecondOrderDerived::PenceGouPotentialB()), adding
+         * the second invariant \f$I_2=\tfrac12(I_1^2-\operatorname{tr}\boldsymbol C^2)\f$ with
+         * \f$\partial I_2/\partial\boldsymbol C = I_1\boldsymbol I-\boldsymbol C\f$ and
+         * \f$\partial^2 I_2/\partial\boldsymbol C\partial\boldsymbol C = \boldsymbol I\otimes
+         * \boldsymbol I - \boldsymbol I^{\rm sym}\f$ (\f$\boldsymbol I^{\rm sym}\f$ the symmetric
+         * fourth-order identity, i.e. \f$\partial\boldsymbol C/\partial\boldsymbol C\f$ for
+         * symmetric \f$\boldsymbol C\f$).
+         *
+         * @tparam T Scalar type, e.g. double, float.
          * @param C Right Cauchy-Green tensor.
          * @param C1 First Mooney-Rivlin modulus.
          * @param C2 Second Mooney-Rivlin modulus.
-         * @return A tuple containing the energy density and its first derivative w.r.t. C.
+         * @return A tuple containing the energy density, its first and second derivative w.r.t. C.
          */
         template < typename T >
-        std::tuple< T, Tensor33t< T > > MooneyRivlinPotential( const Tensor33t< T >& C,
-                                                               const double          C1,
-                                                               const double          C2 )
+        std::tuple< T, Tensor33t< T >, Tensor3333t< T > > MooneyRivlinPotential( const Tensor33t< T >& C,
+                                                                                 const double          C1,
+                                                                                 const double          C2 )
         {
+          using namespace FastorIndices;
+
           const T J  = sqrt( determinant( C ) );
           const T I1 = trace( C );
           const T I2 = 0.5 * ( I1 * I1 - trace( C % C ) );
@@ -634,18 +665,31 @@ namespace Marmot::ContinuumMechanics {
           const T dPsi_dI2 = C2 * pow( J, -4. / 3. );
 
           const Tensor33t< T > CInv   = inverse( C );
-          const Tensor33t< T > dJ_dC  = multiplyFastorTensorWithScalar( transpose( CInv ), T( J / 2. ) );
-          const Tensor33t< T > dI1_dC = fastorTensorFromDoubleTensor< T >( Spatial3D::I );
-          const Tensor33t< T > dI2_dC = multiplyFastorTensorWithScalar( dI1_dC, I1 ) - C;
+          const Tensor33t< T > dJ_dC  = 0.5 * J * transpose( CInv );
+          const Tensor33t< T > dI1_dC = Spatial3D::I;
+          const Tensor33t< T > dI2_dC = I1 * dI1_dC - C;
 
-          const Tensor33t< T > dPsi_dC = multiplyFastorTensorWithScalar( dJ_dC, dPsi_dJ ) +
-                                         multiplyFastorTensorWithScalar( dI1_dC, dPsi_dI1 ) +
-                                         multiplyFastorTensorWithScalar( dI2_dC, dPsi_dI2 );
+          const Tensor33t< T > dPsi_dC = dPsi_dJ * dJ_dC + dPsi_dI1 * dI1_dC + dPsi_dI2 * dI2_dC;
 
-          return { psi, dPsi_dC };
+          const T d2Psi_dJdJ  = C1 * I1 * 10. / 9. * pow( J, -8. / 3. ) + C2 * I2 * 28. / 9. * pow( J, -10. / 3. );
+          const T d2Psi_dJdI1 = C1 * ( -2. / 3. ) * pow( J, -5. / 3. );
+          const T d2Psi_dJdI2 = C2 * ( -4. / 3. ) * pow( J, -7. / 3. );
+
+          const Tensor3333t< T > d2J_dCdC = J / 4. * einsum< JI, LK, to_IJKL >( CInv, CInv ) -
+                                            J / 2. * einsum< JK, LI, to_IJKL >( CInv, CInv );
+          const Tensor3333t< T > d2I2_dCdC = einsum< IJ, KL >( dI1_dC, dI1_dC ) - Spatial3D::ISymm;
+
+          const Tensor3333t< T > d2Psi_dCdC = d2Psi_dJdJ * einsum< IJ, KL >( dJ_dC, dJ_dC ) + dPsi_dJ * d2J_dCdC +
+                                              dPsi_dI2 * d2I2_dCdC +
+                                              d2Psi_dJdI1 * ( einsum< IJ, KL >( dJ_dC, dI1_dC ) +
+                                                              einsum< IJ, KL >( dI1_dC, dJ_dC ) ) +
+                                              d2Psi_dJdI2 * ( einsum< IJ, KL >( dJ_dC, dI2_dC ) +
+                                                              einsum< IJ, KL >( dI2_dC, dJ_dC ) );
+
+          return { psi, dPsi_dC, d2Psi_dCdC };
         }
 
-      } // namespace FirstOrderDerived
+      } // namespace SecondOrderDerived
 
     }   // namespace Incompressible
 

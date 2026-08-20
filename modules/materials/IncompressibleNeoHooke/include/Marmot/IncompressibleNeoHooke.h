@@ -24,7 +24,8 @@
  */
 
 #pragma once
-#include "Marmot/MarmotMaterialFiniteStrainAD.h"
+#include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotMaterialFiniteStrain.h"
 
 namespace Marmot::Materials {
 
@@ -58,9 +59,13 @@ namespace Marmot::Materials {
    * exclusively for use with a mixed displacement-pressure element that enforces incompressibility
    * as an independent constraint, e.g. Marmot::Elements::DisplacementPressureFiniteStrainElement.
    *
+   * The consistent algorithmic tangent is computed analytically via
+   * EnergyDensityFunctions::Incompressible::SecondOrderDerived::NeoHookePotential() - no automatic
+   * differentiation is used, matching Marmot::Materials::CompressibleNeoHooke's approach.
+   *
    * @ingroup materials_hyperelastic
    */
-  class IncompressibleNeoHooke : public MarmotMaterialFiniteStrainAD {
+  class IncompressibleNeoHooke : public MarmotMaterialFiniteStrain {
 
   public:
     /**
@@ -72,17 +77,20 @@ namespace Marmot::Materials {
     IncompressibleNeoHooke( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
     /**
-     * @brief Compute the isochoric Kirchhoff stress with dual numbers.
+     * @brief Compute the isochoric Kirchhoff stress and the algorithmic tangent for the current step.
      * @param[in,out] response
      *   - @c tau - Kirchhoff stress tensor @f$\boldsymbol{\tau}@f$ (trace-free/deviatoric).
      *   - @c elasticEnergyDensity - isochoric elastic energy density @f$\Psi_\mathrm{iso}@f$.
+     * @param[in,out] tangents
+     *   - @c dTau_dF - algorithmic tangent @f$\partial\boldsymbol{\tau}/\partial\boldsymbol{F}@f$.
      * @param[in]  deformation
      *   - @c F - deformation gradient @f$\boldsymbol{F}@f$.
      * @param[in]  timeIncrement Unused (hyperelastic, no history).
      */
-    void computeStressAD( ConstitutiveResponseAD< 3 >& response,
-                          const DeformationAD< 3 >&    deformation,
-                          const TimeIncrement&         timeIncrement ) const override;
+    void computeStress( ConstitutiveResponse< 3 >& response,
+                        AlgorithmicModuli< 3 >&    tangents,
+                        const Deformation< 3 >&    deformation,
+                        const TimeIncrement&       timeIncrement ) const override;
 
     double getDensity( const double* stateVars ) const override
     {

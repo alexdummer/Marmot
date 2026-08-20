@@ -24,7 +24,8 @@
  */
 
 #pragma once
-#include "Marmot/MarmotMaterialFiniteStrainAD.h"
+#include "Marmot/MarmotJournal.h"
+#include "Marmot/MarmotMaterialFiniteStrain.h"
 
 namespace Marmot::Materials {
 
@@ -56,6 +57,10 @@ namespace Marmot::Materials {
    * of \f$\boldsymbol C\f$ is performed, matching the efficiency of the compressible Mooney-Rivlin
    * potential.
    *
+   * The consistent algorithmic tangent is computed analytically via
+   * EnergyDensityFunctions::Incompressible::SecondOrderDerived::MooneyRivlinPotential() - no
+   * automatic differentiation is used, matching Marmot::Materials::CompressibleNeoHooke's approach.
+   *
    * There is no volumetric energy term \f$U(J)\f$: this material resists no volumetric deformation
    * on its own and must therefore not be used with a plain displacement element. It is intended
    * exclusively for use with a mixed displacement-pressure element that enforces incompressibility
@@ -63,7 +68,7 @@ namespace Marmot::Materials {
    *
    * @ingroup materials_hyperelastic
    */
-  class IncompressibleMooneyRivlin : public MarmotMaterialFiniteStrainAD {
+  class IncompressibleMooneyRivlin : public MarmotMaterialFiniteStrain {
 
   public:
     /**
@@ -75,17 +80,20 @@ namespace Marmot::Materials {
     IncompressibleMooneyRivlin( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
     /**
-     * @brief Compute the isochoric Kirchhoff stress with dual numbers.
+     * @brief Compute the isochoric Kirchhoff stress and the algorithmic tangent for the current step.
      * @param[in,out] response
      *   - @c tau - Kirchhoff stress tensor @f$\boldsymbol{\tau}@f$ (trace-free/deviatoric).
      *   - @c elasticEnergyDensity - isochoric elastic energy density @f$\Psi_\mathrm{iso}@f$.
+     * @param[in,out] tangents
+     *   - @c dTau_dF - algorithmic tangent @f$\partial\boldsymbol{\tau}/\partial\boldsymbol{F}@f$.
      * @param[in]  deformation
      *   - @c F - deformation gradient @f$\boldsymbol{F}@f$.
      * @param[in]  timeIncrement Unused (hyperelastic, no history).
      */
-    void computeStressAD( ConstitutiveResponseAD< 3 >& response,
-                          const DeformationAD< 3 >&    deformation,
-                          const TimeIncrement&         timeIncrement ) const override;
+    void computeStress( ConstitutiveResponse< 3 >& response,
+                        AlgorithmicModuli< 3 >&    tangents,
+                        const Deformation< 3 >&    deformation,
+                        const TimeIncrement&       timeIncrement ) const override;
 
     double getDensity( const double* stateVars ) const override
     {

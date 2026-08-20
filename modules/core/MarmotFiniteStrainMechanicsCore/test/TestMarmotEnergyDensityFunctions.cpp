@@ -1,6 +1,7 @@
 #include "Fastor/Fastor.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotTesting.h"
+#include <array>
 
 using namespace Marmot::Testing;
 using namespace Marmot::FastorStandardTensors;
@@ -162,39 +163,101 @@ auto testSecondOrderDerivedB()
     }
 }
 
-// Verifies the analytic first derivative of the (purely isochoric) Incompressible::NeoHookePotential
-// against a central-difference approximation.
-auto testIncompressibleNeoHookeFirstOrderDerived()
+namespace {
+
+  // Six independent symmetric directions spanning the space of symmetric perturbations of C. C is
+  // always symmetric in practice (C=F^T F), so a rigorous finite-difference check of a
+  // dPsi/dC-type derivative must probe it only along symmetric directions - perturbing a single
+  // off-diagonal component C(i,j) alone (leaving C(j,i) untouched) produces an unphysical
+  // asymmetric C that the analytic (symmetric-domain) derivative formulas are not meant to match.
+  std::array< Tensor33d, 6 > symmetricBasisDirections()
+  {
+    std::array< Tensor33d, 6 > D;
+    for ( auto& d : D )
+      d = Tensor33d( 0.0 );
+    D[0]( 0, 0 ) = 1.;
+    D[1]( 1, 1 ) = 1.;
+    D[2]( 2, 2 ) = 1.;
+    D[3]( 0, 1 ) = D[3]( 1, 0 ) = 1.;
+    D[4]( 0, 2 ) = D[4]( 2, 0 ) = 1.;
+    D[5]( 1, 2 ) = D[5]( 2, 1 ) = 1.;
+    return D;
+  }
+
+  // Verifies {psi, dPsi_dC, d2Psi_dCdC} = potentialFn(C) against central-difference directional
+  // derivatives along every pair of symmetric basis directions.
+  template < typename PotentialFn >
+  void checkSecondOrderDerivedAgainstFD( const std::string& testName, const Tensor33d& C, PotentialFn potentialFn )
+  {
+    const auto [psi, dPsi_dC, d2Psi_dCdC] = potentialFn( C );
+
+    static const std::array< Tensor33d, 6 > D = symmetricBasisDirections();
+    const double                            h = 1e-6;
+
+    for ( int a = 0; a < 6; a++ ) {
+      const Tensor33d Cp = C + h * D[a];
+      const Tensor33d Cm = C - h * D[a];
+
+      const auto [psiP, dPsi_dCp, d2Psi_dCdCp] = potentialFn( Cp );
+      const auto [psiM, dPsi_dCm, d2Psi_dCdCm] = potentialFn( Cm );
+
+      const double directionalFD       = ( psiP - psiM ) / ( 2 * h );
+      double       directionalAnalytic = 0.;
+      for ( int i = 0; i < 3; i++ )
+        for ( int j = 0; j < 3; j++ )
+          directionalAnalytic += dPsi_dC( i, j ) * D[a]( i, j );
+
+      throwExceptionOnFailure( checkIfEqual( directionalAnalytic, directionalFD, 1e-6 ),
+                               MakeString() << testName << " first derivative mismatch along direction " << a );
+
+      for ( int b = 0; b < 6; b++ ) {
+        double dirP = 0., dirM = 0.;
+        for ( int k = 0; k < 3; k++ )
+          for ( int l = 0; l < 3; l++ ) {
+            dirP += dPsi_dCp( k, l ) * D[b]( k, l );
+            dirM += dPsi_dCm( k, l ) * D[b]( k, l );
+          }
+        const double d2DirectionalFD = ( dirP - dirM ) / ( 2 * h );
+
+        double d2DirectionalAnalytic = 0.;
+        for ( int i = 0; i < 3; i++ )
+          for ( int j = 0; j < 3; j++ )
+            for ( int k = 0; k < 3; k++ )
+              for ( int l = 0; l < 3; l++ )
+                d2DirectionalAnalytic += d2Psi_dCdC( i, j, k, l ) * D[a]( i, j ) * D[b]( k, l );
+
+        throwExceptionOnFailure( checkIfEqual( d2DirectionalAnalytic, d2DirectionalFD, 1e-3 ),
+                                 MakeString() << testName << " second derivative mismatch along directions (" << a
+                                              << ", " << b << ")" );
+      }
+    }
+  }
+
+} // namespace
+
+// Verifies the analytic first and second derivative of the (purely isochoric)
+// Incompressible::NeoHookePotential against central-difference directional derivatives.
+auto testIncompressibleNeoHookeSecondOrderDerived()
 {
   using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Incompressible;
 
   Tensor33d    C  = get< 0 >( computationParameters() );
   const double mu = 1000.;
 
-  const auto [psi, dPsi_dC] = FirstOrderDerived::NeoHookePotential( C, mu );
-
-  throwExceptionOnFailure( checkIfEqual( psi, NeoHookePotential( C, mu ), 1e-14 ),
+  throwExceptionOnFailure( checkIfEqual( get< 0 >( SecondOrderDerived::NeoHookePotential( C, mu ) ),
+                                         NeoHookePotential( C, mu ),
+                                         1e-14 ),
                            MakeString() << __PRETTY_FUNCTION__ << " energy density mismatch between the bare "
-                                        << "potential and its FirstOrderDerived variant." );
+                                        << "potential and its SecondOrderDerived variant." );
 
-  const double h = 1e-7;
-  for ( int i = 0; i < 3; i++ )
-    for ( int j = 0; j < 3; j++ ) {
-      Tensor33d Cp = C, Cm = C;
-      Cp( i, j ) += h;
-      Cm( i, j ) -= h;
-
-      const double dPsi_dC_numeric = ( NeoHookePotential( Cp, mu ) - NeoHookePotential( Cm, mu ) ) / ( 2 * h );
-
-      throwExceptionOnFailure( checkIfEqual( dPsi_dC( i, j ), dPsi_dC_numeric, 1e-6 ),
-                               MakeString()
-                                 << __PRETTY_FUNCTION__ << " derivative mismatch at (" << i << ", " << j << ")" );
-    }
+  checkSecondOrderDerivedAgainstFD( __PRETTY_FUNCTION__, C, [mu]( const Tensor33d& C_ ) {
+    return SecondOrderDerived::NeoHookePotential( C_, mu );
+  } );
 }
 
-// Verifies the analytic first derivative of the (purely isochoric) Incompressible::MooneyRivlinPotential
-// against a central-difference approximation.
-auto testIncompressibleMooneyRivlinFirstOrderDerived()
+// Verifies the analytic first and second derivative of the (purely isochoric)
+// Incompressible::MooneyRivlinPotential against central-difference directional derivatives.
+auto testIncompressibleMooneyRivlinSecondOrderDerived()
 {
   using namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::Incompressible;
 
@@ -202,26 +265,15 @@ auto testIncompressibleMooneyRivlinFirstOrderDerived()
   const double C1 = 800.;
   const double C2 = 200.;
 
-  const auto [psi, dPsi_dC] = FirstOrderDerived::MooneyRivlinPotential( C, C1, C2 );
-
-  throwExceptionOnFailure( checkIfEqual( psi, MooneyRivlinPotential( C, C1, C2 ), 1e-14 ),
+  throwExceptionOnFailure( checkIfEqual( get< 0 >( SecondOrderDerived::MooneyRivlinPotential( C, C1, C2 ) ),
+                                         MooneyRivlinPotential( C, C1, C2 ),
+                                         1e-14 ),
                            MakeString() << __PRETTY_FUNCTION__ << " energy density mismatch between the bare "
-                                        << "potential and its FirstOrderDerived variant." );
+                                        << "potential and its SecondOrderDerived variant." );
 
-  const double h = 1e-7;
-  for ( int i = 0; i < 3; i++ )
-    for ( int j = 0; j < 3; j++ ) {
-      Tensor33d Cp = C, Cm = C;
-      Cp( i, j ) += h;
-      Cm( i, j ) -= h;
-
-      const double dPsi_dC_numeric = ( MooneyRivlinPotential( Cp, C1, C2 ) - MooneyRivlinPotential( Cm, C1, C2 ) ) /
-                                     ( 2 * h );
-
-      throwExceptionOnFailure( checkIfEqual( dPsi_dC( i, j ), dPsi_dC_numeric, 1e-6 ),
-                               MakeString()
-                                 << __PRETTY_FUNCTION__ << " derivative mismatch at (" << i << ", " << j << ")" );
-    }
+  checkSecondOrderDerivedAgainstFD( __PRETTY_FUNCTION__, C, [C1, C2]( const Tensor33d& C_ ) {
+    return SecondOrderDerived::MooneyRivlinPotential( C_, C1, C2 );
+  } );
 }
 
 int main()
@@ -231,8 +283,8 @@ int main()
                                                        testPenceGouPotentialC,
                                                        testFirstOrderDerivedB,
                                                        testSecondOrderDerivedB,
-                                                       testIncompressibleNeoHookeFirstOrderDerived,
-                                                       testIncompressibleMooneyRivlinFirstOrderDerived };
+                                                       testIncompressibleNeoHookeSecondOrderDerived,
+                                                       testIncompressibleMooneyRivlinSecondOrderDerived };
 
   executeTestsAndCollectExceptions( tests );
   return 0;

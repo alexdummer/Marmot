@@ -31,8 +31,11 @@ of the invariants of :math:`\boldsymbol C=\boldsymbol F^{\mathsf T}\boldsymbol F
 compressible Mooney-Rivlin potential is - so, unlike Ogden, **no spectral decomposition of**
 :math:`\boldsymbol C` **is required or performed**. The second Piola-Kirchhoff stress
 :math:`\boldsymbol S = 2\,\partial\Psi_{\rm iso}/\partial\boldsymbol C` is pushed forward to the
-Kirchhoff stress, and the consistent algorithmic tangent is obtained via automatic
-differentiation. Setting :math:`C_2=0` recovers :ref:`incompressibleneohooke`.
+Kirchhoff stress. The consistent algorithmic tangent is computed analytically (no automatic
+differentiation), extending the same :math:`J`/:math:`I_1` building blocks used in
+:ref:`incompressibleneohooke` with the second invariant :math:`I_2=\tfrac12(I_1^2-
+\operatorname{tr}\boldsymbol C^2)`. Setting :math:`C_2=0` recovers
+:ref:`incompressibleneohooke`.
 
 Implementation
 --------------

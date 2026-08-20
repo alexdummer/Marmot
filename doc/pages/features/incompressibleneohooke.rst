@@ -31,8 +31,11 @@ J^{-2/3}`, :math:`I_1=\operatorname{tr}\boldsymbol C`) exactly as the compressib
 :ref:`compressibleneohooke` are - so, unlike Ogden, **no spectral decomposition of**
 :math:`\boldsymbol C` **is required or performed**. The second Piola-Kirchhoff stress
 :math:`\boldsymbol S = 2\,\partial\Psi_{\rm iso}/\partial\boldsymbol C` is pushed forward to the
-Kirchhoff stress exactly as for :ref:`compressibleneohooke`, and the consistent algorithmic tangent
-is obtained via automatic differentiation.
+Kirchhoff stress exactly as for :ref:`compressibleneohooke`. The consistent algorithmic tangent is
+computed analytically (no automatic differentiation), reusing the same
+:math:`\partial J/\partial\boldsymbol C`, :math:`\partial^2 J/\partial\boldsymbol C\partial
+\boldsymbol C` and :math:`\partial I_1/\partial\boldsymbol C` building blocks already present in
+:ref:`compressibleneohooke`'s Pence-Gou potential.
 
 Implementation
 --------------
