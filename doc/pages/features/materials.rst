@@ -15,6 +15,8 @@ This section contains the ready to use available material models.
   finitestrainj2plasticity
   finitestrainorthotropicbiotviscoelasticity
   ogden
+  incompressibleneohooke
+  incompressiblemooneyrivlin
   linearelastic
   adlinearelastic
   linearviscoelasticpowerlaw

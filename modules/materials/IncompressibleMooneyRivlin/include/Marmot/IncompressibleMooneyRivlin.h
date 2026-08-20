@@ -1,0 +1,97 @@
+/* ---------------------------------------------------------------------
+ *                                       _
+ *  _ __ ___   __ _ _ __ _ __ ___   ___ | |_
+ * | '_ ` _ \ / _` | '__| '_ ` _ \ / _ \| __|
+ * | | | | | | (_| | |  | | | | | | (_) | |_
+ * |_| |_| |_|\__,_|_|  |_| |_| |_|\___/ \__|
+ *
+ * Unit of Strength of Materials and Structural Analysis
+ * University of Innsbruck
+ * 2020 - today
+ *
+ * festigkeitslehre@uibk.ac.at
+ *
+ * This file is part of the MAteRialMOdellingToolbox (marmot).
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * The full text of the license can be found in the file LICENSE.md at
+ * the top level directory of marmot.
+ * ---------------------------------------------------------------------
+ */
+
+#pragma once
+#include "Marmot/MarmotMaterialFiniteStrainAD.h"
+
+namespace Marmot::Materials {
+
+  /**
+   * @class Marmot::Materials::IncompressibleMooneyRivlin
+   * @brief Classical incompressible (purely isochoric) Mooney-Rivlin hyperelastic material model.
+   *
+   * @par Material parameters
+   * - @b C1 - first Mooney-Rivlin modulus (materialProperties[0])
+   * - @b C2 - second Mooney-Rivlin modulus (materialProperties[1])
+   * - @b density (optional) - materialProperties[2]
+   *
+   * @par State variables
+   * - No state variables required.
+   *
+   * @details Implements the standard isochoric Mooney-Rivlin potential
+   * \f[
+   *   \Psi_\mathrm{iso}(\bar\lambda) = C_1 \left( \bar I_1 - 3 \right) + C_2 \left( \bar I_2 - 3
+   *   \right),
+   * \f]
+   * with isochoric principal stretches \f$\bar\lambda_i = J^{-1/3}\lambda_i\f$,
+   * \f$\bar I_1 = \bar\lambda_1^2+\bar\lambda_2^2+\bar\lambda_3^2\f$ and, using
+   * \f$\bar\lambda_1\bar\lambda_2\bar\lambda_3=1\f$,
+   * \f$\bar I_2 = \bar\lambda_1^{-2}+\bar\lambda_2^{-2}+\bar\lambda_3^{-2}\f$. This is exactly the
+   * two-term Ogden model with \f$(\mu_1,\alpha_1)=(2C_1,2)\f$ and
+   * \f$(\mu_2,\alpha_2)=(-2C_2,-2)\f$, and is implemented as such (see
+   * Marmot::Materials::Ogden), reusing the same validated spectral machinery instead of
+   * duplicating it.
+   *
+   * There is no volumetric energy term \f$U(J)\f$: this material resists no volumetric deformation
+   * on its own and must therefore not be used with a plain displacement element. It is intended
+   * exclusively for use with a mixed displacement-pressure element that enforces incompressibility
+   * as an independent constraint, e.g. Marmot::Elements::DisplacementPressureFiniteStrainElement.
+   *
+   * @ingroup materials_hyperelastic
+   */
+  class IncompressibleMooneyRivlin : public MarmotMaterialFiniteStrainAD {
+
+  public:
+    /**
+     * @brief Construct an IncompressibleMooneyRivlin material.
+     * @param materialProperties Expects @c C1 at index 0 and @c C2 at index 1.
+     * @param nMaterialProperties Length of @c materialProperties.
+     * @param materialLabel Material label.
+     */
+    IncompressibleMooneyRivlin( const double* materialProperties, int nMaterialProperties, int materialLabel );
+
+    /**
+     * @brief Compute the isochoric Kirchhoff stress with dual numbers.
+     * @param[in,out] response
+     *   - @c tau - Kirchhoff stress tensor @f$\boldsymbol{\tau}@f$ (trace-free/deviatoric).
+     *   - @c elasticEnergyDensity - isochoric elastic energy density @f$\Psi_\mathrm{iso}@f$.
+     * @param[in]  deformation
+     *   - @c F - deformation gradient @f$\boldsymbol{F}@f$.
+     * @param[in]  timeIncrement Unused (hyperelastic, no history).
+     */
+    void computeStressAD( ConstitutiveResponseAD< 3 >& response,
+                          const DeformationAD< 3 >&    deformation,
+                          const TimeIncrement&         timeIncrement ) const override;
+
+    double getDensity( const double* stateVars ) const override
+    {
+      if ( this->nMaterialProperties < 3 )
+        throw std::runtime_error(
+          std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 3." ) );
+      return this->materialProperties[2];
+    }
+  };
+
+} // namespace Marmot::Materials

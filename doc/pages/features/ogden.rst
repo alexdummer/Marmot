@@ -24,7 +24,10 @@ isochoric principal stretches :math:`\bar\lambda_i = J^{-1/3}\lambda_i` (so that
    \sum_{p=1}^{N} \frac{\mu_p}{\alpha_p}
    \left( \bar\lambda_1^{\alpha_p} + \bar\lambda_2^{\alpha_p} + \bar\lambda_3^{\alpha_p} - 3 \right),
 
-where :math:`\mu_p` and :math:`\alpha_p` are the :math:`N` pairs of Ogden moduli and exponents.
+where :math:`\mu_p` and :math:`\alpha_p` are the :math:`N` pairs of Ogden moduli and exponents. The
+classical incompressible Neo-Hookean (:ref:`incompressibleneohooke`) and Mooney-Rivlin
+(:ref:`incompressiblemooneyrivlin`) models are special one- and two-term cases of this potential,
+and are implemented as thin wrappers reusing this material's spectral machinery.
 
 Because the model carries no volumetric stiffness, it cannot be driven by a plain displacement
 element: the discrete problem would be under-constrained in volumetric response. It must instead be
