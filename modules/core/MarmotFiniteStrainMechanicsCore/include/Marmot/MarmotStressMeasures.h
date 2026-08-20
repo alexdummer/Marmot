@@ -60,6 +60,43 @@ namespace Marmot::ContinuumMechanics {
       return tau;
     }
 
+    /**
+     * @brief Computes the Kirchhoff stress from a principal Kirchhoff stress given in the
+     * eigenbasis of the right Cauchy-Green tensor.
+     *
+     * @details For an isotropic hyperelastic material formulated in principal stretches
+     * \f$\lambda_i\f$, the second Piola-Kirchhoff stress shares the eigenbasis \f$\boldsymbol Q\f$
+     * of \f$\boldsymbol C=\boldsymbol F^T\boldsymbol F\f$ with the principal Kirchhoff stress via
+     * \f$S_i = \tau_i/\lambda_i^2\f$. This helper assembles
+     * \f$\boldsymbol S = \boldsymbol Q\,\mathrm{diag}(S_i)\,\boldsymbol Q^T\f$ and pushes it
+     * forward to the Kirchhoff stress \f$\boldsymbol\tau=\boldsymbol F\boldsymbol S\boldsymbol
+     * F^T\f$, factoring out the pattern shared by every principal-stretch-based finite-strain
+     * material (e.g. Marmot::Materials::Ogden and its incompressible Neo-Hooke/Mooney-Rivlin
+     * specializations).
+     *
+     * @tparam T Scalar type, e.g. double, autodiff::dual.
+     * @param principalKirchhoffStress Principal Kirchhoff stresses \f$\tau_i\f$.
+     * @param principalStretches Principal stretches \f$\lambda_i\f$ (same ordering/eigenbasis).
+     * @param Q Eigenvector matrix of \f$\boldsymbol C\f$ (e.g. from
+     * DeformationMeasures::principalStretches()).
+     * @param F Deformation gradient.
+     * @return Kirchhoff stress \f$\boldsymbol\tau\f$.
+     */
+    template < typename T >
+    Tensor33t< T > KirchhoffStressFromPrincipalKirchhoffStress( const Tensor3t< T >&  principalKirchhoffStress,
+                                                                const Tensor3t< T >&  principalStretches,
+                                                                const Tensor33t< T >& Q,
+                                                                const Tensor33t< T >& F )
+    {
+      Tensor33t< T > PK2_principal( 0. );
+      for ( int i = 0; i < 3; ++i )
+        PK2_principal( i, i ) = principalKirchhoffStress( i ) / ( principalStretches( i ) * principalStretches( i ) );
+
+      const Tensor33t< T > PK2 = Q % PK2_principal % transpose( Q );
+
+      return KirchhoffStressFromPK2( PK2, F );
+    }
+
     namespace FirstOrderDerived {
 
       /** @brief Computes the Kirchhoff stress from the 2nd Piola-Kirchhoff stress and the deformation gradient and the

@@ -69,15 +69,8 @@ namespace Marmot::Materials {
                                                                                                        alpha,
                                                                                                        nOgdenTerms );
 
-    // principal 2nd Piola-Kirchhoff stress S_i = tau_i / lambda_i^2, diagonal in the eigenbasis Q
-    // of C, which PK2 shares for isotropic response
-    Tensor33t< scalar > PK2_principal( 0. );
-    for ( int i = 0; i < 3; ++i )
-      PK2_principal( i, i ) = tauPrincipal( i ) / ( lambda( i ) * lambda( i ) );
+    const auto tau = StressMeasures::KirchhoffStressFromPrincipalKirchhoffStress( tauPrincipal, lambda, Q, F );
 
-    const Tensor33t< scalar > PK2 = Q % PK2_principal % transpose( Q );
-
-    const auto tau                = StressMeasures::KirchhoffStressFromPK2( PK2, F );
     response.tau                  = tau;
     response.elasticEnergyDensity = Math::makeReal( psi_ );
     response.dissipation          = 0.0;
