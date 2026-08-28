@@ -28,7 +28,7 @@
 #include <autodiff/forward/dual/dual.hpp>
 #include <functional>
 
-namespace Marmot::AutomaticDifferentiation {
+namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
 
   namespace detail = autodiff::detail;
   using autodiff::dual;
@@ -268,4 +268,4 @@ namespace Marmot::AutomaticDifferentiation {
    */
   std::pair< VectorXdual, MatrixXdual > dF_dX_2nd( const vector_to_vector_function_type_dual2nd& F,
                                                    const VectorXdual&                            X );
-} // namespace Marmot::AutomaticDifferentiation
+} // namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation

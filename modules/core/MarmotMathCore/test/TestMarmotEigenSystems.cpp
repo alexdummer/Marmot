@@ -1,5 +1,5 @@
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
-#include "Marmot/MarmotEigenSystems.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTesting.h"
 
@@ -7,7 +7,7 @@ using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::FastorStandardTensors;
 using namespace Marmot::Math;
-using namespace Marmot::AutomaticDifferentiation;
+using namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation;
 
 // Helper: check that V^T * V ≈ I, i.e. the eigenvector columns are orthonormal
 static void checkOrthonormality( const Tensor33d& V, const std::string& caller, double tol = 1e-10 )

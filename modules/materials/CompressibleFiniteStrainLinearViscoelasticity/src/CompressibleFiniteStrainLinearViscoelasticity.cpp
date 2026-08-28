@@ -81,7 +81,7 @@ namespace Marmot::Materials {
       throw std::runtime_error( "CompressibleFiniteStrainLinearViscoelasticity::computeEnergyDensityAndDerivatives: "
                                 "Unknown hyperelastic base." );
     }
-    return Marmot::AutomaticDifferentiation::ThirdOrder::d3f_dT3< 3 >( energyDensityFunction, C );
+    return Marmot::NumericalAlgorithms::AutomaticDifferentiation::ThirdOrder::d3f_dT3< 3 >( energyDensityFunction, C );
   }
 
   CompressibleFiniteStrainLinearViscoelasticity::CompressibleFiniteStrainLinearViscoelasticity(
