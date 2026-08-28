@@ -2,6 +2,7 @@
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTesting.h"
 
+using Marmot::MakeString;
 using namespace Marmot::Math;
 using namespace Marmot::Testing;
 

@@ -6,6 +6,7 @@
 #include "Marmot/MarmotTesting.h"
 
 using namespace Fastor;
+using Marmot::MakeString;
 using namespace Marmot::AutomaticDifferentiation;
 using namespace Marmot::Testing;
 using namespace Marmot::FastorStandardTensors;

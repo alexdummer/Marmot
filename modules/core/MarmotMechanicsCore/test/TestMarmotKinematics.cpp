@@ -3,6 +3,7 @@
 #include "Marmot/MarmotTesting.h"
 
 using namespace Eigen;
+using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::ContinuumMechanics::Kinematics::VelocityGradient;
 using namespace Marmot::ContinuumMechanics::Kinematics::Strain;

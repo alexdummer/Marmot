@@ -3,10 +3,10 @@
 
 using namespace MarmotLibrary;
 
-MarmotMaterialFiniteStrain* MarmotMaterialFiniteStrainFactory::createMaterial( const std::string& materialName,
-                                                                               const double*      materialProperties,
-                                                                               int                nMaterialProperties,
-                                                                               int                materialNumber )
+Marmot::MarmotMaterialFiniteStrain* MarmotMaterialFiniteStrainFactory::createMaterial( const std::string& materialName,
+                                                                                       const double* materialProperties,
+                                                                                       int nMaterialProperties,
+                                                                                       int materialNumber )
 {
   auto& map = materialFactoryFunctionByName();
   auto  it  = map.find( materialName );
@@ -15,7 +15,7 @@ MarmotMaterialFiniteStrain* MarmotMaterialFiniteStrainFactory::createMaterial( c
     for ( const auto& pair : map ) {
       reg += pair.first + ", ";
     }
-    throw std::invalid_argument( MakeString()
+    throw std::invalid_argument( Marmot::MakeString()
                                  << __PRETTY_FUNCTION__ << " Material " + materialName + " not registered!" + reg );
   }
 

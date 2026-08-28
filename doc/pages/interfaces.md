@@ -31,18 +31,18 @@ To create your custom interface to Marmot, you can leverage the `MarmotLibrary::
 instances of registered material models and finite elements.
 Marmot provides two main base classes for materials:
 
-- `MarmotMaterialHypoElastic` — for small-strain materials formulated in rate form (hypoelastic constitutive relations).
-- `MarmotMaterialFiniteStrain` — for large-strain materials formulated in terms of the deformation gradient.
+- `Marmot::MarmotMaterialHypoElastic` — for small-strain materials formulated in rate form (hypoelastic constitutive relations).
+- `Marmot::MarmotMaterialFiniteStrain` — for large-strain materials formulated in terms of the deformation gradient.
 
-Finite elements are derived from the general parent class `MarmotElement`.
+Finite elements are derived from the general parent class `Marmot::MarmotElement`.
 
 For instance, the following procedure may be employed to create an instance of a `Marmot::Materials::LinearElastic` material model,
-which belongs to the class of `MarmotMaterialHypoElastic` materials, and compute the current stress state:
+which belongs to the class of `Marmot::MarmotMaterialHypoElastic` materials, and compute the current stress state:
 ```cpp
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 
 // Create the instance by material name
-auto material = std::unique_ptr<MarmotMaterialHypoElastic>(
+auto material = std::unique_ptr<Marmot::MarmotMaterialHypoElastic>(
         MarmotLibrary::MarmotMaterialHypoElasticFactory::createMaterial(
             "LINEARELASTIC", materialProperties, nMaterialProperties, anArbitraryIdentificationCode ));
 
@@ -53,15 +53,15 @@ material->setCharacteristicElementLength( theCharacteristicElementLength );
 const int             nStateVars = material->getNumberOfRequiredStateVars();
 std::vector< double > stateVars( nStateVars, 0.0 );
 
-MarmotMaterialHypoElastic::state3D state = MarmotMaterialHypoElastic::state3D()
+Marmot::MarmotMaterialHypoElastic::state3D state = Marmot::MarmotMaterialHypoElastic::state3D()
 state.stateVars           = stateVars.data();
 
 // compute stresses
-Marmot::Matrix6d                          dStress_dStrain;
-const Marmot::Vector6d                    dStrain  = Marmot::Vector6d::Zero(); // strain increment
-const double                              time     = 0.0;                      // current time
-const double                              dTime    = 0.01;                     // time increment
-const MarmotMaterialHypoElastic::timeInfo timeInfo = { time, dTime };
+Marmot::Matrix6d                                  dStress_dStrain;
+const Marmot::Vector6d                            dStrain  = Marmot::Vector6d::Zero(); // strain increment
+const double                                      time     = 0.0;                      // current time
+const double                                      dTime    = 0.01;                     // time increment
+const Marmot::MarmotMaterialHypoElastic::timeInfo timeInfo = { time, dTime };
 material->computeStress( state, dStress_dStrain, dStrain, timeInfo );
 ```
 
@@ -91,7 +91,7 @@ template < class T,
            typename T::SectionType                             sectionType >
 MarmotLibrary::MarmotElementFactory::elementFactoryFunction makeFactoryFunction()
 {
-    return []( int elementID ) -> MarmotElement* { return new T( elementID, integrationType, sectionType ); };
+    return []( int elementID ) -> Marmot::MarmotElement* { return new T( elementID, integrationType, sectionType ); };
 }
 
 const static bool CPE4_isRegistered = MarmotLibrary::MarmotElementFactory::
@@ -110,18 +110,18 @@ Creating a specific element instance and computing the kernel is straightforward
 int elementNumber = 1;
 
 // create the instance by element name
-auto theElement = std::unique_ptr<MarmotElement>(
+auto theElement = std::unique_ptr<Marmot::MarmotElement>(
         MarmotLibrary::MarmotElementFactory::createElement( "CPE4", elementNumber ) );
 
 // assign nodal coordinates
 theElement->assignNodeCoordinates( coordinates );
 
 // assign properties (e.g., thickness)
-theElement->assignProperty( ElementProperties( propertiesElement, nPropertiesElement ) );
+theElement->assignProperty( Marmot::ElementProperties( propertiesElement, nPropertiesElement ) );
 
 // assign a material section by material name
 // MarmotElement takes care to create the required instances of MarmotMaterial
-theElement->assignProperty( MarmotMaterialSection( "LINEARELASTIC", propertiesMaterial, nPropertiesMaterial ) );
+theElement->assignProperty( Marmot::MarmotMaterialSection( "LINEARELASTIC", propertiesMaterial, nPropertiesMaterial ) );
 
 // assign state vars to the element
 // MarmotElement automatically assigns the state vars also to MarmotMaterial instances
