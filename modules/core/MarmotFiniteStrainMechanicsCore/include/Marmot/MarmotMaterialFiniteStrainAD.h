@@ -111,7 +111,7 @@ namespace Marmot {
      *
      * The child class must implement computeStressAD(), which evaluates the constitutive response
      * (Kirchhoff stress and any state updates) for a dual-valued deformation gradient. This base
-     * implementation then uses Marmot::AutomaticDifferentiation::dF_dT() to:
+     * implementation then uses Marmot::NumericalAlgorithms::AutomaticDifferentiation::dF_dT() to:
      *  - compute the Kirchhoff stress \f$\boldsymbol{\tau}\f$ for the given deformation, and
      *  - compute the consistent algorithmic tangent \f$\partial \boldsymbol{\tau} / \partial \boldsymbol{F}\f$.
      *
@@ -164,10 +164,11 @@ namespace Marmot {
         };
 
       // Compute Kirchhoff stress (tau) and algorithmic tangent (dTau_dF) with autodiff
-      std::tie( response.tau, tangents.dTau_dF ) = Marmot::AutomaticDifferentiation::dF_dT( computeTauAD,
-                                                                                            deformation.F );
-      response.elasticEnergyDensity              = responseAD.elasticEnergyDensity;
-      response.dissipation                       = responseAD.dissipation;
+      std::tie( response.tau,
+                tangents.dTau_dF )  = Marmot::NumericalAlgorithms::AutomaticDifferentiation::dF_dT( computeTauAD,
+                                                                                                   deformation.F );
+      response.elasticEnergyDensity = responseAD.elasticEnergyDensity;
+      response.dissipation          = responseAD.dissipation;
     }
 
     /**
@@ -176,7 +177,7 @@ namespace Marmot {
      * This pure virtual function must be implemented by derived material models to compute
      * the Kirchhoff stress tensor in \p response.tau for a given deformation in dual number
      * form. The base class uses this AD formulation together with
-     * Marmot::AutomaticDifferentiation utilities to obtain algorithmic tangents by
+     * Marmot::NumericalAlgorithms::AutomaticDifferentiation utilities to obtain algorithmic tangents by
      * differentiating the stress with respect to the deformation gradient.
      *
      * Implementations may update the provided state variables via \p response.stateVars

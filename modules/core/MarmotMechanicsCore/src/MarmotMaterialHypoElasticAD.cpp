@@ -30,7 +30,7 @@ namespace Marmot {
     // autodiff part
     // ----------------------------------------
     // compute stress and tangent with autodiff
-    std::tie( S, C ) = Marmot::AutomaticDifferentiation::dF_dX(
+    std::tie( S, C ) = Marmot::NumericalAlgorithms::AutomaticDifferentiation::dF_dX(
       [&]( const Marmot::Vector6dual dE_ ) {
         // reset stateVars to old state
         stateVars = stateVarsOld;

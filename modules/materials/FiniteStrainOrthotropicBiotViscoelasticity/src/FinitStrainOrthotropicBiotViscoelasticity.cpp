@@ -1,7 +1,6 @@
 #include "Marmot/FiniteStrainOrthotropicBiotViscoelasticity.h"
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotDeformationMeasures.h"
-#include "Marmot/MarmotEigenSystems.h"
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotFiniteStrainViscoelasticity.h"
@@ -66,7 +65,7 @@ namespace Marmot::Materials {
     const Tensor33t< scalar > C = DeformationMeasures::rightCauchyGreen( F );
 
     // compute principal stretches and directions
-    auto [lam, Q] = Math::computeEigenSystemJacobi( C );
+    auto [lam, Q] = FastorStandardTensors::computeEigenSystemJacobi( C );
     Tensor33t< scalar > principalStretch( 0. );
     for ( int i = 0; i < 3; ++i ) {
       principalStretch( i, i ) = sqrt( lam( i ) );

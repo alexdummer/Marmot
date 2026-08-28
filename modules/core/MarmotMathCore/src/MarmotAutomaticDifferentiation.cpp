@@ -5,7 +5,7 @@
 using namespace autodiff;
 using namespace Eigen;
 
-namespace Marmot::AutomaticDifferentiation {
+namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
 
   dual2nd shiftTo2ndOrderDual( const dual& x )
   {
@@ -103,4 +103,4 @@ namespace Marmot::AutomaticDifferentiation {
 
     return { F_, J };
   }
-} // namespace Marmot::AutomaticDifferentiation
+} // namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation

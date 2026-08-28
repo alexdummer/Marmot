@@ -7,7 +7,7 @@
 
 using namespace Fastor;
 using Marmot::MakeString;
-using namespace Marmot::AutomaticDifferentiation;
+using namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation;
 using namespace Marmot::Testing;
 using namespace Marmot::FastorStandardTensors;
 using namespace Marmot::ContinuumMechanics;

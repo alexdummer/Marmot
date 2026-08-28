@@ -32,7 +32,7 @@
 #include <autodiff/forward/dual/dual.hpp>
 #include <functional>
 
-namespace Marmot::AutomaticDifferentiation {
+namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
 
   using namespace autodiff;
 
@@ -343,4 +343,4 @@ namespace Marmot::AutomaticDifferentiation {
 
   } // namespace ThirdOrder
 
-} // namespace Marmot::AutomaticDifferentiation
+} // namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation
