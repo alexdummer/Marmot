@@ -2,20 +2,16 @@
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include "Marmot/MarmotMaterialFiniteStrainSubstepped.h"
 
-namespace Marmot::Materials {
+namespace Marmot::Materials::Registration {
 
-  namespace Registration {
+  using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                        // scope
 
-    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
-                                          // scope
+  const static bool FiniteStrainOrthotropicBiotViscoelasticityRegistered = MarmotMaterialFiniteStrainFactory::
+    registerMaterial< FiniteStrainOrthotropicBiotViscoelasticity >( "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY" );
 
-    const static bool FiniteStrainOrthotropicBiotViscoelasticityRegistered = MarmotMaterialFiniteStrainFactory::
-      registerMaterial< FiniteStrainOrthotropicBiotViscoelasticity >( "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY" );
+  const static bool FiniteStrainOrthotropicBiotViscoelasticitySubsteppedRegistered = MarmotMaterialFiniteStrainFactory::
+    registerMaterial< MarmotMaterialFiniteStrainSubstepped< FiniteStrainOrthotropicBiotViscoelasticity > >(
+      "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY_SUBSTEPPED" );
 
-    const static bool
-      FiniteStrainOrthotropicBiotViscoelasticitySubsteppedRegistered = MarmotMaterialFiniteStrainFactory::
-        registerMaterial< MarmotMaterialFiniteStrainSubstepped< FiniteStrainOrthotropicBiotViscoelasticity > >(
-          "FINITESTRAINORTHOTROPICBIOTVISCOELASTICITY_SUBSTEPPED" );
-
-  } // namespace Registration
-} // namespace Marmot::Materials
+} // namespace Marmot::Materials::Registration

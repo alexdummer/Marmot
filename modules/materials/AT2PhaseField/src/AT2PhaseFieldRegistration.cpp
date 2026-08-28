@@ -26,15 +26,12 @@
 #include "Marmot/AT2PhaseField.h"
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElasticFactory.h"
 
-namespace Marmot::Materials {
+namespace Marmot::Materials::Registration {
 
-  namespace Registration {
+  using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                        // scope
 
-    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
-                                          // scope
+  const static bool AT2PhaseFieldIsRegistered = MarmotMaterialGeneralGradientEnhancedHypoElasticFactory<
+    1 >::registerMaterial< AT2PhaseField >( "AT2PHASEFIELD" );
 
-    const static bool AT2PhaseFieldIsRegistered = MarmotMaterialGeneralGradientEnhancedHypoElasticFactory<
-      1 >::registerMaterial< AT2PhaseField >( "AT2PHASEFIELD" );
-
-  } // namespace Registration
-} // namespace Marmot::Materials
+} // namespace Marmot::Materials::Registration

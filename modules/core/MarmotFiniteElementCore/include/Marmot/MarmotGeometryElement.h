@@ -77,7 +77,7 @@ namespace Marmot {
     /// @brief Returns an Ensight Gold shape string (e.g. @c quad4, @c hexa8) for this element.
     std::string getElementShape() const
     {
-      using namespace Marmot::FiniteElement;
+      using namespace FiniteElement;
       static std::map< ElementShapes, std::string > shapes = { { Bar2, "bar2" },
                                                                { Quad4, "quad4" },
                                                                { Quad8, "quad8" },

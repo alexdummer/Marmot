@@ -25,14 +25,10 @@
  * ---------------------------------------------------------------------
  */
 
-namespace Marmot::Materials {
-
-  /**
-   * @brief Numerical constants for the VonMises return-mapping algorithm.
-   */
-  namespace VonMisesConstants {
-    const double innerNewtonTol        = 1e-12; ///< Convergence tolerance for the inner Newton iteration.
-    const int    nMaxInnerNewtonCycles = 15;    ///< Maximum number of inner Newton iterations.
-  }                                             // namespace VonMisesConstants
-
-} // namespace Marmot::Materials
+/**
+ * @brief Numerical constants for the VonMises return-mapping algorithm.
+ */
+namespace Marmot::Materials::VonMisesConstants {
+  const double innerNewtonTol        = 1e-12; ///< Convergence tolerance for the inner Newton iteration.
+  const int    nMaxInnerNewtonCycles = 15;    ///< Maximum number of inner Newton iterations.
+} // namespace Marmot::Materials::VonMisesConstants
