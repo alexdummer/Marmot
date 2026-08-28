@@ -30,8 +30,17 @@
 
 namespace Marmot::AutomaticDifferentiation {
 
-  using namespace autodiff;
-  using namespace Eigen;
+  namespace detail = autodiff::detail;
+  using autodiff::dual;
+  using autodiff::Dual;
+  using autodiff::dual2nd;
+  using autodiff::HigherOrderDual;
+  using autodiff::MatrixXdual;
+  using autodiff::VectorXdual;
+  using autodiff::VectorXdual2nd;
+  using Eigen::MatrixXd;
+  using Eigen::Vector;
+  using Eigen::VectorXd;
 
   /** @brief Creates a 2nd order hyper-dual number from a dual number
    *  @param x Input dual number

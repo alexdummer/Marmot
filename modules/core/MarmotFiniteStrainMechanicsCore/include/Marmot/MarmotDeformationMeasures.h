@@ -29,8 +29,22 @@
 
 namespace Marmot::ContinuumMechanics::DeformationMeasures {
 
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  namespace Spatial3D = FastorStandardTensors::Spatial3D;
+  using FastorIndices::iI;
+  using FastorIndices::iJ;
+  using FastorIndices::iK;
+  using FastorIndices::ik;
+  using FastorIndices::IK;
+  using FastorIndices::jJ;
+  using FastorIndices::JK;
+  using FastorIndices::jK;
+  using FastorIndices::jk;
+  using FastorIndices::kI;
+  using FastorIndices::kJ;
+  using FastorIndices::to_IJkK;
+  using FastorIndices::to_ijkK;
+  using FastorStandardTensors::Tensor3333t;
+  using FastorStandardTensors::Tensor33t;
 
   /** @brief Computes the right Cauchy-Green tensor \f$\boldsymbol{C}\f$.
    * @tparam T Scalar type (e.g., float, double, autodiff::dual)

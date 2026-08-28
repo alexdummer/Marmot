@@ -38,9 +38,33 @@
 
 namespace Marmot::Materials {
 
-  using namespace Fastor;
-  using namespace FastorStandardTensors;
-  using namespace FastorIndices;
+  namespace Spatial3D = FastorStandardTensors::Spatial3D;
+  using FastorIndices::Ii;
+  using FastorIndices::iI;
+  using FastorIndices::iImn;
+  using FastorIndices::ij;
+  using FastorIndices::IJ;
+  using FastorIndices::iJ;
+  using FastorIndices::IJKL;
+  using FastorIndices::iJKL;
+  using FastorIndices::ijmn;
+  using FastorIndices::ik;
+  using FastorIndices::IK;
+  using FastorIndices::IL;
+  using FastorIndices::iL;
+  using FastorIndices::JK;
+  using FastorIndices::jl;
+  using FastorIndices::JL;
+  using FastorIndices::KL;
+  using FastorIndices::KLMN;
+  using FastorIndices::LI;
+  using FastorIndices::mnkL;
+  using FastorIndices::to_ijkl;
+  using FastorIndices::to_ijKL;
+  using FastorIndices::to_IJKL;
+  using FastorStandardTensors::Tensor3333d;
+  using FastorStandardTensors::Tensor33d;
+  using FastorStandardTensors::Tensor33t;
 
   /**
    * @class Marmot::Materials::FiniteStrainJ2Plasticity

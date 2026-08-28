@@ -130,7 +130,7 @@ namespace Marmot {
     const NSized&     N,
     const XiSized&    x_gauss ) const
   {
-    return Marmot::FiniteElement::Spatial2D::axisymmetric::B< 4 >( dNdX, N, x_gauss );
+    return Marmot::FiniteElement::Spatial2D::Axisymmetric::B< 4 >( dNdX, N, x_gauss );
   }
   // Quad8
   template <>
@@ -145,7 +145,7 @@ namespace Marmot {
     const NSized&     N,
     const XiSized&    x_gauss ) const
   {
-    return Marmot::FiniteElement::Spatial2D::axisymmetric::B< 8 >( dNdX, N, x_gauss );
+    return Marmot::FiniteElement::Spatial2D::Axisymmetric::B< 8 >( dNdX, N, x_gauss );
   }
   // Tetra4
   template <>

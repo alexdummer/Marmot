@@ -28,8 +28,10 @@
 
 namespace Marmot::ContinuumMechanics::EnergyDensityFunctions {
 
-  using namespace Fastor;
-  using namespace FastorStandardTensors;
+  namespace Spatial3D = FastorStandardTensors::Spatial3D;
+  using Fastor::Index;
+  using FastorStandardTensors::Tensor3333t;
+  using FastorStandardTensors::Tensor33t;
 
   /** @brief Hyperelastic Energy Density Function Wa acc. Pence & Gou (2015), Eq. (2.11)
    *

@@ -165,5 +165,5 @@ namespace Marmot::PhaseField::EnergyDegradationFunctions {
                                                   const double a1,
                                                   const double a2,
                                                   const double a3 );
-  }; // namespace SecondOrderDerived
+  } // namespace SecondOrderDerived
 } // namespace Marmot::PhaseField::EnergyDegradationFunctions

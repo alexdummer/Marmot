@@ -4,6 +4,7 @@
 
 using namespace Marmot;
 using namespace Marmot::Testing;
+using namespace Marmot::FastorStandardTensors;
 using namespace Marmot::ContinuumMechanics;
 using namespace Marmot::ContinuumMechanics::DeformationMeasures;
 

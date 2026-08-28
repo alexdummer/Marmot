@@ -2,7 +2,6 @@
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/MarmotUtility.h"
 #include "Marmot/MarmotVoigt.h"
 
 namespace Marmot::Materials {
