@@ -1,5 +1,6 @@
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTesting.h"
 

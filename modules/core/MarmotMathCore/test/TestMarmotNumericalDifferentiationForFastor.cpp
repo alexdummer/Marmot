@@ -1,6 +1,6 @@
-// #include "Marmot/MarmotJournal.h"
 #include "Fastor/Fastor.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotNumericalDifferentiationForFastor.h"
 #include "Marmot/MarmotTesting.h"

@@ -7,7 +7,7 @@
 
 using namespace Marmot;
 using namespace Marmot::Testing;
-using namespace Marmot::ContinuumMechanics::CommonConstitutiveModels;
+using namespace Marmot::ContinuumMechanics::ConstitutiveModels;
 using namespace Marmot::ContinuumMechanics::HaighWestergaard;
 
 void testYieldFunctions()

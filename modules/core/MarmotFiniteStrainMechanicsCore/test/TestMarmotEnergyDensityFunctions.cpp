@@ -1,5 +1,6 @@
 #include "Fastor/Fastor.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTesting.h"
 
 using Marmot::MakeString;

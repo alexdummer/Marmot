@@ -1,5 +1,4 @@
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotVoigt.h"
 
 using namespace Eigen;
@@ -79,7 +78,7 @@ namespace Marmot::ContinuumMechanics {
       // projection to plane
       EigenTensors::Tensor322d dS_dF = PlaneStrain::reduce3D_dStress_dDeformationGradient( dS_dF_3D );
 
-      using namespace ContinuumMechanics::TensorUtility::IndexNotation;
+      using namespace ContinuumMechanics::VoigtNotation;
 
       // clang-format off
                 for ( int m = 0; m < 2; m ++ )

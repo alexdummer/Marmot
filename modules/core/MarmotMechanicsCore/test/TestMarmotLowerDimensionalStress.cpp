@@ -1,6 +1,5 @@
 #include "Marmot/MarmotElasticity.h"
 #include "Marmot/MarmotLowerDimensionalStress.h"
-#include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotTesting.h"
 #include "Marmot/MarmotVoigt.h"
 
@@ -189,7 +188,7 @@ void test_compute_dStress_dDeformationGradient()
   Marmot::EigenTensors::Tensor322d computedResult = compute_dStress_dDeformationGradient( inputTensor );
 
   // Expected results
-  using namespace Marmot::ContinuumMechanics::TensorUtility::IndexNotation;
+  using namespace Marmot::ContinuumMechanics::VoigtNotation;
 
   Marmot::EigenTensors::Tensor322d expectedResult;
   // clang-format off
