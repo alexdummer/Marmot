@@ -38,8 +38,10 @@
 
 namespace Marmot::ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration {
 
-  using namespace FastorStandardTensors;
-  using namespace Fastor;
+  using Fastor::Index;
+  using FastorStandardTensors::Tensor3333d;
+  using FastorStandardTensors::Tensor33d;
+  using FastorStandardTensors::Tensor33t;
 
   /** Computes the incremental plastic deformation gradient from the plastic velocity gradient
    *  using the exponential map.

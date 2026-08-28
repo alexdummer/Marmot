@@ -27,7 +27,8 @@
 #include "Marmot/MarmotTypedefs.h"
 
 namespace Marmot::ContinuumMechanics::Viscoelasticity::PronySeries {
-  using namespace Eigen;
+
+  using Eigen::Matrix;
 
   /**
    * @brief Material properties for a generalized Maxwell (Prony series) model.

@@ -30,8 +30,20 @@
 
 namespace Marmot::ContinuumMechanics::StressMeasures {
 
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  namespace Spatial3D = FastorStandardTensors::Spatial3D;
+  using FastorIndices::iI;
+  using FastorIndices::IJ;
+  using FastorIndices::ik;
+  using FastorIndices::jJ;
+  using FastorIndices::jK;
+  using FastorIndices::jk;
+  using FastorIndices::Ki;
+  using FastorIndices::KJ;
+  using FastorIndices::to_ij;
+  using FastorIndices::to_ijIJ;
+  using FastorIndices::to_ijkK;
+  using FastorStandardTensors::Tensor3333t;
+  using FastorStandardTensors::Tensor33t;
 
   /**
    * @brief Computes the Kirchhoff stress from the 2nd Piola-Kirchhoff stress and the deformation gradient.

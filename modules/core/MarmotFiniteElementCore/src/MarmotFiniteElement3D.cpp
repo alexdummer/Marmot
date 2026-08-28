@@ -287,7 +287,7 @@ namespace Marmot::FiniteElement::Spatial3D {
       }
     }
 
-  } // end of namespace Hexa8
+  } // namespace Hexa8
 
   namespace Hexa20 {
     NSized N( const Vector3d& xi )
@@ -438,5 +438,5 @@ namespace Marmot::FiniteElement::Spatial3D {
       }
       }
     }
-  } // end of namespace Hexa20
+  } // namespace Hexa20
 } // namespace Marmot::FiniteElement::Spatial3D

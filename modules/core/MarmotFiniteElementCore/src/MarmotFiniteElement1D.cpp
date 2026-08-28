@@ -24,7 +24,7 @@ namespace Marmot::FiniteElement::Spatial1D {
       return dNdXi;
     }
 
-  } // end of namespace Bar2
+  } // namespace Bar2
 
   namespace Bar3 {
     /*
@@ -51,5 +51,5 @@ namespace Marmot::FiniteElement::Spatial1D {
       return dNdXi;
     }
 
-  } // end of namespace Bar3
+  } // namespace Bar3
 } // namespace Marmot::FiniteElement::Spatial1D

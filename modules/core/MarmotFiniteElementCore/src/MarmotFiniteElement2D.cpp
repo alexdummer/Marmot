@@ -71,7 +71,7 @@ namespace Marmot::FiniteElement::Spatial2D {
       }
     }
 
-  } // end of namespace Quad4
+  } // namespace Quad4
   namespace Quad8 {
     NSized N( const Vector2d& xi )
     {
@@ -147,7 +147,7 @@ namespace Marmot::FiniteElement::Spatial2D {
       }
     }
 
-  } // end of namespace Quad8
+  } // namespace Quad8
 
   void modifyCharElemLengthAbaqusLike( double& charElemLength, int intPoint )
   {
