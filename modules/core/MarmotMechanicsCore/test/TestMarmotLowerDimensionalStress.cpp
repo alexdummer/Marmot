@@ -10,6 +10,7 @@
  */
 
 using namespace Eigen;
+using Marmot::MakeString;
 using namespace Marmot::ContinuumMechanics::Elasticity::Isotropic;
 using namespace Marmot::ContinuumMechanics::PlaneStrain;
 using namespace Marmot::ContinuumMechanics::PlaneStress;

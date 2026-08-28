@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 
+using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::FastorStandardTensors;
 using namespace Marmot::ContinuumMechanics::FiniteStrain::Viscoelasticity;

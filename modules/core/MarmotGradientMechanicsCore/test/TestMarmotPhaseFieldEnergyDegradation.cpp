@@ -3,6 +3,7 @@
 #include "Marmot/MarmotPhaseFieldEnergyDegradation.h"
 #include "Marmot/MarmotTesting.h"
 
+using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::NumericalAlgorithms::Differentiation;
 using namespace Marmot::PhaseField::EnergyDegradationFunctions;
