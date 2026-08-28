@@ -66,8 +66,8 @@ namespace Marmot {
         const double& tau   = maxwellProperties.tau[i];
         const double& gamma = maxwellProperties.gamma[i];
 
-        if ( tau == 0.0 ) {
-          // if tau is zero the elastic spring does not give a contribution
+        if ( std::abs( tau ) < 1e-12 ) {
+          // Very small relaxation time effectively zero; skip contribution
           continue;
         }
         const double dT_tau    = std::max( dT / tau, 1e-15 );

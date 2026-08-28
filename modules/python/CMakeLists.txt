@@ -11,6 +11,8 @@ FetchContent_Declare(
   nanobind
   GIT_REPOSITORY https://github.com/wjakob/nanobind.git
   GIT_TAG        v1.9.2
+  GIT_SHALLOW    TRUE
+  EXCLUDE_FROM_ALL TRUE
   PATCH_COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_nanobind.py" "include/nanobind/nb_attr.h"
 )
 FetchContent_MakeAvailable(nanobind)

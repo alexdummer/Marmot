@@ -10,12 +10,9 @@ NB_MODULE( _marmot, m )
 {
   m.doc() = "Marmot Python bindings";
 
-  nb::module_ core = m.def_submodule( "core", "Core types and functionality" );
-
+  // Core and materials submodules are not needed for the public API.
+  // Only the solvers submodule is exposed.
   nb::module_ solvers = m.def_submodule( "solvers", "Material point solvers" );
   bind_finite_strain_solver( solvers );
   bind_hypo_elastic_solver( solvers );
-
-  nb::module_ materials = m.def_submodule( "materials", "Material models and factories" );
-  bind_materials( materials );
 }
