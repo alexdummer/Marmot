@@ -66,6 +66,14 @@ jobs:
         run: |
           python scripts/buildDocumentation.py
 
+      - name: Upload documentation artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: ./doc/doc_out/sphinx
+          retention-days: 7
+
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: peaceiris/actions-gh-pages@v3
