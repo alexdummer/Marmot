@@ -2,7 +2,7 @@ name: Documentation
 
 on:
   push:
-    branches: [ master, next_v26.05, next_v26.11 ]
+    branches: [ master ]
   pull_request:
 
 jobs:
