@@ -39,7 +39,12 @@ void bind_hypo_elastic_solver( nb::module_& m )
     .def( nb::init<>() )
     .def_rw( "maxIterations", &Solver::SolverOptions::maxIterations )
     .def_rw( "residualTolerance", &Solver::SolverOptions::residualTolerance )
-    .def_rw( "correctionTolerance", &Solver::SolverOptions::correctionTolerance );
+    .def_rw( "correctionTolerance", &Solver::SolverOptions::correctionTolerance )
+    .def( "__repr__", []( const Solver::SolverOptions& o ) {
+      return "<SolverOptions maxIterations=" + std::to_string( o.maxIterations ) +
+             " residualTolerance=" + std::to_string( o.residualTolerance ) +
+             " correctionTolerance=" + std::to_string( o.correctionTolerance ) + ">";
+    } );
 
   nb::class_< Solver::HistoryEntry >( solver, "HistoryEntry" )
     .def( nb::init<>() )
@@ -48,16 +53,22 @@ void bind_hypo_elastic_solver( nb::module_& m )
     .def_ro( "strain", &Solver::HistoryEntry::strain )
     .def_ro( "dStressdStrain", &Solver::HistoryEntry::dStressdStrain )
     .def_ro( "stateVars", &Solver::HistoryEntry::stateVars )
-    .def( "print", &Solver::HistoryEntry::print );
+    .def( "print", &Solver::HistoryEntry::print )
+    .def( "__repr__",
+          []( const Solver::HistoryEntry& h ) { return "<HistoryEntry time=" + std::to_string( h.time ) + ">"; } );
 
   solver
-    .def( "__init__",
-          []( Solver*                                            t,
-              std::string                                        name,
-              nb::ndarray< double, nb::ndim< 1 >, nb::c_contig > props,
-              const Solver::SolverOptions&                       opts ) {
-            new ( t ) Solver( name, props.data(), static_cast< int >( props.size() ), opts );
-          } )
+    .def(
+      "__init__",
+      []( Solver*                                            t,
+          std::string                                        name,
+          nb::ndarray< double, nb::ndim< 1 >, nb::c_contig > props,
+          const Solver::SolverOptions&                       opts ) {
+        new ( t ) Solver( name, props.data(), static_cast< int >( props.size() ), opts );
+      },
+      nb::arg( "name" ),
+      nb::arg( "props" ),
+      nb::arg( "opts" ) = Solver::SolverOptions{} )
     .def( "addStep", &Solver::addStep )
     .def( "getSteps", &Solver::getSteps )
     .def( "clearSteps", &Solver::clearSteps )

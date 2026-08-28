@@ -12,19 +12,18 @@ fails, rather than silently producing an unpatched build.
 
 import sys
 
-ORIGINAL = "arg_data args[Size];"
-PATCHED = "arg_data args[Size == 0 ? 1 : Size];"
+ORIGINAL = "    // GCC and Clang do.\n    arg_data args[Size];"
+PATCHED = "    // GCC and Clang do.\n    arg_data args[Size == 0 ? 1 : Size];"
 
 path = sys.argv[1]
 
 with open(path, "r") as f:
     content = f.read()
 
-if PATCHED in content:
-    print(f"{path} is already patched, nothing to do.")
-    sys.exit(0)
-
 if ORIGINAL not in content:
+    if PATCHED in content:
+        print(f"{path} is already patched, nothing to do.")
+        sys.exit(0)
     sys.exit(
         f"error: expected pattern '{ORIGINAL}' not found in {path}. "
         "The nanobind version has probably changed; patch_nanobind.py needs to be updated."
