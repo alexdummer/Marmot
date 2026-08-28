@@ -3,7 +3,7 @@
 using namespace Marmot::ContinuumMechanics::TensorUtility;
 
 namespace Marmot {
-  namespace ContinuumMechanics::CommonTensors {
+  namespace ContinuumMechanics::Tensors {
 
     EigenTensors::Tensor3333d Initialize_IFourthOrder()
     {
@@ -121,7 +121,7 @@ namespace Marmot {
       return e;
     }
 
-  } // namespace ContinuumMechanics::CommonTensors
+  } // namespace ContinuumMechanics::Tensors
 
   namespace ContinuumMechanics::TensorUtility {
     Eigen::Matrix3d dyadicProduct( const Eigen::Vector3d& vector1, const Eigen::Vector3d& vector2 )

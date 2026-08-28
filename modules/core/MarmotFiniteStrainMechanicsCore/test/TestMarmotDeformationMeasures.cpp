@@ -1,5 +1,6 @@
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTesting.h"
 
 using namespace Marmot;

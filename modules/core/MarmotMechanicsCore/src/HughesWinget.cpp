@@ -1,6 +1,5 @@
 #include "Marmot/HughesWinget.h"
 #include "Marmot/MarmotKinematics.h"
-#include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotVoigt.h"
 
 namespace Marmot::NumericalAlgorithms {
@@ -41,7 +40,6 @@ namespace Marmot::NumericalAlgorithms {
                                                                 const Marmot::Matrix6d& dChauchydEps )
   {
     using namespace Marmot;
-    using namespace Marmot::ContinuumMechanics::TensorUtility;
     using namespace Marmot::ContinuumMechanics::Kinematics::VelocityGradient;
 
     EigenTensors::Tensor633d dS_dl;
@@ -52,7 +50,7 @@ namespace Marmot::NumericalAlgorithms {
 
     dStressRotational_dl.setZero();
     for ( int ij = 0; ij < 6; ij++ ) {
-      auto [i, j] = IndexNotation::fromVoigt< 3 >( ij );
+      auto [i, j] = ContinuumMechanics::VoigtNotation::fromVoigt< 3 >( ij );
       for ( int k = 0; k < 3; k++ )
         for ( int l = 0; l < 3; l++ )
           for ( int m = 0; m < 3; m++ )

@@ -2,7 +2,6 @@
 #include "Marmot/HaighWestergaard.h"
 #include "Marmot/MarmotConstants.h"
 #include "Marmot/MarmotMath.h"
-#include "Marmot/MarmotTensor.h"
 #include "Marmot/MarmotTypedefs.h"
 
 using namespace Eigen;
@@ -71,8 +70,6 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
 
   EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness )
   {
-    using namespace TensorUtility::IndexNotation;
-
     EigenTensors::Tensor3333d stiffness;
     stiffness.setZero(); // Initialize with zeros
 
@@ -98,7 +95,6 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     FastorStandardTensors::Tensor3333d stiffness( 0. );
     int                                row;
     int                                col;
-    using namespace TensorUtility::IndexNotation;
     for ( int i = 0; i < 3; i++ ) {
       for ( int j = 0; j < 3; j++ ) {
         row = toVoigt< 3 >( i, j );

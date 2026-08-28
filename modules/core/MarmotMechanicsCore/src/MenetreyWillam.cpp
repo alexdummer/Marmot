@@ -3,7 +3,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace Marmot::ContinuumMechanics::CommonConstitutiveModels {
+namespace Marmot::ContinuumMechanics::ConstitutiveModels {
   using namespace Constants;
   using namespace ContinuumMechanics::HaighWestergaard;
 
@@ -47,4 +47,4 @@ namespace Marmot::ContinuumMechanics::CommonConstitutiveModels {
     }
   }
 
-} // namespace Marmot::ContinuumMechanics::CommonConstitutiveModels
+} // namespace Marmot::ContinuumMechanics::ConstitutiveModels

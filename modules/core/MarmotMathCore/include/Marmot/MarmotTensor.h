@@ -24,12 +24,10 @@
  */
 
 #pragma once
-#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTypedefs.h"
-#include <utility>
 
 namespace Marmot {
-  namespace ContinuumMechanics::CommonTensors {
+  namespace ContinuumMechanics::Tensors {
     /**
      * @brief Initializes the fourth-order tensor \f$I_{ijkl} = \delta_{ij}\delta_{kl}\f$.
      */
@@ -225,7 +223,7 @@ namespace Marmot {
         return LeviCivita3D;
     }
 
-  } // namespace ContinuumMechanics::CommonTensors
+  } // namespace ContinuumMechanics::Tensors
 
   namespace ContinuumMechanics::TensorUtility {
     /** @brief Kronecker delta function \f$ \delta_{ab} \f$.
@@ -343,98 +341,6 @@ namespace Marmot {
      * @return 3x3 matrix representing the dyadic product.
      */
     Eigen::Matrix3d dyadicProduct( const Eigen::Vector3d& vector1, const Eigen::Vector3d& vector2 );
-
-    namespace IndexNotation {
-      /**
-       * @brief Convert a Voigt index to tensor indices.
-       *
-       * Maps a Voigt notation index @p ij to the corresponding
-       * `(i, j)` tensor indices for a given dimension @p nDim.
-       *
-       * @tparam nDim Problem dimension (1, 2, or 3).
-       * @param ij Voigt index.
-       * @return Pair of tensor indices (i, j).
-       * @throws std::invalid_argument if @p nDim or @p ij is invalid.
-       */
-      template < int nDim >
-      constexpr std::pair< int, int > fromVoigt( int ij )
-      {
-        if constexpr ( nDim == 1 )
-          return std::pair< int, int >( 0, 0 );
-        else if ( nDim == 2 )
-          switch ( ij ) {
-          case 0: return std::pair< int, int >( 0, 0 );
-          case 1: return std::pair< int, int >( 1, 1 );
-          case 2: return std::pair< int, int >( 0, 1 );
-          }
-
-        else if ( nDim == 3 ) {
-          switch ( ij ) {
-          case 0: return std::pair< int, int >( 0, 0 );
-          case 1: return std::pair< int, int >( 1, 1 );
-          case 2: return std::pair< int, int >( 2, 2 );
-          case 3: return std::pair< int, int >( 0, 1 );
-          case 4: return std::pair< int, int >( 0, 2 );
-          case 5: return std::pair< int, int >( 1, 2 );
-          }
-        }
-
-        throw std::invalid_argument( MakeString()
-                                     << __PRETTY_FUNCTION__ << ": invalid dimension / voigt index specified" );
-      }
-
-      /**
-       * @brief Maps tensor indices (i, j) to the corresponding Voigt
-       * notation index for a given dimension @p nDim.
-       *
-       * @tparam nDim Problem dimension (1, 2, or 3).
-       * @param i Row index of the tensor.
-       * @param j Column index of the tensor.
-       * @return Voigt index corresponding to (i, j).
-       * @throws std::invalid_argument if @p nDim is invalid.
-       */
-      template < int nDim >
-      constexpr int toVoigt( int i, int j )
-      {
-        if constexpr ( nDim == 1 )
-          return 0;
-        else if ( nDim == 2 )
-          return ( i == j ) ? ( i == 0 ? 0 : 1 ) : 2;
-
-        else if ( nDim == 3 ) {
-          constexpr int tensor2VoigtNotationIndicesMapping[3][3] = { { 0, 3, 4 }, { 3, 1, 5 }, { 4, 5, 2 } };
-          return tensor2VoigtNotationIndicesMapping[i][j];
-        }
-
-        throw std::invalid_argument( MakeString() << __PRETTY_FUNCTION__ << ": invalid dimension specified" );
-      }
-
-      /**
-       * @brief Construct the Voigt mapping tensor.
-       *
-       * Creates a 3rd-order tensor that maps tensor indices (i, j)
-       * to their corresponding Voigt index. Each entry is 1 at
-       * `(toVoigt<nDim>(i, j), i, j)` and 0 elsewhere.
-       *
-       * @tparam nDim Problem dimension (1, 2, or 3).
-       * @return A tensor of shape (VoigtSize, nDim, nDim) encoding
-       *         the Voigt mapping.
-       */
-      template < int nDim >
-      Eigen::TensorFixedSize< double, Eigen::Sizes< VOIGTFROMDIM( nDim ), nDim, nDim > > voigtMap()
-      {
-        using namespace Eigen;
-        Eigen::TensorFixedSize< double, Eigen::Sizes< VOIGTFROMDIM( nDim ), nDim, nDim > > result;
-        result.setZero();
-        for ( int i = 0; i < nDim; i++ )
-          for ( int j = 0; j < nDim; j++ )
-            result( toVoigt< nDim >( i, j ), i, j ) = 1;
-        return result;
-      }
-
-    } // namespace IndexNotation
-
-    // namespace ContinuumMechanics::VoigtNotation
 
   } // namespace ContinuumMechanics::TensorUtility
 
