@@ -431,10 +431,10 @@ namespace Marmot::Elements {
   {
     for ( auto& qp : qps ) {
       qp.material = std::unique_ptr< MarmotMaterialHypoElastic >(
-        MarmotLibrary::MarmotMaterialHypoElasticFactory::createMaterial( section.materialName,
-                                                                         section.materialProperties,
-                                                                         section.nMaterialProperties,
-                                                                         elLabel ) );
+        Marmot::Registration::MarmotMaterialHypoElasticFactory::createMaterial( section.materialName,
+                                                                                section.materialProperties,
+                                                                                section.nMaterialProperties,
+                                                                                elLabel ) );
 
       if ( !qp.material )
         throw std::invalid_argument( MakeString()
