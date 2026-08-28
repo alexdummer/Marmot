@@ -1,7 +1,7 @@
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include "Marmot/MarmotJournal.h"
 
-using namespace Marmot::Registration;
+using namespace Marmot::Factory;
 
 Marmot::MarmotMaterialHypoElastic* MarmotMaterialHypoElasticFactory::createMaterial( const std::string& materialName,
                                                                                      const double* materialProperties,

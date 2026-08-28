@@ -1,6 +1,6 @@
 #include "Marmot/MarmotElementFactory.h"
 
-using namespace Marmot::Registration;
+using namespace Marmot::Factory;
 
 MarmotElementFactory::ElementFactoryMap& MarmotElementFactory::elementFactoryFunctionByName()
 {

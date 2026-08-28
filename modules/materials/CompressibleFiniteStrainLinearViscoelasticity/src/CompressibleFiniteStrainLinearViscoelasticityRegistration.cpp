@@ -4,8 +4,7 @@
 
 namespace Marmot::Materials::Registration {
 
-  using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
-                                        // scope
+  using namespace Marmot::Factory;
 
   const static bool CompressibleFiniteStrainLinearViscoelasticityRegistered = MarmotMaterialFiniteStrainFactory::
     registerMaterial< CompressibleFiniteStrainLinearViscoelasticity >(
