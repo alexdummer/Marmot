@@ -24,10 +24,12 @@ if ORIGINAL not in content:
     if PATCHED in content:
         print(f"{path} is already patched, nothing to do.")
         sys.exit(0)
-    sys.exit(
+    print(
         f"error: expected pattern '{ORIGINAL}' not found in {path}. "
-        "The nanobind version has probably changed; patch_nanobind.py needs to be updated."
+        "The nanobind version has probably changed; patch_nanobind.py needs to be updated.",
+        file=sys.stderr,
     )
+    sys.exit(1)
 
 with open(path, "w") as f:
     f.write(content.replace(ORIGINAL, PATCHED))

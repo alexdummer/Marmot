@@ -1,3 +1,27 @@
+/* ---------------------------------------------------------------------
+ *                                       _
+ *  _ __ ___   __ _ _ __ _ __ ___   ___ | |_
+ * | '_ ` _ \ / _` | '__| '_ ` _ \ / _ \| __|
+ * | | | | | | (_| | |  | | | | | | (_) | |_
+ * |_| |_| |_|\__,_|_|  |_| |_| |_|\___/ \__|
+ *
+ * Unit of Strength of Materials and Structural Analysis
+ * University of Innsbruck,
+ * 2020 - today
+ *
+ * festigkeitslehre@uibk.ac.at
+ *
+ * This file is part of the MAteRialMOdellingToolbox (marmot).
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * The full text of the license can be found in the file LICENSE.md at
+ * the top level directory of marmot.
+ * ---------------------------------------------------------------------
+ */
 #include <nanobind/eigen/dense.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
@@ -55,8 +79,10 @@ void bind_finite_strain_solver( nb::module_& m )
     .def_ro( "dTau_dF", &Solver::HistoryEntry::dTau_dF )
     .def_ro( "stateVars", &Solver::HistoryEntry::stateVars )
     .def( "print", &Solver::HistoryEntry::print )
-    .def( "__repr__",
-          []( const Solver::HistoryEntry& h ) { return "<HistoryEntry time=" + std::to_string( h.time ) + ">"; } );
+    .def( "__repr__", []( const Solver::HistoryEntry& h ) {
+      return "<HistoryEntry time=" + std::to_string( h.time ) + " stress[0,0]=" + std::to_string( h.stress( 0, 0 ) ) +
+             ">";
+    } );
 
   solver
     .def(
@@ -70,15 +96,15 @@ void bind_finite_strain_solver( nb::module_& m )
       nb::arg( "name" ),
       nb::arg( "props" ),
       nb::arg( "opts" ) = Solver::SolverOptions{} )
-    .def( "addStep", &Solver::addStep )
+    .def( "addStep", &Solver::addStep, nb::arg( "step" ) )
     .def( "getSteps", &Solver::getSteps )
     .def( "clearSteps", &Solver::clearSteps )
-    .def( "setInitialState", &Solver::setInitialState )
+    .def( "setInitialState", &Solver::setInitialState, nb::arg( "initialStress" ), nb::arg( "initialStateVars" ) )
     .def( "getNumberOfStateVariables", &Solver::getNumberOfStateVariables )
     .def( "resetToInitialState", &Solver::resetToInitialState )
     .def( "solve", &Solver::solve )
     .def( "getHistory", &Solver::getHistory )
     .def( "clearHistory", &Solver::clearHistory )
     .def( "printHistory", &Solver::printHistory )
-    .def( "exportHistoryToCSV", &Solver::exportHistoryToCSV );
+    .def( "exportHistoryToCSV", &Solver::exportHistoryToCSV, nb::arg( "filename" ) );
 }

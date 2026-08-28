@@ -20,7 +20,6 @@ FetchContent_MakeAvailable(nanobind)
 # Define the python extension module
 nanobind_add_module(_marmot
     src/bind_main.cpp
-    src/bind_materials.cpp
     src/bind_solver_finite_strain.cpp
     src/bind_solver_hypo_elastic.cpp
 )
@@ -64,6 +63,3 @@ foreach(SCRIPT ${PYTHON_TEST_SCRIPTS})
     set_tests_properties("Python_${MAT_NAME}_${SCRIPT_NAME}" PROPERTIES
              ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python")
 endforeach()
-
-
-

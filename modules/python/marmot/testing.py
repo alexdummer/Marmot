@@ -4,22 +4,29 @@ import os
 import numpy as np
 
 
-def writeReferenceSolution(history, reference_file):
+def _extract_strain(history, strain_field=None):
+    if strain_field is not None:
+        return np.array([getattr(h, strain_field) for h in history])
+    if hasattr(history[0], "F"):
+        return np.array([h.F for h in history])
+    if hasattr(history[0], "strain"):
+        return np.array([h.strain for h in history])
+    raise AttributeError("HistoryEntry has neither 'F' nor 'strain' attribute.")
+
+
+def writeReferenceSolution(history, reference_file, strain_field=None):
     """Write solver history to a reference npz file."""
     if len(history) == 0:
         raise RuntimeError("Solver history is empty!")
 
     stress = np.array([h.stress for h in history])
-    if hasattr(history[0], "F"):
-        strain = np.array([h.F for h in history])
-    else:
-        strain = np.array([h.strain for h in history])
+    strain = _extract_strain(history, strain_field)
 
     np.savez(reference_file, stress=stress, strain=strain)
     print(f"Reference solution created: {reference_file}")
 
 
-def compareHistoryToReferenceSolution(history, reference_file):
+def compareHistoryToReferenceSolution(history, reference_file, strain_field=None):
     """Compare a solver history against a reference npz file."""
     if len(history) == 0:
         raise RuntimeError("Solver history is empty!")
@@ -30,10 +37,7 @@ def compareHistoryToReferenceSolution(history, reference_file):
         )
 
     stress = np.array([h.stress for h in history])
-    if hasattr(history[0], "F"):
-        strain = np.array([h.F for h in history])
-    else:
-        strain = np.array([h.strain for h in history])
+    strain = _extract_strain(history, strain_field)
 
     ref = np.load(reference_file)
     np.testing.assert_allclose(stress, ref["stress"], atol=1e-6, rtol=1e-5)
@@ -41,7 +45,7 @@ def compareHistoryToReferenceSolution(history, reference_file):
     print(f"Reference solution passed: {reference_file}")
 
 
-def run_test(history, script_file):
+def run_test(history, script_file, strain_field=None):
     """
     Unified entry point for testing python scripts.
     Parses command line arguments to either compare or write the reference solution.
@@ -54,6 +58,6 @@ def run_test(history, script_file):
     reference_file = os.path.splitext(script_file)[0] + "_reference.npz"
 
     if args.writeReferenceSolution:
-        writeReferenceSolution(history, reference_file)
+        writeReferenceSolution(history, reference_file, strain_field=strain_field)
     else:
-        compareHistoryToReferenceSolution(history, reference_file)
+        compareHistoryToReferenceSolution(history, reference_file, strain_field=strain_field)
