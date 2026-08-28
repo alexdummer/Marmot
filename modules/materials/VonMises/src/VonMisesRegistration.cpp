@@ -3,25 +3,22 @@
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include "Marmot/VonMises.h"
 
-namespace Marmot::Materials {
+namespace Marmot::Materials::Registration {
 
-  namespace Registration {
+  using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                        // scope
 
-    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
-                                          // scope
+  const static bool VonMisesIsRegistered = MarmotMaterialHypoElasticFactory::registerMaterial< VonMisesModel >(
+    "VONMISES" );
 
-    const static bool VonMisesIsRegistered = MarmotMaterialHypoElasticFactory::registerMaterial< VonMisesModel >(
-      "VONMISES" );
+  // Co-rotational Hughes-Winget wrapper, usable wherever a MarmotMaterialFiniteStrain is expected
+  // (finite-strain elements, meshfree particles and material points).
+  const static bool VonMisesHughesWingetIsRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial<
+    HughesWingetWrapper< VonMisesModel > >( "VONMISES/HUGHES-WINGET" );
 
-    // Co-rotational Hughes-Winget wrapper, usable wherever a MarmotMaterialFiniteStrain is expected
-    // (finite-strain elements, meshfree particles and material points).
-    const static bool VonMisesHughesWingetIsRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial<
-      HughesWingetWrapper< VonMisesModel > >( "VONMISES/HUGHES-WINGET" );
+  // Variant recovering the exact d(sigma^(n+1))/d(sigma_rot) operator; worth the seven material
+  // evaluations whenever large incremental rotations coincide with plastic flow.
+  const static bool VonMisesHughesWingetExactIsRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial<
+    HughesWingetWrapper< VonMisesModel, HughesWingetTangent::Exact > >( "VONMISES/HUGHES-WINGET/EXACT-TANGENT" );
 
-    // Variant recovering the exact d(sigma^(n+1))/d(sigma_rot) operator; worth the seven material
-    // evaluations whenever large incremental rotations coincide with plastic flow.
-    const static bool VonMisesHughesWingetExactIsRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial<
-      HughesWingetWrapper< VonMisesModel, HughesWingetTangent::Exact > >( "VONMISES/HUGHES-WINGET/EXACT-TANGENT" );
-
-  } // namespace Registration
-} // namespace Marmot::Materials
+} // namespace Marmot::Materials::Registration

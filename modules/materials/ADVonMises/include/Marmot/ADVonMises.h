@@ -28,8 +28,6 @@
 #include "Marmot/MarmotMaterialHypoElasticAD.h"
 #include <Eigen/src/Core/Map.h>
 
-using namespace Marmot;
-
 namespace Marmot::Materials {
   /**
    * @brief Implementation of a isotropic J2-plasticity  material

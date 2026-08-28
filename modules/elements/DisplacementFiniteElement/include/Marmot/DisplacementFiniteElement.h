@@ -43,10 +43,9 @@
 #include <memory>
 #include <vector>
 
-using namespace Marmot;
-using namespace Eigen;
-
 namespace Marmot::Elements {
+
+  using namespace Eigen;
 
   /**
    * @class Marmot::Elements::DisplacementFiniteElement

@@ -130,7 +130,6 @@ namespace Marmot {
                         const Deformation< 3 >&    deformation,
                         const TimeIncrement&       timeIncrement ) const override
     {
-      using namespace Marmot;
       using namespace FastorStandardTensors;
       using scalar = autodiff::dual;
 

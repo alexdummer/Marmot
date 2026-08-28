@@ -187,7 +187,6 @@ namespace Marmot {
      */
     virtual void computePlaneStress( response& res, tangents& tan, const increment& inc ) const
     {
-      using namespace Marmot;
       using namespace Eigen;
 
       Map< VectorXd > stateVars( res.stateVars, stateLayout.totalSize() );

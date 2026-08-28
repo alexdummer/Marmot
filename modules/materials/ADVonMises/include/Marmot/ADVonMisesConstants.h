@@ -23,14 +23,10 @@
  * ---------------------------------------------------------------------
  */
 
-namespace Marmot::Materials {
-
-  /**
-   * @brief Numerical constants for the ADVonMises return-mapping algorithm.
-   */
-  namespace ADVonMisesConstants {
-    const double innerNewtonTol        = 1e-10; ///< Convergence tolerance for the inner Newton iteration.
-    const int    nMaxInnerNewtonCycles = 15;    ///< Maximum number of inner Newton iterations.
-  }                                             // namespace ADVonMisesConstants
-
-} // namespace Marmot::Materials
+/**
+ * @brief Numerical constants for the ADVonMises return-mapping algorithm.
+ */
+namespace Marmot::Materials::ADVonMisesConstants {
+  const double innerNewtonTol        = 1e-10; ///< Convergence tolerance for the inner Newton iteration.
+  const int    nMaxInnerNewtonCycles = 15;    ///< Maximum number of inner Newton iterations.
+} // namespace Marmot::Materials::ADVonMisesConstants

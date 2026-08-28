@@ -1,16 +1,13 @@
 #include "Marmot/ADCompressibleNeoHooke.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 
-namespace Marmot::Materials {
+namespace Marmot::Materials::Registration {
 
-  namespace Registration {
+  using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                        // scope
 
-    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
-                                          // scope
+  const static bool
+    ADCompressibleNeoHookeRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial< ADCompressibleNeoHooke >(
+      "ADCOMPRESSIBLENEOHOOKE" );
 
-    const static bool
-      ADCompressibleNeoHookeRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial< ADCompressibleNeoHooke >(
-        "ADCOMPRESSIBLENEOHOOKE" );
-
-  } // namespace Registration
-} // namespace Marmot::Materials
+} // namespace Marmot::Materials::Registration
