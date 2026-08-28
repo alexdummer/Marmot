@@ -1,7 +1,7 @@
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 #include "Marmot/MarmotJournal.h"
 
-using namespace MarmotLibrary;
+using namespace Marmot::Registration;
 
 Marmot::MarmotMaterialFiniteStrain* MarmotMaterialFiniteStrainFactory::createMaterial( const std::string& materialName,
                                                                                        const double* materialProperties,

@@ -509,7 +509,7 @@ namespace Marmot::Elements {
   {
     for ( auto& qp : qps ) {
       qp.material = std::unique_ptr< MarmotMaterialGeneralGradientEnhancedHypoElastic< nNonlocalVariables > >(
-        MarmotLibrary::MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< nNonlocalVariables >::
+        Marmot::Registration::MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< nNonlocalVariables >::
           createMaterial( section.materialName, section.materialProperties, section.nMaterialProperties, elLabel ) );
     }
   }

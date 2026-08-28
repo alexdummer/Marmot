@@ -540,10 +540,10 @@ namespace Marmot::Elements {
 
     for ( auto& qp : qps ) {
       qp.material = std::unique_ptr< Material >(
-        MarmotLibrary::MarmotMaterialFiniteStrainFactory::createMaterial( section.materialName,
-                                                                          section.materialProperties,
-                                                                          section.nMaterialProperties,
-                                                                          elLabel ) );
+        Marmot::Registration::MarmotMaterialFiniteStrainFactory::createMaterial( section.materialName,
+                                                                                 section.materialProperties,
+                                                                                 section.nMaterialProperties,
+                                                                                 elLabel ) );
     }
   }
 

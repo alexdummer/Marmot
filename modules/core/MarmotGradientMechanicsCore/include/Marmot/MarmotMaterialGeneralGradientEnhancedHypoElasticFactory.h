@@ -29,7 +29,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace MarmotLibrary {
+namespace Marmot::Registration {
 
   /**
    * @brief Factory class for creating MarmotMaterialGeneralGradientEnhancedHypoElastic instances.
@@ -83,4 +83,4 @@ namespace MarmotLibrary {
     /// @brief Get the map of material factory functions by material name.
     static MaterialFactoryMap& materialFactoryFunctionByName();
   };
-} // namespace MarmotLibrary
+} // namespace Marmot::Registration

@@ -20,7 +20,7 @@ namespace Marmot {
                                                                                   const SolverOptions& options )
       : options( options )
     {
-      using namespace MarmotLibrary;
+      using namespace Marmot::Registration;
 
       // create material instance
       material = std::unique_ptr< MarmotMaterialFiniteStrain >( dynamic_cast< MarmotMaterialFiniteStrain* >(

@@ -7,7 +7,8 @@ namespace Marmot::Materials {
 
   namespace Registration {
 
-    using namespace MarmotLibrary;
+    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                          // scope
 
     const static bool VonMisesIsRegistered = MarmotMaterialHypoElasticFactory::registerMaterial< VonMisesModel >(
       "VONMISES" );
@@ -23,5 +24,4 @@ namespace Marmot::Materials {
       HughesWingetWrapper< VonMisesModel, HughesWingetTangent::Exact > >( "VONMISES/HUGHES-WINGET/EXACT-TANGENT" );
 
   } // namespace Registration
-
 } // namespace Marmot::Materials

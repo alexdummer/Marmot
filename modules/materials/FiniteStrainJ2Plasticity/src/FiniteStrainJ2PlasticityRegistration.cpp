@@ -6,7 +6,8 @@ namespace Marmot::Materials {
 
   namespace Registration {
 
-    using namespace MarmotLibrary;
+    using namespace Marmot::Registration; // factory/registry namespace, distinct from this file's own ::Registration
+                                          // scope
 
     const static bool FiniteStrainJ2PlasticityRegistered = MarmotMaterialFiniteStrainFactory::registerMaterial<
       FiniteStrainJ2Plasticity >( "FINITESTRAINJ2PLASTICITY" );

@@ -27,7 +27,7 @@ A singularity container recipe is [available](https://github.com/matthiasneuner/
 
 ## Create your custom interface
 
-To create your custom interface to Marmot, you can leverage the `MarmotLibrary::MarmotMaterialHypoElasticFactory` and `MarmotLibrary::MarmotElementFactory` factories to create
+To create your custom interface to Marmot, you can leverage the `Marmot::Registration::MarmotMaterialHypoElasticFactory` and `Marmot::Registration::MarmotElementFactory` factories to create
 instances of registered material models and finite elements.
 Marmot provides two main base classes for materials:
 
@@ -43,7 +43,7 @@ which belongs to the class of `Marmot::MarmotMaterialHypoElastic` materials, and
 
 // Create the instance by material name
 auto material = std::unique_ptr<Marmot::MarmotMaterialHypoElastic>(
-        MarmotLibrary::MarmotMaterialHypoElasticFactory::createMaterial(
+        Marmot::Registration::MarmotMaterialHypoElasticFactory::createMaterial(
             "LINEARELASTIC", materialProperties, nMaterialProperties, anArbitraryIdentificationCode ));
 
 // assign a characteristic length parameter (specific to hypoelastic materials)
@@ -75,7 +75,7 @@ For instance, the `LinearElastic` material is registered as
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 
 const static bool LinearElasticIsRegistered =
-    MarmotLibrary::MarmotMaterialHypoElasticFactory::registerMaterial< Marmot::Materials::LinearElastic >(
+    Marmot::Registration::MarmotMaterialHypoElasticFactory::registerMaterial< Marmot::Materials::LinearElastic >(
         "LINEARELASTIC" );
 ```
 
@@ -89,12 +89,12 @@ For instance, the 4-node plane strain displacement finite element "CPE4" is regi
 template < class T,
            Marmot::FiniteElement::Quadrature::IntegrationTypes integrationType,
            typename T::SectionType                             sectionType >
-MarmotLibrary::MarmotElementFactory::elementFactoryFunction makeFactoryFunction()
+Marmot::Registration::MarmotElementFactory::elementFactoryFunction makeFactoryFunction()
 {
     return []( int elementID ) -> Marmot::MarmotElement* { return new T( elementID, integrationType, sectionType ); };
 }
 
-const static bool CPE4_isRegistered = MarmotLibrary::MarmotElementFactory::
+const static bool CPE4_isRegistered = Marmot::Registration::MarmotElementFactory::
     registerElement( "CPE4",
                      makeFactoryFunction< DisplacementFiniteElement< 2, 4 >,
                                           FullIntegration,
@@ -111,7 +111,7 @@ int elementNumber = 1;
 
 // create the instance by element name
 auto theElement = std::unique_ptr<Marmot::MarmotElement>(
-        MarmotLibrary::MarmotElementFactory::createElement( "CPE4", elementNumber ) );
+        Marmot::Registration::MarmotElementFactory::createElement( "CPE4", elementNumber ) );
 
 // assign nodal coordinates
 theElement->assignNodeCoordinates( coordinates );
