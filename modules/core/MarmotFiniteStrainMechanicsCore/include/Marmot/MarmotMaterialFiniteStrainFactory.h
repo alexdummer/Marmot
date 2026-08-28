@@ -29,7 +29,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Marmot::Registration {
+namespace Marmot::Factory {
 
   /**
    * @class MarmotMaterialFiniteStrainFactory
@@ -88,4 +88,4 @@ namespace Marmot::Registration {
     using MaterialFactoryMap = std::unordered_map< std::string, materialFactoryFunction >;
     static MaterialFactoryMap& materialFactoryFunctionByName();
   };
-} // namespace Marmot::Registration
+} // namespace Marmot::Factory

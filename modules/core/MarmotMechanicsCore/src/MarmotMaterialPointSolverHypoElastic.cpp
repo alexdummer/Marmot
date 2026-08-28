@@ -11,7 +11,7 @@ MarmotMaterialPointSolverHypoElastic::MarmotMaterialPointSolverHypoElastic( std:
                                                                             const SolverOptions& options )
   : options( options )
 {
-  using namespace Marmot::Registration;
+  using namespace Marmot::Factory;
 
   // create material instance
   material = std::unique_ptr< MarmotMaterialHypoElastic >( dynamic_cast< MarmotMaterialHypoElastic* >(

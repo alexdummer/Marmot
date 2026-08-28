@@ -28,7 +28,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Marmot::Registration {
+namespace Marmot::Factory {
 
   /**
    * @class MarmotElementFactory
@@ -82,4 +82,4 @@ namespace Marmot::Registration {
     static ElementFactoryMap& elementFactoryFunctionByName();
   };
 
-} // namespace Marmot::Registration
+} // namespace Marmot::Factory

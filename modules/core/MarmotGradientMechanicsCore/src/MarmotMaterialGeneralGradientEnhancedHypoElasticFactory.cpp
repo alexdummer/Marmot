@@ -1,7 +1,7 @@
 #include "Marmot/MarmotMaterialGeneralGradientEnhancedHypoElasticFactory.h"
 #include "Marmot/MarmotJournal.h"
 
-using namespace Marmot::Registration;
+using namespace Marmot::Factory;
 
 template <>
 MarmotMaterialGeneralGradientEnhancedHypoElasticFactory< 1 >::MaterialFactoryMap& MarmotMaterialGeneralGradientEnhancedHypoElasticFactory<
