@@ -27,6 +27,11 @@ jobs:
           ${CXX} --version
           cmake --version
 
+      - name: Install Python dependencies
+        shell: bash -leo pipefail {0}
+        run: |
+          pip3 install --break-system-packages numpy
+
       - name: Install Eigen
         shell: bash -leo pipefail {0}
         run: |
@@ -79,7 +84,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ..
+          cmake -DMARMOT_BUILD_PYTHON_BINDINGS=ON ..
           sudo make install
           # --no-tests=error: ctest exits 0 on an empty test set, which would
           # report success for a build that produced no tests at all.
