@@ -8,7 +8,7 @@ Marmot is a high-performance C++20 shared library (`libMarmot`) providing finite
 
 Optional Python bindings (`modules/python`, built with [nanobind](https://github.com/wjakob/nanobind)) expose material point solvers (`marmot.solvers.HypoElasticSolver`, `marmot.solvers.FiniteStrainSolver`) for quick material testing and prototyping — see `doc/pages/python_bindings.md`.
 
-Dependencies: Eigen (>3.3.8), autodiff (>0.6.0), Fastor (>6.4.0) discovered via top-level `CMakeLists.txt`.
+Dependencies (discovered via top-level `CMakeLists.txt`): Eigen (`find_package(Eigen3 3.3 REQUIRED)`), autodiff and Fastor (located via `find_path()`, no version enforced — CI pins autodiff v1.1.0 and Fastor V0.6.4).
 
 ## Build & Test
 
@@ -36,7 +36,7 @@ ctest -R Python_                                   # run the python solver examp
 - **Reuse & Generalize**: Generalize templated formulations (`<int nDim, int nNodes>`) where applicable.
 - **State Variable In-Place Writes**: Manage layout via `stateLayout.add("name", size)` / `finalize()`, access via `stateLayout.getAs<double&>(...)`. Elements slice state via `QPStateVarManager` / `MarmotStateVarVectorManager`.
 - **Early Exit on Trivial Increments**: Check `if (dE.isZero(1e-14)) { dS_dE = Cel; return; }` to bypass return mapping.
-- **Exceptions & Cutbacks**: Throw `MarmotExceptions.h` subclasses (`StressUpdateFailed`, `CutbackRequest`, `ConvergenceError`) with `MakeString() << __PRETTY_FUNCTION__`.
+- **Exceptions & Cutbacks**: Throw `MarmotExceptions.h` subclasses (`StressUpdateFailed`, `SolverConvergenceFailed`, `SolverTimestepExhausted`, `SolverIncrementsExhausted`) with `MakeString() << __PRETTY_FUNCTION__`.
 - **Framework Logging**: Use `MarmotJournal::warningToMSG(...)` and `notificationToMSG(...)` instead of `std::cout`/`std::cerr`.
 - **Test Every Feature**: Register standalone executables in `test.cmake`. Verify against **analytical solutions** and validate tangents via `MarmotMathCore`'s `numdiff`/`autodiff`.
 - **Linting & Commits**: Format with `pre-commit run --all-files`. Commits follow [Conventional Commits](https://www.conventionalcommits.org). PRs target active `next_v<YY>.<MM>` branch.

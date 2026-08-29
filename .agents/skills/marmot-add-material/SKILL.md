@@ -10,7 +10,7 @@ description: >-
 ## 1. Rules & Architecture
 - **In-Place State Variables**: Store **strictly path-dependent** variables via `stateLayout.add("name", size)`. Access by in-place reference `stateLayout.getAs<double&>(state.stateVars, "name")`.
 - **Early Exit on Zero Increments**: `if (dStrain.isZero(1e-14)) { dStress_dStrain = Cel; return; }`.
-- **Exceptions & Logging**: Throw `MarmotExceptions.h` (`StressUpdateFailed`, `CutbackRequest`). Log via `MarmotJournal::warningToMSG(...)`.
+- **Exceptions & Logging**: Throw `MarmotExceptions.h` (`StressUpdateFailed`, `SolverConvergenceFailed`). Log via `MarmotJournal::warningToMSG(...)`.
 - **Base Classes**:
   - Small-strain: `MarmotMaterialHypoElastic` (`MarmotMaterialHypoElasticFactory`)
   - Finite-strain: `MarmotMaterialFiniteStrain` (`MarmotMaterialFiniteStrainFactory`)
