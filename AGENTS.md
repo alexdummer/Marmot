@@ -6,6 +6,8 @@ Guidance for AI Agents working on Marmot (MAteRialMOdellingToolbox).
 
 Marmot is a high-performance C++20 shared library (`libMarmot`) providing finite elements and constitutive material models for quasi-brittle and engineering materials. Consumed by external FE frameworks ([EdelweissFE](https://github.com/MAteRialMOdelingToolbox/EdelweissFE), Abaqus, MOOSE, OpenSees) via lightweight interfaces (`MarmotMaterial*`, `MarmotElement`).
 
+Optional Python bindings (`modules/python`, built with [nanobind](https://github.com/wjakob/nanobind)) expose material point solvers (`marmot.solvers.HypoElasticSolver`, `marmot.solvers.FiniteStrainSolver`) for quick material testing and prototyping — see `doc/pages/python_bindings.md`.
+
 Dependencies: Eigen (>3.3.8), autodiff (>0.6.0), Fastor (>6.4.0) discovered via top-level `CMakeLists.txt`.
 
 ## Build & Test
@@ -17,6 +19,13 @@ cmake .. -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)
 make install                                       # installs libMarmot and public headers
 ctest --output-on-failure                          # run all tests
 ctest -R TestLinearElastic                         # run specific test
+```
+
+To build and install the optional Python bindings (nanobind is fetched automatically at configure time; requires a Python 3.8+ dev environment):
+```bash
+cmake .. -DMARMOT_BUILD_PYTHON_BINDINGS=ON -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
+make install                                       # also installs the `marmot` python package
+ctest -R Python_                                   # run the python solver example tests only
 ```
 
 ## General Coding Rules & Best Practices
@@ -50,6 +59,8 @@ Categories are auto-discovered in strict dependency order (modules only depend o
 2. `materials` — constitutive models (`MarmotMaterialHypoElastic`, `MarmotMaterialFiniteStrain`, `MarmotMaterialGeneralGradientEnhancedHypoElastic`)
 3. `elements` — formulations (`MarmotElement`, `MarmotGeometryElement<nDim, nNodes>`)
 4. `particles` | 5. `materialpoints` | 6. `cells` | 7. `cellelements`
+
+`modules/python` is *not* a category in this scan — it is a single, standalone nanobind extension (`modules/python/CMakeLists.txt`) added via `add_subdirectory` only when `MARMOT_BUILD_PYTHON_BINDINGS=ON`, wrapping the material point solvers on top of `libMarmot`. New materials/elements are registered through the C++ factories above; they do not need bindings added by hand.
 
 Standard `module.cmake`:
 ```cmake
