@@ -3,7 +3,7 @@
 #include "Marmot/MarmotTimeIntegration.h"
 
 using Marmot::MakeString;
-using namespace Marmot::TimeIntegration;
+using namespace Marmot::NumericalAlgorithms::TimeIntegration;
 using namespace Marmot::Testing;
 
 void test_explicitEuler()
