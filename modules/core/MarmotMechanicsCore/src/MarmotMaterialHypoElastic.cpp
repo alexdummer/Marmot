@@ -75,7 +75,7 @@ namespace Marmot {
     state2D_.dissipation          = state.dissipation;
     state2D_.stateVars            = stateVars.data();
 
-    dStress_dStrain2D_ = ContinuumMechanics::PlaneStress::getPlaneStressTangent( dStress_dStrain3D );
+    dStress_dStrain2D_ = ContinuumMechanics::LowerOrder::PlaneStress::getPlaneStressTangent( dStress_dStrain3D );
   }
 
   void MarmotMaterialHypoElastic::computeUniaxialStress( state1D&        state1D_,
@@ -131,7 +131,7 @@ namespace Marmot {
     state1D_.dissipation          = state.dissipation;
     state1D_.stateVars            = stateVars.data();
 
-    dStress_dStrain1D_ = ContinuumMechanics::UniaxialStress::getUniaxialStressTangent( dStress_dStrain3D );
+    dStress_dStrain1D_ = ContinuumMechanics::LowerOrder::UniaxialStress::getUniaxialStressTangent( dStress_dStrain3D );
   }
   double MarmotMaterialHypoElastic::getMaximumWaveSpeed( const state3D& state ) const
   {

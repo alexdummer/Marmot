@@ -3,7 +3,7 @@
 
 using namespace Eigen;
 
-namespace Marmot::ContinuumMechanics {
+namespace Marmot::ContinuumMechanics::LowerOrder {
 
   namespace UniaxialStress {
     double getUniaxialStressTangent( const Ref< const Matrix6d >& C )
@@ -142,4 +142,5 @@ namespace Marmot::ContinuumMechanics {
     }
 
   } // namespace PlaneStress
-} // namespace Marmot::ContinuumMechanics
+
+} // namespace Marmot::ContinuumMechanics::LowerOrder

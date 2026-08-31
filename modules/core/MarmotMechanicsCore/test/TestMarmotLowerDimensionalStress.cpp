@@ -11,9 +11,9 @@
 using namespace Eigen;
 using Marmot::MakeString;
 using namespace Marmot::ContinuumMechanics::Elasticity::Isotropic;
-using namespace Marmot::ContinuumMechanics::PlaneStrain;
-using namespace Marmot::ContinuumMechanics::PlaneStress;
-using namespace Marmot::ContinuumMechanics::UniaxialStress;
+using namespace Marmot::ContinuumMechanics::LowerOrder::PlaneStrain;
+using namespace Marmot::ContinuumMechanics::LowerOrder::PlaneStress;
+using namespace Marmot::ContinuumMechanics::LowerOrder::UniaxialStress;
 using namespace Marmot::Testing;
 
 Marmot::Matrix6d create_C_Matrix()

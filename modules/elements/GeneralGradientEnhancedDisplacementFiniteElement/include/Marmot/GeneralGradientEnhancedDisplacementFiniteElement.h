@@ -677,12 +677,12 @@ namespace Marmot::Elements {
         if ( sectionType == SectionType::PlaneStress ) {
           qp.material->computePlaneStress( res, tan, inc );
           S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-          C = ContinuumMechanics::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
+          C = ContinuumMechanics::LowerOrder::PlaneStress::getPlaneStressTangent( tan.dStressddStrain );
         }
         else if ( sectionType == SectionType::PlaneStrain ) {
           qp.material->computeStress( res, tan, inc );
           S = ContinuumMechanics::VoigtNotation::voigtToPlaneVoigt( res.stress );
-          C = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
+          C = ContinuumMechanics::LowerOrder::PlaneStrain::getPlaneStrainTangent( tan.dStressddStrain );
         }
         else {
           throw std::invalid_argument( "Invalid section type for 2D element, expected PlaneStress or PlaneStrain" );

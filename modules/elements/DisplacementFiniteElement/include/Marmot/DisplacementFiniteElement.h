@@ -623,7 +623,7 @@ namespace Marmot::Elements {
           qp.managedStateVars->stress = state.stress;
 
           S                    = reduce3DVoigt< ParentGeometryElement::voigtSize >( state.stress );
-          C                    = ContinuumMechanics::PlaneStrain::getPlaneStrainTangent( C66 );
+          C                    = ContinuumMechanics::LowerOrder::PlaneStrain::getPlaneStrainTangent( C66 );
           elasticEnergyDensity = state.elasticEnergyDensity;
           dissipation          = state.dissipation;
         }

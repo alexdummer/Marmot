@@ -28,7 +28,7 @@
 #pragma once
 #include "Marmot/MarmotVoigt.h"
 
-namespace Marmot::ContinuumMechanics {
+namespace Marmot::ContinuumMechanics::LowerOrder {
 
   namespace UniaxialStress {
     /**
@@ -149,4 +149,5 @@ namespace Marmot::ContinuumMechanics {
      */
     Eigen::Matrix< double, 3, 6 > dStressPlaneStressDStress();
   } // namespace PlaneStress
-} // namespace Marmot::ContinuumMechanics
+
+} // namespace Marmot::ContinuumMechanics::LowerOrder
