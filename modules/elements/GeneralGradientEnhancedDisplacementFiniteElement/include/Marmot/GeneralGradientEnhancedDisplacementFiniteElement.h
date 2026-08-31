@@ -876,8 +876,19 @@ namespace Marmot::Elements {
     constexpr double wHighOrder = isHexa20 ? 1.0 / 3.0 : 0.5;
     constexpr double wLinear    = isHexa20 ? 2.0 / 3.0 : 0.5;
 
-    constexpr int nNodesLinear  = ( 1 << nDim );
-    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
+    constexpr int nNodesLinear = ( 1 << nDim );
+
+    // computeLumpedInertia() only knows how to weight the non-local block against either the
+    // displacement interpolation itself (equal-order, nNonLocalNodes == nNodes) or the linear
+    // corner-node interpolation (reduced-order, nNonLocalNodes == nNodesLinear); assigning N_lin
+    // to a differently-sized non-local weight vector below would silently misbehave for any other
+    // nNonLocalNodes.
+    static_assert( nNodes == nNonLocalNodes || nNonLocalNodes == nNodesLinear,
+                   "GeneralGradientEnhancedDisplacementFiniteElement::computeLumpedInertia requires the "
+                   "non-local field to use either the displacement interpolation order (nNonLocalNodes == "
+                   "nNodes) or linear corner-node interpolation (nNonLocalNodes == 2^nDim)." );
+
+    auto linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
       const auto N_    = localGeometryElement.N( qp.xi );
       const auto N_lin = linGeometryEl.N( qp.xi );
