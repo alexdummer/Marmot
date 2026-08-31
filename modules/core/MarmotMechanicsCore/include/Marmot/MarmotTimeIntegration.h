@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <tuple>
 
-namespace Marmot::TimeIntegration {
+namespace Marmot::NumericalAlgorithms::TimeIntegration {
 
   /** @brief Explicit Euler time integrator
    * @param yN Current value
@@ -191,4 +191,4 @@ namespace Marmot::TimeIntegration {
     return std::make_tuple( yNew, tauNew );
   }
 
-} // namespace Marmot::TimeIntegration
+} // namespace Marmot::NumericalAlgorithms::TimeIntegration
