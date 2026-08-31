@@ -607,7 +607,7 @@ namespace Marmot::Elements {
 
     for ( auto& qp : qps ) {
 
-      using namespace Marmot::FastorIndices;
+      using namespace Marmot::TensorUtility::FastorTensors::Indices;
 
       const auto& dNdX_ = qp.dNdX;
 
@@ -633,7 +633,8 @@ namespace Marmot::Elements {
           using namespace Marmot;
 
           Material::ConstitutiveResponse< 3 >
-            response3D( FastorStandardTensors::Tensor3d( qp.managedStateVars->stress.data(), ColumnMajor ),
+            response3D( TensorUtility::FastorTensors::StandardTensors::Tensor3d( qp.managedStateVars->stress.data(),
+                                                                                 ColumnMajor ),
                         response.elasticEnergyDensity,
                         response.dissipation,
                         response.stateVars );
@@ -738,7 +739,7 @@ namespace Marmot::Elements {
 
     for ( auto& qp : qps ) {
 
-      using namespace Marmot::FastorIndices;
+      using namespace Marmot::TensorUtility::FastorTensors::Indices;
 
       const auto& dNdX_ = qp.dNdX;
 
@@ -762,7 +763,8 @@ namespace Marmot::Elements {
           using namespace Marmot;
 
           Material::ConstitutiveResponse< 3 >
-            response3D( FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
+            response3D( TensorUtility::FastorTensors::StandardTensors::Tensor33d( qp.managedStateVars->stress.data(),
+                                                                                  Fastor::ColumnMajor ),
                         response.elasticEnergyDensity,
                         response.dissipation,
                         qp.managedStateVars->materialStateVars.data() );
@@ -1054,7 +1056,7 @@ namespace Marmot::Elements {
       const double        characteristicElementLength = 2.0 *
                                                  Eigen::JacobiSVD< JacobianSized >( J_ ).singularValues().minCoeff();
 
-      using namespace Marmot::FastorIndices;
+      using namespace Marmot::TensorUtility::FastorTensors::Indices;
       const auto                         dNdX = Tensor< double, nDim, nNodes >( qp.dNdX.data(), ColumnMajor );
       const Tensor< double, nDim, nDim > F_np = evaluate( einsum< Ai, jA >( qU_np, dNdX ) + I );
       Tensor< double, 3, 3 >             F_np_3D;
@@ -1163,7 +1165,7 @@ namespace Marmot::Elements {
 
     for ( auto& qp : Parent::qps ) {
 
-      using namespace Marmot::FastorIndices;
+      using namespace Marmot::TensorUtility::FastorTensors::Indices;
 
       auto        N_    = this->N( qp.xi );
       const auto& dNdX_ = qp.dNdX;
@@ -1189,7 +1191,8 @@ namespace Marmot::Elements {
 
       using namespace Marmot;
       Material::ConstitutiveResponse< 3 >
-        response3D{ FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
+        response3D{ TensorUtility::FastorTensors::StandardTensors::Tensor33d( qp.managedStateVars->stress.data(),
+                                                                              Fastor::ColumnMajor ),
                     qp.managedStateVars->elasticEnergy / qp.J0xW,
                     qp.managedStateVars->dissipation / qp.J0xW,
                     qp.managedStateVars->materialStateVars.data() };
@@ -1307,7 +1310,7 @@ namespace Marmot::Elements {
 
     for ( auto& qp : Parent::qps ) {
 
-      using namespace Marmot::FastorIndices;
+      using namespace Marmot::TensorUtility::FastorTensors::Indices;
 
       auto        N_    = this->N( qp.xi );
       const auto& dNdX_ = qp.dNdX;
@@ -1332,7 +1335,8 @@ namespace Marmot::Elements {
 
       using namespace Marmot;
       Material::ConstitutiveResponse< 3 >
-        response3D( FastorStandardTensors::Tensor33d( qp.managedStateVars->stress.data(), Fastor::ColumnMajor ),
+        response3D( TensorUtility::FastorTensors::StandardTensors::Tensor33d( qp.managedStateVars->stress.data(),
+                                                                              Fastor::ColumnMajor ),
                     qp.managedStateVars->elasticEnergy / qp.J0xW,
                     qp.managedStateVars->dissipation / qp.J0xW,
                     qp.managedStateVars->materialStateVars.data() );

@@ -35,7 +35,7 @@
 
 namespace Marmot {
 
-  namespace FastorStandardTensors {
+  namespace TensorUtility::FastorTensors::StandardTensors {
 
     using Tensor3d      = Fastor::Tensor< double, 3 >;
     using Tensor33d     = Fastor::Tensor< double, 3, 3 >;
@@ -101,9 +101,9 @@ namespace Marmot {
 
     } // namespace Spatial3D
 
-  }   // namespace FastorStandardTensors
+  }   // namespace TensorUtility::FastorTensors::StandardTensors
 
-  namespace FastorIndices {
+  namespace TensorUtility::FastorTensors::Indices {
     enum IndexTag { i_, j_, k_, l_, m_, n_, o_, p_, A_, B_, I_, J_, K_, L_, M_, N_, P_ };
 
     using A      = Fastor::Index< A_ >;
@@ -274,7 +274,7 @@ namespace Marmot {
     using to_kK     = Fastor::OIndex< k_, K_ >;
     using to_kL     = Fastor::OIndex< k_, L_ >;
     using to_ijklmn = Fastor::OIndex< i_, j_, k_, l_, m_, n_ >;
-  } // namespace FastorIndices
+  } // namespace TensorUtility::FastorTensors::Indices
 
   /**
    * @brief Map a Fastor Tensor (const) to an Eigen Map (row-major, const)
@@ -500,8 +500,8 @@ namespace Marmot {
    * This is the case for example when T is autodiff::dual.
    */
   template < typename T >
-  T einsum_ij_ij_hardcoded( const FastorStandardTensors::Tensor33t< T >& A,
-                            const FastorStandardTensors::Tensor33t< T >& B )
+  T einsum_ij_ij_hardcoded( const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >& A,
+                            const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >& B )
   {
     T result( 0.0 );
 
@@ -656,9 +656,10 @@ namespace Marmot {
    * It actually computes \f$ \text{sym}\, t_ij = 0.5 ( t_{ij} + t_{ji} ) \f$
    */
   template < typename T >
-  FastorStandardTensors::Tensor33t< T > symmetric( const FastorStandardTensors::Tensor33t< T >& t )
+  TensorUtility::FastorTensors::StandardTensors::Tensor33t< T > symmetric(
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >& t )
   {
-    const FastorStandardTensors::Tensor33t< T > sym = 0.5 * ( t + Fastor::transpose( t ) );
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T > sym = 0.5 * ( t + Fastor::transpose( t ) );
     return sym;
   }
 
@@ -671,12 +672,14 @@ namespace Marmot {
    * It actually computes \f$ \text{dev} \, t_{ij} = t_{ij} - \frac{1}{3}t_{kk}\delta_{ij}\f$
    */
   template < typename T >
-  FastorStandardTensors::Tensor33t< T > deviatoric( const FastorStandardTensors::Tensor33t< T >& t )
+  TensorUtility::FastorTensors::StandardTensors::Tensor33t< T > deviatoric(
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >& t )
   {
-    Eigen::Matrix< T, 3, 3 >                    dummy = Eigen::Matrix< T, 3, 3 >::Identity();
-    const FastorStandardTensors::Tensor33t< T > I     = FastorStandardTensors::Tensor33t< T >( dummy.data(),
-                                                                                           Fastor::ColumnMajor );
-    const FastorStandardTensors::Tensor33t< T > dev   = t - 1. / 3 * multiplyFastorTensorWithScalar( I, trace( t ) );
+    Eigen::Matrix< T, 3, 3 > dummy = Eigen::Matrix< T, 3, 3 >::Identity();
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >
+      I = TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >( dummy.data(), Fastor::ColumnMajor );
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33t< T >
+      dev = t - 1. / 3 * multiplyFastorTensorWithScalar( I, trace( t ) );
     return dev;
   }
 
@@ -690,11 +693,11 @@ namespace Marmot {
    * such that \f$ C^{-1}_{ijmn} C_{mnkl} = \delta_{ik}\delta_{jl} \f$ using Mandel notation and Fastor's inverse
    * function for second order tensors.
    */
-  FastorStandardTensors::Tensor3333d invertMinorSymmetricFourthOrderTensor(
-    const FastorStandardTensors::Tensor3333d& C );
+  TensorUtility::FastorTensors::StandardTensors::Tensor3333d invertMinorSymmetricFourthOrderTensor(
+    const TensorUtility::FastorTensors::StandardTensors::Tensor3333d& C );
 } // namespace Marmot
 
-namespace Marmot::FastorStandardTensors {
+namespace Marmot::TensorUtility::FastorTensors::StandardTensors {
 
   template < typename T = double >
   std::pair< Tensor3t< T >, Tensor33t< T > > computeEigenSystemJacobi( const Tensor33t< T >& A_in )
@@ -997,4 +1000,4 @@ namespace Marmot::FastorStandardTensors {
     return std::make_pair( eigenvalues, eigenvectors );
   }
 
-} // namespace Marmot::FastorStandardTensors
+} // namespace Marmot::TensorUtility::FastorTensors::StandardTensors

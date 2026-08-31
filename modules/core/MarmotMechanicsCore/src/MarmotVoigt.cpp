@@ -40,7 +40,7 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     return strain;
   }
 
-  Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const EigenTensors::Tensor3333d& C )
+  Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const TensorUtility::EigenTensors::Tensor3333d& C )
   {
     // Ordering for Voigt notation (0->xx, 1->yy, 2->zz, 3->xy, 4->xz, 5->yz)
     std::array< std::pair< int, int >, 6 > ordering = {
@@ -68,9 +68,9 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     return voigtStiffness;
   }
 
-  EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness )
+  TensorUtility::EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness )
   {
-    EigenTensors::Tensor3333d stiffness;
+    TensorUtility::EigenTensors::Tensor3333d stiffness;
     stiffness.setZero(); // Initialize with zeros
 
     int row;
@@ -90,11 +90,12 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     return stiffness;
   }
 
-  FastorStandardTensors::Tensor3333d voigtToStiffnessFastor( const Marmot::Matrix6d& voigtStiffness )
+  TensorUtility::FastorTensors::StandardTensors::Tensor3333d voigtToStiffnessFastor(
+    const Marmot::Matrix6d& voigtStiffness )
   {
-    FastorStandardTensors::Tensor3333d stiffness( 0. );
-    int                                row;
-    int                                col;
+    TensorUtility::FastorTensors::StandardTensors::Tensor3333d stiffness( 0. );
+    int                                                        row;
+    int                                                        col;
     for ( int i = 0; i < 3; i++ ) {
       for ( int j = 0; j < 3; j++ ) {
         row = toVoigt< 3 >( i, j );
@@ -645,8 +646,8 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     Matrix6d transformStiffnessToGlobalSystem( const Marmot::Matrix6d& stiffness,
                                                const Matrix3d&         transformedCoordinateSystem )
     {
-      const EigenTensors::Tensor3333d stiffnessTensorLocal = voigtToStiffness( stiffness );
-      EigenTensors::Tensor3333d       stiffnessTensorGlobal;
+      const TensorUtility::EigenTensors::Tensor3333d stiffnessTensorLocal = voigtToStiffness( stiffness );
+      TensorUtility::EigenTensors::Tensor3333d       stiffnessTensorGlobal;
       stiffnessTensorGlobal.setZero();
       Matrix3d N = transformedCoordinateSystem.transpose();
 

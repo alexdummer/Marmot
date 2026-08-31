@@ -315,7 +315,7 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
    * @note The input tensor `C` must follow the symmetry properties of a stiffness tensor for the
    *       conversion to be valid (minor symmetry).
    */
-  Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const EigenTensors::Tensor3333d& C );
+  Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const TensorUtility::EigenTensors::Tensor3333d& C );
 
   /**
    * @brief Converts a stiffness matrix in Voigt notation (\f$ 6 \times 6 \f$ matrix) to a 4th-order stiffness tensor
@@ -324,7 +324,7 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
    * @return An Eigen::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
    *         The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
    */
-  EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness );
+  TensorUtility::EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness );
 
   /**
    * @brief Converts a stiffness matrix in Voigt notation (\f$ 6 \times 6 \f$ matrix) to a 4th-order stiffness tensor
@@ -333,7 +333,8 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
    * @return a Fastor::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
    *         The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
    */
-  Marmot::FastorStandardTensors::Tensor3333d voigtToStiffnessFastor( const Marmot::Matrix6d& voigtStiffness );
+  Marmot::TensorUtility::FastorTensors::StandardTensors::Tensor3333d voigtToStiffnessFastor(
+    const Marmot::Matrix6d& voigtStiffness );
 
   /**
    * @brief Converts a stress vector in Voigt notation to its corresponding tensor form.

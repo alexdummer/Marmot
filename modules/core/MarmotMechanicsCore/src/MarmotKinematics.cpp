@@ -6,9 +6,9 @@ namespace Marmot::ContinuumMechanics::Kinematics {
 
   namespace VelocityGradient {
 
-    EigenTensors::Tensor3333d initializeDOmega_dVelocityGradient()
+    TensorUtility::EigenTensors::Tensor3333d initializeDOmega_dVelocityGradient()
     {
-      EigenTensors::Tensor3333d dwdl;
+      TensorUtility::EigenTensors::Tensor3333d dwdl;
 
       for ( int i = 0; i < 3; i++ )
         for ( int j = 0; j < 3; j++ )
@@ -19,11 +19,11 @@ namespace Marmot::ContinuumMechanics::Kinematics {
             }
       return dwdl;
     }
-    const EigenTensors::Tensor3333d dOmega_dVelocityGradient = initializeDOmega_dVelocityGradient();
+    const TensorUtility::EigenTensors::Tensor3333d dOmega_dVelocityGradient = initializeDOmega_dVelocityGradient();
 
-    EigenTensors::Tensor633d initializeDStretchingRate_dVelocityGradient()
+    TensorUtility::EigenTensors::Tensor633d initializeDStretchingRate_dVelocityGradient()
     {
-      EigenTensors::Tensor633d dddl;
+      TensorUtility::EigenTensors::Tensor633d dddl;
 
       for ( int i = 0; i < 3; i++ )
         for ( int j = 0; j < 3; j++ )
@@ -37,7 +37,8 @@ namespace Marmot::ContinuumMechanics::Kinematics {
       return dddl;
     }
 
-    const EigenTensors::Tensor633d dStretchingRate_dVelocityGradient = initializeDStretchingRate_dVelocityGradient();
+    const TensorUtility::EigenTensors::Tensor633d
+      dStretchingRate_dVelocityGradient = initializeDStretchingRate_dVelocityGradient();
 
   } // namespace VelocityGradient
 
@@ -50,10 +51,10 @@ namespace Marmot::ContinuumMechanics::Kinematics {
         0.5 * ( H + H.transpose() + H.transpose() * H ) );
     }
 
-    Marmot::EigenTensors::Tensor633d dGreenLagrangedDeformationGradient( const Eigen::Matrix3d& F )
+    Marmot::TensorUtility::EigenTensors::Tensor633d dGreenLagrangedDeformationGradient( const Eigen::Matrix3d& F )
     {
-      EigenTensors::Tensor633d dEdF;
-      auto                     kron = Matrix3d::Identity();
+      TensorUtility::EigenTensors::Tensor633d dEdF;
+      auto                                    kron = Matrix3d::Identity();
 
       for ( int IJ = 0; IJ < 6; IJ++ ) {
         auto [I, J] = Marmot::ContinuumMechanics::VoigtNotation::fromVoigt< 3 >( IJ );

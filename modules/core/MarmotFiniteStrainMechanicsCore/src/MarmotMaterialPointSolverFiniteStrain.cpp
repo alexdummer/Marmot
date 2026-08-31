@@ -9,7 +9,7 @@
 
 using namespace Marmot;
 using namespace Fastor;
-using namespace FastorStandardTensors;
+using namespace TensorUtility::FastorTensors::StandardTensors;
 
 namespace Marmot::Solvers {
 
@@ -51,8 +51,9 @@ namespace Marmot::Solvers {
     }
   }
 
-  void MarmotMaterialPointSolverFiniteStrain::setInitialState( const FastorStandardTensors::Tensor33d& initialStress,
-                                                               const Eigen::VectorXd& initialStateVars )
+  void MarmotMaterialPointSolverFiniteStrain::setInitialState(
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33d& initialStress,
+    const Eigen::VectorXd&                                          initialStateVars )
   {
     _initialStress    = initialStress;
     _initialStateVars = initialStateVars;
@@ -239,10 +240,10 @@ namespace Marmot::Solvers {
       HistoryEntry( increment.timeOld + increment.dT, stress, Spatial3D::I + gradU, dTau_dF, stateVars ) );
   }
 
-  FastorStandardTensors::Tensor9d MarmotMaterialPointSolverFiniteStrain::computeResidual(
-    const FastorStandardTensors::Tensor9d& stressIncrement,
-    const FastorStandardTensors::Tensor9d& target,
-    const Increment&                       increment )
+  TensorUtility::FastorTensors::StandardTensors::Tensor9d MarmotMaterialPointSolverFiniteStrain::computeResidual(
+    const TensorUtility::FastorTensors::StandardTensors::Tensor9d& stressIncrement,
+    const TensorUtility::FastorTensors::StandardTensors::Tensor9d& target,
+    const Increment&                                               increment )
   {
     Tensor9d residual = stressIncrement;
     // replace displacement gradient controlled components
@@ -255,8 +256,9 @@ namespace Marmot::Solvers {
     return residual;
   }
 
-  void MarmotMaterialPointSolverFiniteStrain::modifyTangent( FastorStandardTensors::Tensor99d& tangent,
-                                                             const Increment&                  increment )
+  void MarmotMaterialPointSolverFiniteStrain::modifyTangent(
+    TensorUtility::FastorTensors::StandardTensors::Tensor99d& tangent,
+    const Increment&                                          increment )
   {
     // modify the tangent matrix based on control type
     for ( int i = 0; i < 9; i++ ) {

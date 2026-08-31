@@ -16,8 +16,8 @@ namespace Marmot::Materials {
 
   using namespace Marmot;
   using namespace Fastor;
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  using namespace TensorUtility::FastorTensors::Indices;
+  using namespace TensorUtility::FastorTensors::StandardTensors;
 
   double FiniteStrainOrthotropicBiotViscoelasticity::getDensity( const double* stateVars ) const
   {
@@ -65,7 +65,7 @@ namespace Marmot::Materials {
     const Tensor33t< scalar > C = DeformationMeasures::rightCauchyGreen( F );
 
     // compute principal stretches and directions
-    auto [lam, Q] = FastorStandardTensors::computeEigenSystemJacobi( C );
+    auto [lam, Q] = TensorUtility::FastorTensors::StandardTensors::computeEigenSystemJacobi( C );
     Tensor33t< scalar > principalStretch( 0. );
     for ( int i = 0; i < 3; ++i ) {
       principalStretch( i, i ) = sqrt( lam( i ) );

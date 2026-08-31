@@ -130,7 +130,7 @@ namespace Marmot {
                         const Deformation< 3 >&    deformation,
                         const TimeIncrement&       timeIncrement ) const override
     {
-      using namespace FastorStandardTensors;
+      using namespace TensorUtility::FastorTensors::StandardTensors;
       using scalar = autodiff::dual;
 
       Eigen::Map< Eigen::VectorXd > stateVars( response.stateVars, this->getNumberOfRequiredStateVars() );

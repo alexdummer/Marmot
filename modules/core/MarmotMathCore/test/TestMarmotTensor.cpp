@@ -4,7 +4,7 @@
 
 using Marmot::MakeString;
 using namespace Marmot::ContinuumMechanics::Tensors;
-using namespace Marmot::ContinuumMechanics::TensorUtility;
+using namespace Marmot::TensorUtility;
 using namespace Marmot::Testing;
 using namespace Eigen;
 

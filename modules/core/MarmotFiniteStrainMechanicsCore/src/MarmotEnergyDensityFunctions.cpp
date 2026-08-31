@@ -2,11 +2,14 @@
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
 namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::ThirdOrderDerived {
   using namespace Fastor;
-  using namespace Marmot::FastorStandardTensors;
-  std::tuple< double, FastorStandardTensors::Tensor33d, FastorStandardTensors::Tensor3333d, FastorStandardTensors::Tensor333333d > standardNeoHooke(
-    const FastorStandardTensors::Tensor33d& C,
-    const double&                           K,
-    const double&                           G )
+  using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
+  std::tuple< double,
+              TensorUtility::FastorTensors::StandardTensors::Tensor33d,
+              TensorUtility::FastorTensors::StandardTensors::Tensor3333d,
+              TensorUtility::FastorTensors::StandardTensors::Tensor333333d >
+  standardNeoHooke( const TensorUtility::FastorTensors::StandardTensors::Tensor33d& C,
+                    const double&                                                   K,
+                    const double&                                                   G )
   {
 
     const double lambda = K - 2.0 / 3.0 * G;
@@ -37,7 +40,7 @@ namespace Marmot::ContinuumMechanics::EnergyDensityFunctions::ThirdOrderDerived 
     const Tensor33d dPsi_dC = G / 2 * ( dTrC_dC - dLnDetC_dC ) + lambda / 4 * ( dDetC_dC - dLnDetC_dC );
 
     // second derivative quantities
-    using namespace FastorIndices;
+    using namespace TensorUtility::FastorTensors::Indices;
     using lj                        = Index< l_, j_ >;
     using li                        = Index< l_, i_ >;
     const Tensor3333d  dInvCt_dC    = -0.5 * ( einsum< ik, lj, to_ijkl >( invCt, invCt ) +

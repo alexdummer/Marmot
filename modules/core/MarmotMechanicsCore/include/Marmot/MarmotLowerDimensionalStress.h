@@ -68,8 +68,8 @@ namespace Marmot::ContinuumMechanics::LowerOrder {
      * @return Reduced derivative of stress with respect to deformation gradient (\f$3\times2\times2\f$ tensor)
      *         in the plane strain setting.
      */
-    EigenTensors::Tensor322d reduce3D_dStress_dDeformationGradient(
-      const EigenTensors::Tensor633d& dStressdDeformationGradient3D );
+    TensorUtility::EigenTensors::Tensor322d reduce3D_dStress_dDeformationGradient(
+      const TensorUtility::EigenTensors::Tensor633d& dStressdDeformationGradient3D );
 
     /**
      * @brief Computes the derivative of the 3D strain tensor with respect to the plane strain tensor.
@@ -101,8 +101,8 @@ namespace Marmot::ContinuumMechanics::LowerOrder {
      * @return Reduced derivative of stress w.r.t. deformation gradient (\f$3 \times 2 \times 2\f$ tensor)
      *         for plane stress.
      */
-    EigenTensors::Tensor322d compute_dStress_dDeformationGradient(
-      const EigenTensors::Tensor633d& dStressdDeformationGradient3D );
+    TensorUtility::EigenTensors::Tensor322d compute_dStress_dDeformationGradient(
+      const TensorUtility::EigenTensors::Tensor633d& dStressdDeformationGradient3D );
 
     /**
      * @brief Computes the out-of-plane strain correction component for plane stress conditions.

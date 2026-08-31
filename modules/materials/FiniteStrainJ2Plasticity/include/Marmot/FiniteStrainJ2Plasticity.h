@@ -38,33 +38,33 @@
 
 namespace Marmot::Materials {
 
-  namespace Spatial3D = FastorStandardTensors::Spatial3D;
-  using FastorIndices::Ii;
-  using FastorIndices::iI;
-  using FastorIndices::iImn;
-  using FastorIndices::ij;
-  using FastorIndices::IJ;
-  using FastorIndices::iJ;
-  using FastorIndices::IJKL;
-  using FastorIndices::iJKL;
-  using FastorIndices::ijmn;
-  using FastorIndices::ik;
-  using FastorIndices::IK;
-  using FastorIndices::IL;
-  using FastorIndices::iL;
-  using FastorIndices::JK;
-  using FastorIndices::jl;
-  using FastorIndices::JL;
-  using FastorIndices::KL;
-  using FastorIndices::KLMN;
-  using FastorIndices::LI;
-  using FastorIndices::mnkL;
-  using FastorIndices::to_ijkl;
-  using FastorIndices::to_ijKL;
-  using FastorIndices::to_IJKL;
-  using FastorStandardTensors::Tensor3333d;
-  using FastorStandardTensors::Tensor33d;
-  using FastorStandardTensors::Tensor33t;
+  namespace Spatial3D = TensorUtility::FastorTensors::StandardTensors::Spatial3D;
+  using TensorUtility::FastorTensors::Indices::Ii;
+  using TensorUtility::FastorTensors::Indices::iI;
+  using TensorUtility::FastorTensors::Indices::iImn;
+  using TensorUtility::FastorTensors::Indices::ij;
+  using TensorUtility::FastorTensors::Indices::IJ;
+  using TensorUtility::FastorTensors::Indices::iJ;
+  using TensorUtility::FastorTensors::Indices::IJKL;
+  using TensorUtility::FastorTensors::Indices::iJKL;
+  using TensorUtility::FastorTensors::Indices::ijmn;
+  using TensorUtility::FastorTensors::Indices::ik;
+  using TensorUtility::FastorTensors::Indices::IK;
+  using TensorUtility::FastorTensors::Indices::IL;
+  using TensorUtility::FastorTensors::Indices::iL;
+  using TensorUtility::FastorTensors::Indices::JK;
+  using TensorUtility::FastorTensors::Indices::jl;
+  using TensorUtility::FastorTensors::Indices::JL;
+  using TensorUtility::FastorTensors::Indices::KL;
+  using TensorUtility::FastorTensors::Indices::KLMN;
+  using TensorUtility::FastorTensors::Indices::LI;
+  using TensorUtility::FastorTensors::Indices::mnkL;
+  using TensorUtility::FastorTensors::Indices::to_ijkl;
+  using TensorUtility::FastorTensors::Indices::to_ijKL;
+  using TensorUtility::FastorTensors::Indices::to_IJKL;
+  using TensorUtility::FastorTensors::StandardTensors::Tensor3333d;
+  using TensorUtility::FastorTensors::StandardTensors::Tensor33d;
+  using TensorUtility::FastorTensors::StandardTensors::Tensor33t;
 
   /**
    * @class Marmot::Materials::FiniteStrainJ2Plasticity

@@ -6,7 +6,7 @@
 
 using Marmot::MakeString;
 using namespace Marmot::Testing;
-using namespace Marmot::FastorStandardTensors;
+using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 using namespace Marmot::Math;
 using namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation;
 

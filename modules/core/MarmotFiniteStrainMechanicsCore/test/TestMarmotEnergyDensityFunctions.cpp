@@ -5,7 +5,7 @@
 
 using Marmot::MakeString;
 using namespace Marmot::Testing;
-using namespace Marmot::FastorStandardTensors;
+using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 
 std::tuple< Tensor33d, Tensor33d, double, double, double, double > computationParameters()
 {

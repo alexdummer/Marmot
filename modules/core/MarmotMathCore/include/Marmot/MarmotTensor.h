@@ -31,65 +31,66 @@ namespace Marmot {
     /**
      * @brief Initializes the fourth-order tensor \f$I_{ijkl} = \delta_{ij}\delta_{kl}\f$.
      */
-    EigenTensors::Tensor3333d Initialize_I2xI2();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_I2xI2();
 
     /**
      * @brief Fourth-order tensor \f$I_{ijkl} = \delta_{ij}\delta_{kl}\f$.
      */
-    inline const EigenTensors::Tensor3333d I2xI2 = Initialize_I2xI2();
+    inline const TensorUtility::EigenTensors::Tensor3333d I2xI2 = Initialize_I2xI2();
 
     /**
      * @brief Initializes the symmetric fourth-order identity tensor \f$
      * I_{ijkl}^{sym}=\frac{1}{2}(\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk}) \f$.
      */
-    EigenTensors::Tensor3333d Initialize_Isym();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_Isym();
 
     /**
      * @brief Symmetric fourth-order identity tensor
      * \f$ I_{ijkl}^{sym}=\frac{1}{2}(\delta_{ik}\delta_{jl}+\delta_{il}\delta_{jk}) \f$.
      */
-    inline const EigenTensors::Tensor3333d Isym = Initialize_Isym();
+    inline const TensorUtility::EigenTensors::Tensor3333d Isym = Initialize_Isym();
 
     /**
      * @brief Initializes the skew-symmetric fourth-order identity tensor
      * \f$ I_{ijkl}^{skew}=\frac{1}{2}(\delta_{ik}\delta_{jl}-\delta_{il}\delta_{jk}) \f$.
      */
-    EigenTensors::Tensor3333d Initialize_Iskew();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_Iskew();
 
     /** @brief Skew-symmetric part of the fourth-order identity tensor \f$
      * I_{ijkl}^{skew}=\frac{1}{2}(\delta_{ik}\delta_{jl}-\delta_{il}\delta_{jk}) \f$.
      */
-    inline const EigenTensors::Tensor3333d Iskew = Initialize_Iskew();
+    inline const TensorUtility::EigenTensors::Tensor3333d Iskew = Initialize_Iskew();
 
     /**
      * @brief Initializes the fourth-order identity tensor \f$ I_{ijkl} = \delta_{ik}\delta_{jl} \f$.
      */
-    EigenTensors::Tensor3333d Initialize_IFourthOrder();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_IFourthOrder();
 
     /**
      * @brief Fourth-order identity tensor \f$ I_{ijkl} = \delta_{ik}\delta_{jl} \f$.
      */
-    inline const EigenTensors::Tensor3333d IFourthOrder = Initialize_IFourthOrder();
+    inline const TensorUtility::EigenTensors::Tensor3333d IFourthOrder = Initialize_IFourthOrder();
 
     /**
      * @brief Initializes the transposed fourth-order identity tensor \f$ I_{ijkl}^{T} = \delta_{il}\delta_{jk} \f$.
      */
-    EigenTensors::Tensor3333d Initialize_IFourthOrderTranspose();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_IFourthOrderTranspose();
 
     /// @brief Transposed fourth-order identity tensor \f$ I_{ijkl}^{T} = \delta_{il}\delta_{jk} \f$.
-    inline const EigenTensors::Tensor3333d IFourthOrderTranspose = Initialize_IFourthOrderTranspose();
+    inline const TensorUtility::EigenTensors::Tensor3333d IFourthOrderTranspose = Initialize_IFourthOrderTranspose();
 
     /**
      * @brief Initializes the derivative tensor of deviatoric stress w.r.t. stress  \f$ \frac{\partial
      * s_{ij}}{\partial\sigma_{kl}} = \delta_{ik}\delta_{jl} - \frac{1}{3} \delta_{ij}\delta_{kl} \f$.
      */
-    EigenTensors::Tensor3333d Initialize_dDeviatoricStress_dStress();
+    TensorUtility::EigenTensors::Tensor3333d Initialize_dDeviatoricStress_dStress();
 
     /** @brief Derivative of the deviatoric stress with respect to stress \f$ \frac{\partial
      * s_{ij}}{\partial\sigma_{kl}} =
      * \delta_{ik}\delta_{jl} - \frac{1}{3} \delta_{ij}\delta_{kl} \f$.
      */
-    inline const EigenTensors::Tensor3333d dDeviatoricStress_dStress = Initialize_dDeviatoricStress_dStress();
+    inline const TensorUtility::EigenTensors::Tensor3333d
+      dDeviatoricStress_dStress = Initialize_dDeviatoricStress_dStress();
 
     /**
      * @brief Initializes the 3D Levi-Civita permutation tensor \f$E_{ijk}\f$.
@@ -103,13 +104,13 @@ namespace Marmot {
      *   \end{cases}
      * \f]
      */
-    EigenTensors::Tensor333d Initialize_LeviCivita3D();
+    TensorUtility::EigenTensors::Tensor333d Initialize_LeviCivita3D();
 
     /**
      * @brief 3D Levi-Civita permutation tensor \f$E_{ijk}\f$.
      * @copydetails Initialize_LeviCivita3D
      */
-    inline const EigenTensors::Tensor333d LeviCivita3D = Initialize_LeviCivita3D();
+    inline const TensorUtility::EigenTensors::Tensor333d LeviCivita3D = Initialize_LeviCivita3D();
 
     /**
      * @brief 2D Levi-Civita permutation tensor \f$E_{ij}\f$.
@@ -124,24 +125,24 @@ namespace Marmot {
      * \f]
      * Commonly used to represent 2D cross products and rotations in tensor notation.
      */
-    EigenTensors::Tensor122d Initialize_LeviCivita2D();
+    TensorUtility::EigenTensors::Tensor122d Initialize_LeviCivita2D();
 
     /**
      * @brief 2D Levi-Civita permutation tensor \f$\varepsilon_{ij}\f$.
      * @copydetails Initialize_LeviCivita2D
      */
-    inline const EigenTensors::Tensor122d LeviCivita2D = Initialize_LeviCivita2D();
+    inline const TensorUtility::EigenTensors::Tensor122d LeviCivita2D = Initialize_LeviCivita2D();
 
     /**
      * @brief Initializes the second-order identity tensor.
      * @details \f$ I_{ij} = \delta_{ij} \f$.
      */
-    EigenTensors::Tensor33d Initialize_I2();
+    TensorUtility::EigenTensors::Tensor33d Initialize_I2();
 
     /** @brief Second-order identity tensor.
      * @copydetails Initialize_I2
      */
-    inline const EigenTensors::Tensor33d I2 = Initialize_I2();
+    inline const TensorUtility::EigenTensors::Tensor33d I2 = Initialize_I2();
 
     /**
      * @brief Returns the number of rotational DOFs for the given dimension.
@@ -225,7 +226,7 @@ namespace Marmot {
 
   } // namespace ContinuumMechanics::Tensors
 
-  namespace ContinuumMechanics::TensorUtility {
+  namespace TensorUtility {
     /** @brief Kronecker delta function \f$ \delta_{ab} \f$.
      * @return 1 if a == b, otherwise 0.
      */
@@ -342,6 +343,6 @@ namespace Marmot {
      */
     Eigen::Matrix3d dyadicProduct( const Eigen::Vector3d& vector1, const Eigen::Vector3d& vector2 );
 
-  } // namespace ContinuumMechanics::TensorUtility
+  } // namespace TensorUtility
 
 } // namespace Marmot

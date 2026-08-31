@@ -17,8 +17,8 @@ namespace Marmot::Materials {
 
   using namespace Marmot;
   using namespace Fastor;
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  using namespace TensorUtility::FastorTensors::Indices;
+  using namespace TensorUtility::FastorTensors::StandardTensors;
 
   double CompressibleFiniteStrainLinearViscoelasticity::getDensity( const double* stateVars ) const
   {
@@ -33,18 +33,19 @@ namespace Marmot::Materials {
   }
 
   std::tuple< double,
-              FastorStandardTensors::Tensor33d,
-              FastorStandardTensors::Tensor3333d,
-              FastorStandardTensors::Tensor333333d >
+              TensorUtility::FastorTensors::StandardTensors::Tensor33d,
+              TensorUtility::FastorTensors::StandardTensors::Tensor3333d,
+              TensorUtility::FastorTensors::StandardTensors::Tensor333333d >
   CompressibleFiniteStrainLinearViscoelasticity::computeEnergyDensityAndDerivatives(
-    const FastorStandardTensors::Tensor33d& C ) const
+    const TensorUtility::FastorTensors::StandardTensors::Tensor33d& C ) const
   {
 
     // select hyperelastic base
     // compute enregy density and derivatives
     // with autodiff
     // we need a function mapping from tensor33 with dual3rd to dual3rd
-    std::function< autodiff::dual3rd( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& ) >
+    std::function< autodiff::dual3rd(
+      const TensorUtility::FastorTensors::StandardTensors::Tensor33t< autodiff::dual3rd >& ) >
       energyDensityFunction;
 
     switch ( hyperelasticBase ) {
@@ -53,29 +54,32 @@ namespace Marmot::Materials {
                                                                                               elasticProperties[0],
                                                                                               elasticProperties[1] );
     case PenceGouNeoHooke:
-      energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
-        autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::PenceGouPotentialB<
-          autodiff::dual3rd >( C_ad, elasticProperties[0], elasticProperties[1] );
-        return res;
-      };
+      energyDensityFunction =
+        [this]( const TensorUtility::FastorTensors::StandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
+          autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::PenceGouPotentialB<
+            autodiff::dual3rd >( C_ad, elasticProperties[0], elasticProperties[1] );
+          return res;
+        };
       break;
     case Yeoh:
-      energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
-        autodiff::dual3rd
-          res = ContinuumMechanics::EnergyDensityFunctions::YeohPotential< autodiff::dual3rd >( C_ad,
-                                                                                                elasticProperties[0],
-                                                                                                elasticProperties[1],
-                                                                                                elasticProperties[2],
-                                                                                                elasticProperties[3] );
-        return res;
-      };
+      energyDensityFunction =
+        [this]( const TensorUtility::FastorTensors::StandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
+          autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::YeohPotential<
+            autodiff::dual3rd >( C_ad,
+                                 elasticProperties[0],
+                                 elasticProperties[1],
+                                 elasticProperties[2],
+                                 elasticProperties[3] );
+          return res;
+        };
       break;
     case MooneyRivlin:
-      energyDensityFunction = [this]( const FastorStandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
-        autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::MooneyRivlinPotential<
-          autodiff::dual3rd >( C_ad, elasticProperties[0], elasticProperties[1], elasticProperties[2] );
-        return res;
-      };
+      energyDensityFunction =
+        [this]( const TensorUtility::FastorTensors::StandardTensors::Tensor33t< autodiff::dual3rd >& C_ad ) {
+          autodiff::dual3rd res = ContinuumMechanics::EnergyDensityFunctions::MooneyRivlinPotential<
+            autodiff::dual3rd >( C_ad, elasticProperties[0], elasticProperties[1], elasticProperties[2] );
+          return res;
+        };
       break;
     default:
       throw std::runtime_error( "CompressibleFiniteStrainLinearViscoelasticity::computeEnergyDensityAndDerivatives: "

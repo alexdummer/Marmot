@@ -6,7 +6,7 @@
 
 using Marmot::MakeString;
 using namespace Marmot::Testing;
-using namespace Marmot::FastorStandardTensors;
+using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 
 Tensor33d make_dGp()
 {

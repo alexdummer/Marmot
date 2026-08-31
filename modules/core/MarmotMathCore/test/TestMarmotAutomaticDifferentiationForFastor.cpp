@@ -9,7 +9,7 @@ using namespace Fastor;
 using Marmot::MakeString;
 using namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation;
 using namespace Marmot::Testing;
-using namespace Marmot::FastorStandardTensors;
+using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 using namespace Marmot::ContinuumMechanics;
 
 void testTensorToScalar()

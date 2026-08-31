@@ -29,22 +29,22 @@
 
 namespace Marmot::ContinuumMechanics::DeformationMeasures {
 
-  namespace Spatial3D = FastorStandardTensors::Spatial3D;
-  using FastorIndices::iI;
-  using FastorIndices::iJ;
-  using FastorIndices::iK;
-  using FastorIndices::ik;
-  using FastorIndices::IK;
-  using FastorIndices::jJ;
-  using FastorIndices::JK;
-  using FastorIndices::jK;
-  using FastorIndices::jk;
-  using FastorIndices::kI;
-  using FastorIndices::kJ;
-  using FastorIndices::to_IJkK;
-  using FastorIndices::to_ijkK;
-  using FastorStandardTensors::Tensor3333t;
-  using FastorStandardTensors::Tensor33t;
+  namespace Spatial3D = TensorUtility::FastorTensors::StandardTensors::Spatial3D;
+  using TensorUtility::FastorTensors::Indices::iI;
+  using TensorUtility::FastorTensors::Indices::iJ;
+  using TensorUtility::FastorTensors::Indices::iK;
+  using TensorUtility::FastorTensors::Indices::ik;
+  using TensorUtility::FastorTensors::Indices::IK;
+  using TensorUtility::FastorTensors::Indices::jJ;
+  using TensorUtility::FastorTensors::Indices::JK;
+  using TensorUtility::FastorTensors::Indices::jK;
+  using TensorUtility::FastorTensors::Indices::jk;
+  using TensorUtility::FastorTensors::Indices::kI;
+  using TensorUtility::FastorTensors::Indices::kJ;
+  using TensorUtility::FastorTensors::Indices::to_IJkK;
+  using TensorUtility::FastorTensors::Indices::to_ijkK;
+  using TensorUtility::FastorTensors::StandardTensors::Tensor3333t;
+  using TensorUtility::FastorTensors::StandardTensors::Tensor33t;
 
   /** @brief Computes the right Cauchy-Green tensor \f$\boldsymbol{C}\f$.
    * @tparam T Scalar type (e.g., float, double, autodiff::dual)
@@ -169,7 +169,7 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
     {
 
       using namespace Fastor;
-      using namespace FastorIndices;
+      using namespace TensorUtility::FastorTensors::Indices;
 
       using TensorDd   = Tensor< double, nDim >;
       using TensorDDd  = Tensor< double, nDim, nDim >;
@@ -221,7 +221,7 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
     {
 
       using namespace Fastor;
-      using namespace FastorIndices;
+      using namespace TensorUtility::FastorTensors::Indices;
       using TensorDDd   = Tensor< double, nDim, nDim >;
       using TensorDDDDd = Tensor< double, nDim, nDim, nDim, nDim >;
 
@@ -255,7 +255,7 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
     {
 
       using namespace Fastor;
-      using namespace FastorIndices;
+      using namespace TensorUtility::FastorTensors::Indices;
       using TensorDDd   = Tensor< double, nDim, nDim >;
       using TensorDDDDd = Tensor< double, nDim, nDim, nDim, nDim >;
 

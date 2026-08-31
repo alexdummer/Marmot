@@ -50,11 +50,14 @@ namespace Marmot::Solvers {
      * time information and time step control parameters.
      */
     struct Step {
-      FastorStandardTensors::Tensor33d gradUIncrementTarget;  ///< Target displacement gradient increment for the step
-      FastorStandardTensors::Tensor33d stressIncrementTarget; ///< Target Kirchhoff stress increment for the step
-      FastorStandardTensors::Tensor33t< bool > isGradUComponentControlled; ///< Flags to indicate which displacement
-                                                                           ///< gradient components are controlled
-      FastorStandardTensors::Tensor33t< bool >
+      TensorUtility::FastorTensors::StandardTensors::Tensor33d
+        gradUIncrementTarget;             ///< Target displacement gradient increment for the step
+      TensorUtility::FastorTensors::StandardTensors::Tensor33d
+        stressIncrementTarget;            ///< Target Kirchhoff stress increment for the step
+      TensorUtility::FastorTensors::StandardTensors::Tensor33t< bool >
+        isGradUComponentControlled;       ///< Flags to indicate which displacement
+                                          ///< gradient components are controlled
+      TensorUtility::FastorTensors::StandardTensors::Tensor33t< bool >
              isStressComponentControlled; ///< Flags to indicate which stress components are controlled
       double timeStart     = 0.0;         ///< Start time of the step
       double timeEnd       = 1.0;         ///< End time of the step
@@ -84,11 +87,14 @@ namespace Marmot::Solvers {
      * control flags, time information, and iteration limits.
      */
     struct Increment {
-      FastorStandardTensors::Tensor9d         gradUIncrement;  ///< Target displacement gradient increment for the step
-      FastorStandardTensors::Tensor9d         stressIncrement; ///< Target Kirchhoff stress increment for the step
-      FastorStandardTensors::Tensor9t< bool > isGradUComponentControlled; ///< Flags to indicate which displecement
-                                                                          ///< gradient components are controlled
-      FastorStandardTensors::Tensor9t< bool >
+      TensorUtility::FastorTensors::StandardTensors::Tensor9d
+        gradUIncrement;                   ///< Target displacement gradient increment for the step
+      TensorUtility::FastorTensors::StandardTensors::Tensor9d
+        stressIncrement;                  ///< Target Kirchhoff stress increment for the step
+      TensorUtility::FastorTensors::StandardTensors::Tensor9t< bool >
+        isGradUComponentControlled;       ///< Flags to indicate which displecement
+                                          ///< gradient components are controlled
+      TensorUtility::FastorTensors::StandardTensors::Tensor9t< bool >
              isStressComponentControlled; ///< Flags to indicate which stress components are controlled
       double timeOld;                     ///< Old time at the beginning of the increment
       double dT;                          ///< Time step size for the increment
@@ -99,11 +105,11 @@ namespace Marmot::Solvers {
      * @details Each entry contains time, stress, deformation, and state variables.
      */
     struct HistoryEntry {
-      double                             time;      ///< Time at the history entry
-      FastorStandardTensors::Tensor33d   stress;    ///< Stress at the history entry
-      FastorStandardTensors::Tensor33d   F;         ///< deformation gradient at the history entry
-      FastorStandardTensors::Tensor3333d dTau_dF;   ///< Material tangent at the history entry
-      Eigen::VectorXd                    stateVars; ///< State variables at the history entry
+      double                                                     time;    ///< Time at the history entry
+      TensorUtility::FastorTensors::StandardTensors::Tensor33d   stress;  ///< Stress at the history entry
+      TensorUtility::FastorTensors::StandardTensors::Tensor33d   F;       ///< deformation gradient at the history entry
+      TensorUtility::FastorTensors::StandardTensors::Tensor3333d dTau_dF; ///< Material tangent at the history entry
+      Eigen::VectorXd                                            stateVars; ///< State variables at the history entry
 
       /**
        * @brief Print the history entry to the console
@@ -143,20 +149,20 @@ namespace Marmot::Solvers {
        * @param dTau_dF Material tangent at the history entry
        * @param stateVars State variables at the history entry
        */
-      HistoryEntry( double                                    time,
-                    const FastorStandardTensors::Tensor33d&   stress,
-                    const FastorStandardTensors::Tensor33d&   F,
-                    const FastorStandardTensors::Tensor3333d& dTau_dF,
-                    const Eigen::VectorXd&                    stateVars )
+      HistoryEntry( double                                                            time,
+                    const TensorUtility::FastorTensors::StandardTensors::Tensor33d&   stress,
+                    const TensorUtility::FastorTensors::StandardTensors::Tensor33d&   F,
+                    const TensorUtility::FastorTensors::StandardTensors::Tensor3333d& dTau_dF,
+                    const Eigen::VectorXd&                                            stateVars )
         : time( time ), stress( stress ), F( F ), dTau_dF( dTau_dF ), stateVars( stateVars )
       {
       }
       // default constructor
       HistoryEntry()
         : time( 0.0 ),
-          stress( FastorStandardTensors::Tensor33d( 0.0 ) ),
-          F( FastorStandardTensors::Tensor33d( 0.0 ) ),
-          dTau_dF( FastorStandardTensors::Tensor3333d( 0.0 ) ),
+          stress( TensorUtility::FastorTensors::StandardTensors::Tensor33d( 0.0 ) ),
+          F( TensorUtility::FastorTensors::StandardTensors::Tensor33d( 0.0 ) ),
+          dTau_dF( TensorUtility::FastorTensors::StandardTensors::Tensor3333d( 0.0 ) ),
           stateVars( Eigen::VectorXd() )
       {
       }
@@ -207,8 +213,8 @@ namespace Marmot::Solvers {
      * @param initialStress The initial stress in Voigt notation
      * @param initialStateVars The initial state variables
      */
-    void setInitialState( const FastorStandardTensors::Tensor33d& initialStress,
-                          const Eigen::VectorXd&                  initialStateVars );
+    void setInitialState( const TensorUtility::FastorTensors::StandardTensors::Tensor33d& initialStress,
+                          const Eigen::VectorXd&                                          initialStateVars );
 
     /**
      * @brief Get the number of state variables in the material model
@@ -286,9 +292,10 @@ namespace Marmot::Solvers {
      * and the target increment, taking into account which components
      * are controlled by strain or stress.
      */
-    FastorStandardTensors::Tensor9d computeResidual( const FastorStandardTensors::Tensor9d& stressIncrement,
-                                                     const FastorStandardTensors::Tensor9d& target,
-                                                     const Increment&                       increment );
+    TensorUtility::FastorTensors::StandardTensors::Tensor9d computeResidual(
+      const TensorUtility::FastorTensors::StandardTensors::Tensor9d& stressIncrement,
+      const TensorUtility::FastorTensors::StandardTensors::Tensor9d& target,
+      const Increment&                                               increment );
 
     /**
      * @brief Modify the material tangent matrix based on control type
@@ -301,7 +308,7 @@ namespace Marmot::Solvers {
      * This is done by zeroing out rows corresponding to displacement gradient controlled
      * components and setting their diagonal entries to one.
      */
-    void modifyTangent( FastorStandardTensors::Tensor99d& tangent, const Increment& increment );
+    void modifyTangent( TensorUtility::FastorTensors::StandardTensors::Tensor99d& tangent, const Increment& increment );
 
     /// @brief The finite strain material model
     std::unique_ptr< MarmotMaterialFiniteStrain > material;
@@ -319,16 +326,20 @@ namespace Marmot::Solvers {
     Eigen::VectorXd stateVarsTemp;
 
     /// @brief The Kirchhoff stress
-    FastorStandardTensors::Tensor33d stress = FastorStandardTensors::Tensor33d( 0.0 );
+    TensorUtility::FastorTensors::StandardTensors::Tensor33d
+      stress = TensorUtility::FastorTensors::StandardTensors::Tensor33d( 0.0 );
 
     /// @brief The initial Kirchhoff stress
-    FastorStandardTensors::Tensor33d _initialStress = FastorStandardTensors::Tensor33d( 0.0 );
+    TensorUtility::FastorTensors::StandardTensors::Tensor33d
+      _initialStress = TensorUtility::FastorTensors::StandardTensors::Tensor33d( 0.0 );
 
     /// @brief The displacement gradient
-    FastorStandardTensors::Tensor33d gradU = FastorStandardTensors::Tensor33d( 0.0 );
+    TensorUtility::FastorTensors::StandardTensors::Tensor33d
+      gradU = TensorUtility::FastorTensors::StandardTensors::Tensor33d( 0.0 );
 
     /// @brief The material tangent dTau/dF
-    FastorStandardTensors::Tensor3333d dTau_dF = FastorStandardTensors::Tensor3333d( 0.0 );
+    TensorUtility::FastorTensors::StandardTensors::Tensor3333d
+      dTau_dF = TensorUtility::FastorTensors::StandardTensors::Tensor3333d( 0.0 );
 
     /// @brief List of loading steps
     std::vector< Step > steps;

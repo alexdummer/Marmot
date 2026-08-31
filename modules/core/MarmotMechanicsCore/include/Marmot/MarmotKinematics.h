@@ -43,7 +43,7 @@ namespace Marmot::ContinuumMechanics::Kinematics {
      * @param F The deformation gradient tensor as a 3x3 matrix.
      * @return A \f$6 \times 3 \times 3\f$ tensor representing the derivative of the Green-Lagrange strain tensor.
      */
-    Marmot::EigenTensors::Tensor633d dGreenLagrangedDeformationGradient( const Eigen::Matrix3d& F );
+    Marmot::TensorUtility::EigenTensors::Tensor633d dGreenLagrangedDeformationGradient( const Eigen::Matrix3d& F );
   } // namespace Strain
 
   namespace VelocityGradient {

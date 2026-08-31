@@ -27,7 +27,7 @@
 #include "Marmot/MarmotMath.h"
 #include <iostream>
 
-namespace Marmot::ContinuumMechanics::TensorUtility::TensorExponential {
+namespace Marmot::TensorUtility::TensorExponential {
   struct ExponentialMapFailed : std::exception {};
 
   /**
@@ -166,4 +166,4 @@ namespace Marmot::ContinuumMechanics::TensorUtility::TensorExponential {
       return theResult;
     }
   } // namespace FirstOrderDerived
-} // namespace Marmot::ContinuumMechanics::TensorUtility::TensorExponential
+} // namespace Marmot::TensorUtility::TensorExponential

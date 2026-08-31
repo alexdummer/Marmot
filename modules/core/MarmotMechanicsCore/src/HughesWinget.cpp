@@ -35,18 +35,18 @@ namespace Marmot::NumericalAlgorithms {
       dR * Marmot::ContinuumMechanics::VoigtNotation::voigtToStress( tensor ) * dR.transpose() );
   }
 
-  Marmot::EigenTensors::Tensor633d HughesWinget::compute_dS_dF( const Marmot::Vector6d& stress,
-                                                                const Matrix3d&         FInv,
-                                                                const Marmot::Matrix6d& dChauchydEps )
+  Marmot::TensorUtility::EigenTensors::Tensor633d HughesWinget::compute_dS_dF( const Marmot::Vector6d& stress,
+                                                                               const Matrix3d&         FInv,
+                                                                               const Marmot::Matrix6d& dChauchydEps )
   {
     using namespace Marmot;
     using namespace Marmot::ContinuumMechanics::Kinematics::VelocityGradient;
 
-    EigenTensors::Tensor633d dS_dl;
-    EigenTensors::Tensor633d dS_dF;
-    EigenTensors::Tensor633d dStressRotational_dl;
-    EigenTensors::Tensor633d dStressJaumann_dl;
-    auto                     stressNew = ContinuumMechanics::VoigtNotation::stressMatrixFromVoigt< 3 >( stress );
+    TensorUtility::EigenTensors::Tensor633d dS_dl;
+    TensorUtility::EigenTensors::Tensor633d dS_dF;
+    TensorUtility::EigenTensors::Tensor633d dStressRotational_dl;
+    TensorUtility::EigenTensors::Tensor633d dStressJaumann_dl;
+    auto stressNew = ContinuumMechanics::VoigtNotation::stressMatrixFromVoigt< 3 >( stress );
 
     dStressRotational_dl.setZero();
     for ( int ij = 0; ij < 6; ij++ ) {

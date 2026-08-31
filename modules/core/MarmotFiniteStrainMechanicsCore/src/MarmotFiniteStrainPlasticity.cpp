@@ -4,8 +4,8 @@
 namespace Marmot::ContinuumMechanics::Plasticity::FlowIntegration::FirstOrderDerived {
 
   using namespace Fastor;
-  using namespace FastorStandardTensors;
-  using namespace FastorIndices;
+  using namespace TensorUtility::FastorTensors::StandardTensors;
+  using namespace TensorUtility::FastorTensors::Indices;
 
   std::pair< Tensor33d, Tensor3333d > explicitIntegration( const Tensor33d& dGp )
   {

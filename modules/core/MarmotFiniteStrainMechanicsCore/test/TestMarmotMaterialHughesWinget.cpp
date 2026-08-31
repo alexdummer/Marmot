@@ -36,7 +36,7 @@
 using namespace Marmot;
 using namespace Marmot::Materials;
 using namespace Marmot::Testing;
-using namespace Marmot::FastorStandardTensors;
+using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 
 namespace {
 
