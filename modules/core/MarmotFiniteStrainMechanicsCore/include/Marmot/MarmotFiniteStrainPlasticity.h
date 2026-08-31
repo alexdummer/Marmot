@@ -36,7 +36,7 @@
  * the plastic velocity gradient.
  */
 
-namespace Marmot::ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration {
+namespace Marmot::ContinuumMechanics::Plasticity::FlowIntegration {
 
   using Fastor::Index;
   using FastorStandardTensors::Tensor3333d;
@@ -96,4 +96,4 @@ namespace Marmot::ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration 
     std::pair< Tensor33d, Tensor3333d > exponentialMap( const Tensor33d& deltaGp );
   } // namespace FirstOrderDerived
 
-} // namespace Marmot::ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration
+} // namespace Marmot::ContinuumMechanics::Plasticity::FlowIntegration
