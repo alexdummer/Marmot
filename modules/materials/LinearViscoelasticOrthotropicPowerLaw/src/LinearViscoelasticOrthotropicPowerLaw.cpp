@@ -14,6 +14,8 @@ using namespace Eigen;
 
 namespace Marmot::Materials {
 
+  namespace KelvinChain = Marmot::ContinuumMechanics::Viscoelasticity::KelvinChain;
+
   double LinearViscoelasticOrthotropicPowerLaw::getDensity( const double* stateVars ) const
   {
     if ( nMaterialProperties < 24 ) {

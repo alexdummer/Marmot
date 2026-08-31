@@ -26,7 +26,9 @@
 #pragma once
 #include "Marmot/MarmotKelvinChain.h"
 
-namespace Marmot::Materials::SolidificationTheory {
+namespace Marmot::ContinuumMechanics::Viscoelasticity::SolidificationTheory {
+
+  namespace KelvinChain = Marmot::ContinuumMechanics::Viscoelasticity::KelvinChain;
 
   /// \brief material parameters for Solidification Theory
   struct Parameters {
@@ -84,4 +86,4 @@ namespace Marmot::Materials::SolidificationTheory {
     return log( 1. + pow( xi, params.n ) );
   }
 
-} // namespace Marmot::Materials::SolidificationTheory
+} // namespace Marmot::ContinuumMechanics::Viscoelasticity::SolidificationTheory
