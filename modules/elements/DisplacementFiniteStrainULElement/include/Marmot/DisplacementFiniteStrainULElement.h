@@ -365,6 +365,11 @@ namespace Marmot::Elements {
      * @brief Compute lumped (diagonal) mass matrix using material density.
      * @details Using the manifold based approach according to
      * Yang et al. (2017) "A rigorous and unified mass lumping scheme for higher-order elements", CMAME
+     *
+     * Hexa20 is special-cased to a 1/3-2/3 split (high-order/linear) instead of the default
+     * 1/2-1/2: with 1/2-1/2, the negative corner contribution of the Hexa20 serendipity shape
+     * function exactly cancels the positive corner contribution of the trilinear shape function
+     * for any regular (affinely-mapped) element, producing an exactly zero corner mass.
      */
     void computeLumpedInertia( double* M );
 
@@ -914,6 +919,13 @@ namespace Marmot::Elements {
     Eigen::Map< RhsSized > LMM( M );
     LMM.setZero();
 
+    // Hexa20 special case: shift the split towards the linear shape function to avoid the exact
+    // corner-mass cancellation the default 1/2-1/2 split produces for this element (see the
+    // Doxygen comment on the declaration).
+    constexpr bool   isHexa20   = ( nDim == 3 && nNodes == 20 );
+    constexpr double wHighOrder = isHexa20 ? 1.0 / 3.0 : 0.5;
+    constexpr double wLinear    = isHexa20 ? 2.0 / 3.0 : 0.5;
+
     // 2^nDim. std::pow is not constexpr in the standard (libstdc++ offers it as an
     // extension, libc++ does not), so compute it with a shift to stay portable.
     constexpr int nNodesLinear  = 1 << nDim;
@@ -922,8 +934,8 @@ namespace Marmot::Elements {
       const auto N_    = this->N( qp.xi );
       const auto N_lin = linGeometryEl.N( qp.xi );
 
-      Eigen::VectorXd N_weighted = 0.5 * ( N_ );
-      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+      Eigen::VectorXd N_weighted = wHighOrder * ( N_ );
+      N_weighted.head( nNodesLinear ) += wLinear * N_lin;
 
       const double    rho = qp.material->getDensity( qp.managedStateVars->materialStateVars.data() );
       Eigen::VectorXd m_  = N_weighted * qp.J0xW * rho;
