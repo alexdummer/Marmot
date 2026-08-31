@@ -461,8 +461,8 @@ namespace Marmot::Materials {
       Tensor33d   dGp = multiplyFastorTensorWithScalar( df_dS, dLambda );
       Tensor33d   dFp;
       Tensor3333d ddFp_ddGp;
-      std::tie( dFp, ddFp_ddGp ) = ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration::FirstOrderDerived::
-        exponentialMap( dGp );
+      std::tie( dFp,
+                ddFp_ddGp ) = ContinuumMechanics::Plasticity::FlowIntegration::FirstOrderDerived::exponentialMap( dGp );
 
       return { dFp, einsum< IJKL, KL >( ddFp_ddGp, df_dS ) };
     }
@@ -512,7 +512,7 @@ namespace Marmot::Materials {
       std::tie( f, df_dMandel, df_dBetaP ) = yieldFunctionFromStressFirstOrderDerived( mandelStress, betaP );
 
       const Tensor33t< T > dGp = multiplyFastorTensorWithScalar( df_dMandel, dLambda );
-      const Tensor33t< T > dFp = ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration::exponentialMap( dGp );
+      const Tensor33t< T > dFp = ContinuumMechanics::Plasticity::FlowIntegration::exponentialMap( dGp );
 
       VectorXt< T > aux = mV9t( Tensor33t< T >( einsum< iJ, JK >( Fe, dFp ) ).data() ) -
                           mV9t( fastorTensorFromDoubleTensor< T >( FeTrial ).data() );
@@ -578,8 +578,8 @@ namespace Marmot::Materials {
       Tensor33d   dGp = dLambda * df_dMandel;
       Tensor33d   dFp;
       Tensor3333d ddFp_ddGp;
-      std::tie( dFp, ddFp_ddGp ) = ContinuumMechanics::FiniteStrain::Plasticity::FlowIntegration::FirstOrderDerived::
-        exponentialMap( dGp );
+      std::tie( dFp,
+                ddFp_ddGp ) = ContinuumMechanics::Plasticity::FlowIntegration::FirstOrderDerived::exponentialMap( dGp );
 
       Tensor3333d ddGp_dFe      = dLambda * einsum< ijmn, mnkL >( d2f_dMandel_dMandel, dMandel_dFe );
       Tensor33d   ddFp_ddLambda = einsum< IJKL, KL >( ddFp_ddGp, df_dMandel );
