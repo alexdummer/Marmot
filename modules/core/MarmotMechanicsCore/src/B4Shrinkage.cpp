@@ -7,7 +7,7 @@
 using namespace Marmot;
 using namespace std;
 
-namespace Marmot::Materials::Shrinkage::B4 {
+namespace Marmot::ContinuumMechanics::Shrinkage::B4 {
   Vector6d computeShrinkageStrainIncrement( const double tStartDays,
                                             const double dTDays,
                                             const double ultimateAutogenousShrinkageStrain,
@@ -44,4 +44,4 @@ namespace Marmot::Materials::Shrinkage::B4 {
     return ContinuumMechanics::VoigtNotation::I *
            ( ultimateAutogenousShrinkageStrain * deltaAutogenous + ultimateDryingShrinkageStrain * kHum * deltaDrying );
   }
-} // namespace Marmot::Materials::Shrinkage::B4
+} // namespace Marmot::ContinuumMechanics::Shrinkage::B4

@@ -37,6 +37,11 @@ namespace Marmot::Materials {
   public:
     using MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD;
 
+    /// @brief Convergence tolerance for the inner Newton iteration.
+    static constexpr double innerNewtonTol = 1e-10;
+    /// @brief Maximum number of inner Newton iterations.
+    static constexpr int nMaxInnerNewtonCycles = 15;
+
     /// @brief Young’s modulus.
     const double& E;
     /// @brief Poisson’s ratio.

@@ -31,7 +31,7 @@
 /**
  * @brief B4-specific shrinkage strain increment computation.
  */
-namespace Marmot::Materials::Shrinkage::B4 {
+namespace Marmot::ContinuumMechanics::Shrinkage::B4 {
 
   /**
    * @brief Computes the total shrinkage strain increment over one time step.
@@ -63,4 +63,4 @@ namespace Marmot::Materials::Shrinkage::B4 {
                                                     const double dryingShrinkageHalfTime,
                                                     const double kHum,
                                                     const double dryingStart );
-} // namespace Marmot::Materials::Shrinkage::B4
+} // namespace Marmot::ContinuumMechanics::Shrinkage::B4
