@@ -7,7 +7,7 @@
 using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::NumericalAlgorithms::Differentiation;
-using namespace Marmot::GradientDamage::DecreasingInteractions;
+using namespace Marmot::ContinuumMechanics::GradientDamage::DecreasingInteractions;
 
 void testPohTemplate()
 {

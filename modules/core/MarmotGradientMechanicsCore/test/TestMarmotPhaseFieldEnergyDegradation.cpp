@@ -6,7 +6,7 @@
 using Marmot::MakeString;
 using namespace Marmot::Testing;
 using namespace Marmot::NumericalAlgorithms::Differentiation;
-using namespace Marmot::PhaseField::EnergyDegradationFunctions;
+using namespace Marmot::ContinuumMechanics::PhaseField::EnergyDegradationFunctions;
 
 void testQuadratic()
 {

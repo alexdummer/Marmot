@@ -28,7 +28,7 @@
 #include <cmath>
 #include <tuple>
 
-namespace Marmot::PhaseField::EnergyDegradationFunctions {
+namespace Marmot::ContinuumMechanics::PhaseField::EnergyDegradationFunctions {
   // degradation functions acc. Kuhn, Schlüter, Müller (2015)
 
   /**
@@ -166,4 +166,4 @@ namespace Marmot::PhaseField::EnergyDegradationFunctions {
                                                   const double a2,
                                                   const double a3 );
   } // namespace SecondOrderDerived
-} // namespace Marmot::PhaseField::EnergyDegradationFunctions
+} // namespace Marmot::ContinuumMechanics::PhaseField::EnergyDegradationFunctions
