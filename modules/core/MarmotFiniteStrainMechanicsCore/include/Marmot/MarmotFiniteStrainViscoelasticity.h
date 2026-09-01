@@ -111,6 +111,7 @@ namespace Marmot::ContinuumMechanics::FiniteStrain::Viscoelasticity {
       return;
 
     using namespace Fastor;
+    using namespace Marmot::TensorUtility::FastorTensors;
     using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
     using namespace Marmot::TensorUtility::FastorTensors::Indices;
 
@@ -182,6 +183,7 @@ namespace Marmot::ContinuumMechanics::FiniteStrain::Viscoelasticity {
       return;
 
     using namespace Fastor;
+    using namespace Marmot::TensorUtility::FastorTensors;
     using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
     using namespace Marmot::TensorUtility::FastorTensors::Indices;
 

@@ -83,7 +83,7 @@ namespace Marmot {
        * @param response ConstitutiveResponse instance to initialize from.
        */
       ConstitutiveResponseAD( const ConstitutiveResponse< nDim >& response )
-        : tau( Marmot::makeDual( response.tau ) ),
+        : tau( Marmot::TensorUtility::FastorTensors::makeDual( response.tau ) ),
           elasticEnergyDensity( response.elasticEnergyDensity ),
           dissipation( response.dissipation ),
           stateVars( response.stateVars )
@@ -150,7 +150,8 @@ namespace Marmot {
           DeformationAD< 3 > deformationAD;
           deformationAD.F = F_;
 
-          responseAD.tau                  = Marmot::makeDual( tauOld ); // Initialize tau with old value for consistency
+          responseAD.tau = Marmot::TensorUtility::FastorTensors::makeDual(
+            tauOld ); // Initialize tau with old value for consistency
           responseAD.elasticEnergyDensity = response.elasticEnergyDensity; // Initialize energy density
           responseAD.dissipation          = response.dissipation;          // Initialize dissipation
 

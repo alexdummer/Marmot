@@ -71,7 +71,7 @@ void testTensorToScalarWith2ndOrderDuals()
   // initialise F with identity tensor
   Tensor33d F;
   F.eye();
-  Tensor33t< autodiff::dual > F_dual = Marmot::makeDual( F );
+  Tensor33t< autodiff::dual > F_dual = Marmot::TensorUtility::FastorTensors::makeDual( F );
 
   // seed F_dual to check if shifting to higher order duals works
   seed< 1 >( F_dual( 0, 0 ), 1 );

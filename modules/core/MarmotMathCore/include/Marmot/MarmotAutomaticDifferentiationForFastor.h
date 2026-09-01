@@ -35,6 +35,7 @@
 namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
 
   using namespace autodiff;
+  using namespace Marmot::TensorUtility::FastorTensors;
 
   /** @brief Increase the order of an arbitray order dual-valued Fastor tensor by one and shift the derivatives
    *  @tparam order current order of the dual numers in the tensor

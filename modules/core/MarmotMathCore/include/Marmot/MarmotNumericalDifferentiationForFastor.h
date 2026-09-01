@@ -34,6 +34,8 @@
 namespace Marmot {
   namespace NumericalAlgorithms::Differentiation {
 
+    using namespace Marmot::TensorUtility::FastorTensors;
+
     namespace ScalarToTensor {
 
       /**

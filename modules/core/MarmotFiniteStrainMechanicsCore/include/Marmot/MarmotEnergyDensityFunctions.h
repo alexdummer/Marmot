@@ -249,6 +249,7 @@ namespace Marmot::ContinuumMechanics::EnergyDensityFunctions {
     template < typename T >
     std::tuple< T, Tensor33t< T > > PenceGouPotentialB( const Tensor33t< T >& C, const double K, const double G )
     {
+      using namespace TensorUtility::FastorTensors;
       using namespace TensorUtility::FastorTensors::Indices;
 
       const T J  = sqrt( determinant( C ) );
@@ -305,6 +306,7 @@ namespace Marmot::ContinuumMechanics::EnergyDensityFunctions {
                                                                           const double          K,
                                                                           const double          G )
     {
+      using namespace TensorUtility::FastorTensors;
       using namespace TensorUtility::FastorTensors::Indices;
 
       const T J  = sqrt( determinant( C ) );
@@ -352,6 +354,8 @@ namespace Marmot::ContinuumMechanics::EnergyDensityFunctions {
                       const double&                                                        K,
                       const double&                                                        G )
     {
+      using namespace TensorUtility::FastorTensors;
+
       const double lambda = K - 2.0 / 3.0 * G;
 
       /*
@@ -413,6 +417,7 @@ namespace Marmot::ContinuumMechanics::EnergyDensityFunctions {
                   const double&                                                        K,
                   const double&                                                        G )
     {
+      using namespace TensorUtility::FastorTensors;
       using namespace TensorUtility::FastorTensors::Indices;
       Tensor3333t< T > I4       = makeOtherScalarType< T >( Spatial3D::I4 );
       Tensor33t< T >   C        = U % U;

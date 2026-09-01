@@ -250,14 +250,14 @@ namespace Marmot::Materials {
     static Marmot::TensorUtility::FastorTensors::StandardTensors::Tensor33d fromEigen( const Eigen::Matrix3d& m )
     {
       Marmot::TensorUtility::FastorTensors::StandardTensors::Tensor33d t;
-      Marmot::mapEigenToFastor( t ) = m;
+      Marmot::TensorUtility::FastorTensors::mapEigenToFastor( t ) = m;
       return t;
     }
 
     /// @brief Convert a Fastor 3x3 tensor into an Eigen matrix.
     static Eigen::Matrix3d toEigen( const Marmot::TensorUtility::FastorTensors::StandardTensors::Tensor33d& t )
     {
-      return Eigen::Matrix3d( Marmot::mapEigenToFastor( t ) );
+      return Eigen::Matrix3d( Marmot::TensorUtility::FastorTensors::mapEigenToFastor( t ) );
     }
 
     /**

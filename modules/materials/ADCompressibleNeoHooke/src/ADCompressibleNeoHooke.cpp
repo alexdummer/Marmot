@@ -14,6 +14,7 @@ namespace Marmot::Materials {
 
   using namespace Marmot;
   using namespace Fastor;
+  using namespace TensorUtility::FastorTensors;
   using namespace TensorUtility::FastorTensors::Indices;
   using namespace TensorUtility::FastorTensors::StandardTensors;
 

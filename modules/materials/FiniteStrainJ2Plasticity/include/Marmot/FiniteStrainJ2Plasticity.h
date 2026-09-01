@@ -39,6 +39,9 @@
 namespace Marmot::Materials {
 
   namespace Spatial3D = TensorUtility::FastorTensors::StandardTensors::Spatial3D;
+  using TensorUtility::FastorTensors::deviatoric;
+  using TensorUtility::FastorTensors::fastorTensorFromDoubleTensor;
+  using TensorUtility::FastorTensors::multiplyFastorTensorWithScalar;
   using TensorUtility::FastorTensors::Indices::Ii;
   using TensorUtility::FastorTensors::Indices::iI;
   using TensorUtility::FastorTensors::Indices::iImn;
