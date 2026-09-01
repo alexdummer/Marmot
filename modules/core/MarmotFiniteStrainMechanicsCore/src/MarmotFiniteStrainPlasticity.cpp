@@ -17,10 +17,8 @@ namespace Marmot::ContinuumMechanics::Plasticity::FlowIntegration::FirstOrderDer
 
   std::pair< Tensor33d, Tensor3333d > exponentialMap( const Tensor33d& dGp )
   {
-    const auto [dFpT,
-                dFpT_dGp] = TensorUtility::TensorExponential::FirstOrderDerived::computeTensorExponential( dGp,
-                                                                                                           15,
-                                                                                                           1e-14 );
+    const auto [dFpT, dFpT_dGp] = TensorUtility::FastorTensors::TensorExponential::FirstOrderDerived::
+      computeTensorExponential( dGp, 15, 1e-14 );
     // clang-format off
             return { permute< Index< 1, 0 > >      ( dFpT     ),
                      permute< Index< 1, 0, 2, 3 > >( dFpT_dGp ) };

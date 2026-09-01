@@ -60,7 +60,10 @@ namespace Marmot::ContinuumMechanics::Plasticity::FlowIntegration {
   template < typename T >
   Tensor33t< T > exponentialMap( const Tensor33t< T >& dGp )
   {
-    const Tensor33t< T > dFpT = TensorUtility::TensorExponential::computeTensorExponential( dGp, 15, 1e-14, 1e-14 );
+    const Tensor33t< T > dFpT = TensorUtility::FastorTensors::TensorExponential::computeTensorExponential( dGp,
+                                                                                                           15,
+                                                                                                           1e-14,
+                                                                                                           1e-14 );
     const Tensor33t< T > out  = permute< Index< 1, 0 > >( dFpT );
     return out;
   }
