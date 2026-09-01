@@ -74,22 +74,22 @@ namespace Marmot {
       inline const Tensor33d I = Tensor33d( ( Eigen::Matrix3d() << Eigen::Matrix3d::Identity() ).finished().data(),
                                             Fastor::ColumnMajor );
 
-      inline const Tensor333d LeviCivita = Tensor333d( Marmot::ContinuumMechanics::Tensors::LeviCivita3D.data(),
+      inline const Tensor333d LeviCivita = Tensor333d( Marmot::TensorUtility::EigenTensors::LeviCivita3D.data(),
                                                        Fastor::ColumnMajor );
 
-      inline const Tensor3333d IHyd = Tensor3333d( Marmot::ContinuumMechanics::Tensors::I2xI2.data(),
+      inline const Tensor3333d IHyd = Tensor3333d( Marmot::TensorUtility::EigenTensors::I2xI2.data(),
                                                    Fastor::ColumnMajor );
 
-      inline const Tensor3333d ISymm = Tensor3333d( Marmot::ContinuumMechanics::Tensors::Isym.data(),
+      inline const Tensor3333d ISymm = Tensor3333d( Marmot::TensorUtility::EigenTensors::Isym.data(),
                                                     Fastor::ColumnMajor );
 
-      inline const Tensor3333d ISkew = Tensor3333d( Marmot::ContinuumMechanics::Tensors::Iskew.data(),
+      inline const Tensor3333d ISkew = Tensor3333d( Marmot::TensorUtility::EigenTensors::Iskew.data(),
                                                     Fastor::ColumnMajor );
 
-      inline const Tensor3333d I4 = Tensor3333d( Marmot::ContinuumMechanics::Tensors::IFourthOrder.data(),
+      inline const Tensor3333d I4 = Tensor3333d( Marmot::TensorUtility::EigenTensors::IFourthOrder.data(),
                                                  Fastor::ColumnMajor );
 
-      inline const Tensor3333d ITranspose = Tensor3333d( Marmot::ContinuumMechanics::Tensors::IFourthOrderTranspose
+      inline const Tensor3333d ITranspose = Tensor3333d( Marmot::TensorUtility::EigenTensors::IFourthOrderTranspose
                                                            .data(),
                                                          Fastor::ColumnMajor );
 

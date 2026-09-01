@@ -3,7 +3,7 @@
 #include "Marmot/MarmotTesting.h"
 
 using Marmot::MakeString;
-using namespace Marmot::ContinuumMechanics::Tensors;
+using namespace Marmot::TensorUtility::EigenTensors;
 using namespace Marmot::TensorUtility;
 using namespace Marmot::Testing;
 using namespace Eigen;
