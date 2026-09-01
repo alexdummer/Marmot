@@ -35,7 +35,6 @@
 namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
 
   using namespace autodiff;
-  using namespace Marmot::TensorUtility::FastorTensors;
 
   /** @brief Increase the order of an arbitray order dual-valued Fastor tensor by one and shift the derivatives
    *  @tparam order current order of the dual numers in the tensor
@@ -77,6 +76,8 @@ namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
   Fastor::Tensor< double, Rest... > df_dT( const tensor_to_scalar_function_type< Rest... >& f,
                                            const Fastor::Tensor< double, Rest... >&         T )
   {
+    using namespace Marmot::TensorUtility::FastorTensors;
+
     Fastor::Tensor< double, Rest... > df_dT( 0.0 );
     Fastor::Tensor< dual, Rest... >   T_right = makeDual( T );
 
@@ -147,6 +148,7 @@ namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
     std::function< Fastor::Tensor< dual, RestF... >( const Fastor::Tensor< dual, RestT... >& ) >& F,
     const Fastor::Tensor< double, RestT... >&                                                     T )
   {
+    using namespace Marmot::TensorUtility::FastorTensors;
 
     Fastor::Tensor< double, RestF... >           F_( 0.0 );
     Fastor::Tensor< double, RestF..., RestT... > dF_dT_( 0.0 );
@@ -200,6 +202,8 @@ namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
       const tensor_to_scalar_function_type< dim >& F,
       const Fastor::Tensor< double, dim, dim >&    T )
     {
+      using namespace Marmot::TensorUtility::FastorTensors;
+
       double                                       F_;
       dual2nd                                      F_right;
       Fastor::Tensor< double, dim, dim >           dF_dT_;
@@ -253,6 +257,8 @@ namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
                                                             const Fastor::Tensor< double, dim, dim >&               T,
                                                             const double scalar )
     {
+      using namespace Marmot::TensorUtility::FastorTensors;
+
       Fastor::Tensor< double, dim, dim >  d2F_dTdScalar;
       Fastor::Tensor< dual2nd, dim, dim > T_right = makeHigherOrderDual< 2 >( T );
 
@@ -301,6 +307,8 @@ namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation {
                 Fastor::Tensor< double, dim, dim, dim, dim, dim, dim > >
     d3f_dT3( const tensor_to_scalar_function_type< dim >& F, const Fastor::Tensor< double, dim, dim >& T )
     {
+      using namespace Marmot::TensorUtility::FastorTensors;
+
       double                                                 F_;
       dual3rd                                                F_right;
       Fastor::Tensor< double, dim, dim >                     dF_dT_;

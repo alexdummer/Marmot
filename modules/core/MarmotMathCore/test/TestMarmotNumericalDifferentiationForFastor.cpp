@@ -8,6 +8,7 @@
 
 using namespace Marmot;
 using namespace Marmot::Testing;
+using namespace Marmot::TensorUtility::FastorTensors;
 using namespace Marmot::NumericalAlgorithms::Differentiation;
 
 void testScalarToTensor()
