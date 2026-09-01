@@ -191,7 +191,7 @@ void testJ3Strain()
 void test_dStressMean_dStress()
 {
 
-  using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
+  using namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived;
 
   const Vector6d dStressMean_dStressGold = { 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 0, 0, 0 };
 
@@ -202,7 +202,7 @@ void test_dStressMean_dStress()
 void test_dRho_dStress()
 {
 
-  using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
+  using namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived;
   const Vector6d stress = { 1, 2, 3, 4, 5, 6 };
 
   const auto hw = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress );
@@ -215,9 +215,9 @@ void test_dRho_dStress()
 
   const auto dRho_dStress_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( rho, stress );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::dRho_dStress( hw.rho,
-                                                                                                               stress )
-                                           .norm(),
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
+                                           dRho_dStress( hw.rho, stress )
+                                             .norm(),
                                          dRho_dStress_FD.norm(),
                                          1e-8 ),
                            MakeString() << __PRETTY_FUNCTION__ << " failed" );
@@ -226,7 +226,7 @@ void test_dRho_dStress()
 void test_dRhoStrain_dStrain()
 {
 
-  using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
+  using namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived;
   const Vector6d strain = { 1, 2, 3, 4, 5, 6 };
 
   const auto hw = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaardFromStrain( strain );
@@ -239,7 +239,7 @@ void test_dRhoStrain_dStrain()
 
   const auto dRho_dStress_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( rho, strain );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
                                            dRhoStrain_dStrain( hw.rho, strain )
                                              .norm(),
                                          dRho_dStress_FD.norm(),
@@ -250,7 +250,7 @@ void test_dRhoStrain_dStrain()
 void test_dTheta_dStress()
 {
 
-  using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
+  using namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived;
   const Vector6d stress = { 1, 2, 3, 4, 5, 6 };
   const auto     hw     = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress );
 
@@ -262,7 +262,7 @@ void test_dTheta_dStress()
 
   const auto dTheta_dStress_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( theta, stress );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
                                            dTheta_dStress( hw.theta, stress )
                                              .norm(),
                                          dTheta_dStress_FD.norm(),
@@ -284,8 +284,9 @@ void test_dJ2_dStress()
 
   const auto dJ2_dStress_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( J2, stress );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::dJ2_dStress( stress )
-                                           .norm(),
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
+                                           dJ2_dStress( stress )
+                                             .norm(),
                                          dJ2_dStress_FD.norm(),
                                          1e-8 ),
                            MakeString() << __PRETTY_FUNCTION__ << " failed" );
@@ -305,8 +306,9 @@ void test_dJ3_dStress()
 
   const auto dJ3_dStress_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( J3, stress );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::dJ3_dStress( stress )
-                                           .norm(),
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
+                                           dJ3_dStress( stress )
+                                             .norm(),
                                          dJ3_dStress_FD.norm(),
                                          1e-8 ),
                            MakeString() << __PRETTY_FUNCTION__ << " failed" );
@@ -326,9 +328,9 @@ void test_dJ2Strain_dStrain()
 
   const auto dJ2_dStrain_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( J2, strain );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::dJ2Strain_dStrain(
-                                           strain )
-                                           .norm(),
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
+                                           dJ2Strain_dStrain( strain )
+                                             .norm(),
                                          dJ2_dStrain_FD.norm(),
                                          1e-8 ),
                            MakeString() << __PRETTY_FUNCTION__ << " failed" );
@@ -347,9 +349,9 @@ void test_dJ3Strain_dStrain()
 
   const auto dJ3_dStrain_FD = Marmot::NumericalAlgorithms::Differentiation::forwardDifference( J3, strain );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::dJ3Strain_dStrain(
-                                           strain )
-                                           .norm(),
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
+                                           dJ3Strain_dStrain( strain )
+                                             .norm(),
                                          dJ3_dStrain_FD.norm(),
                                          1e-8 ),
                            MakeString() << __PRETTY_FUNCTION__ << " failed" );
@@ -370,7 +372,7 @@ void test_dSortedPrincipalStrains_dStrain()
   const auto dSortedPrincipalStrains_dStrain_FD = Marmot::NumericalAlgorithms::Differentiation::
     forwardDifference( sortedPrincipalStrains, strain );
 
-  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Derivatives::
+  throwExceptionOnFailure( checkIfEqual( Marmot::ContinuumMechanics::VoigtNotation::Invariants::FirstOrderDerived::
                                            dSortedStrainPrincipal_dStrain( strain )
                                              .norm(),
                                          dSortedPrincipalStrains_dStrain_FD.norm(),

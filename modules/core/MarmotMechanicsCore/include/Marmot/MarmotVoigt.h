@@ -855,252 +855,251 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
     std::pair< Eigen::Vector3d, Eigen::Matrix< double, 3, 6 > > principalValuesAndDerivatives(
       const Eigen::Matrix< double, 6, 1 >& S );
 
-  } // namespace Invariants
+    namespace FirstOrderDerived {
 
-  namespace Derivatives {
+      // derivatives of Haigh Westergaard stresses with respect to cauchy stress in eng. notation
 
-    // derivatives of Haigh Westergaard stresses with respect to cauchy stress in eng. notation
+      /**
+       * @brief Computes the derivative of the mean stress with respect to the stress vector.
+       *
+       * \f[
+       *   \frac{\partial \sigma_m}{\partial \boldsymbol{\sigma}}
+       * \f]
+       * @return 6-component vector representing \f$ \tfrac{\partial \sigma_m}{\partial \boldsymbol{\sigma}} \f$
+       *         in Voigt notation.
+       */
+      Vector6d dStressMean_dStress();
 
-    /**
-     * @brief Computes the derivative of the mean stress with respect to the stress vector.
-     *
-     * \f[
-     *   \frac{\partial \sigma_m}{\partial \boldsymbol{\sigma}}
-     * \f]
-     * @return 6-component vector representing \f$ \tfrac{\partial \sigma_m}{\partial \boldsymbol{\sigma}} \f$
-     *         in Voigt notation.
-     */
-    Vector6d dStressMean_dStress();
+      /**
+       * @brief Computes the derivative of the Haigh–Westergaard deviatoric radius \f$ \rho \f$
+       *        with respect to the stress vector.
+       *
+       * \f[
+       *   \frac{\partial \rho}{\partial \boldsymbol{\sigma}}
+       * \f]
+       * @tparam T Scalar type (e.g., double, float).
+       * @param rho Precomputed Haigh–Westergaard coordinate \f$ \rho \f$.
+       * @param stress 6-component stress vector in Voigt notation.
+       * @return 6-component vector of partial derivatives
+       *         \f$ \tfrac{\partial \rho}{\partial \boldsymbol{\sigma}} \f$ in Voigt notation.
+       * @note Returns zero if \f$ \rho \leq 10^{-16} \f$ to avoid division by zero.
+       */
+      template < typename T >
+      Eigen::Matrix< T, 6, 1 > dRho_dStress( T rho, const Eigen::Matrix< T, 6, 1 >& stress )
+      {
+        if ( Marmot::Math::makeReal( rho ) <= 1e-16 )
+          return Eigen::Matrix< T, 6, 1 >::Zero();
 
-    /**
-     * @brief Computes the derivative of the Haigh–Westergaard deviatoric radius \f$ \rho \f$
-     *        with respect to the stress vector.
-     *
-     * \f[
-     *   \frac{\partial \rho}{\partial \boldsymbol{\sigma}}
-     * \f]
-     * @tparam T Scalar type (e.g., double, float).
-     * @param rho Precomputed Haigh–Westergaard coordinate \f$ \rho \f$.
-     * @param stress 6-component stress vector in Voigt notation.
-     * @return 6-component vector of partial derivatives
-     *         \f$ \tfrac{\partial \rho}{\partial \boldsymbol{\sigma}} \f$ in Voigt notation.
-     * @note Returns zero if \f$ \rho \leq 10^{-16} \f$ to avoid division by zero.
-     */
-    template < typename T >
-    Eigen::Matrix< T, 6, 1 > dRho_dStress( T rho, const Eigen::Matrix< T, 6, 1 >& stress )
-    {
-      if ( Marmot::Math::makeReal( rho ) <= 1e-16 )
-        return Eigen::Matrix< T, 6, 1 >::Zero();
+        Eigen::Matrix< T, 6, 1 > s = IDev * stress;
+        // P array results from the derivative of the double contraction s:s in voigt notation
+        return T( 1. / rho ) * P.array() * s.array();
+      }
+      /**
+       * Computes the derivative \f$ \frac{d\, \varepsilon_\rho}{d\, \boldsymbol{\varepsilon}}\f$ of the haigh
+       * westergaard coordinate \f$
+       * \strain_\rho \f$ with respect to the voigt notated strain vector \f$ \boldsymbol{\varepsilon} \f$
+       */
+      template < typename T >
+      Eigen::Matrix< T, 6, 1 > dRhoStrain_dStrain( T rhoStrain, const Eigen::Matrix< T, 6, 1 >& strain )
+      {
+        if ( Marmot::Math::makeReal( rhoStrain ) <= 1e-16 )
+          return Eigen::Matrix< T, 6, 1 >::Zero();
 
-      Eigen::Matrix< T, 6, 1 > s = IDev * stress;
-      // P array results from the derivative of the double contraction s:s in voigt notation
-      return T( 1. / rho ) * P.array() * s.array();
-    }
-    /**
-     * Computes the derivative \f$ \frac{d\, \varepsilon_\rho}{d\, \boldsymbol{\varepsilon}}\f$ of the haigh
-     * westergaard coordinate \f$
-     * \strain_\rho \f$ with respect to the voigt notated strain vector \f$ \boldsymbol{\varepsilon} \f$
-     */
-    template < typename T >
-    Eigen::Matrix< T, 6, 1 > dRhoStrain_dStrain( T rhoStrain, const Eigen::Matrix< T, 6, 1 >& strain )
-    {
-      if ( Marmot::Math::makeReal( rhoStrain ) <= 1e-16 )
-        return Eigen::Matrix< T, 6, 1 >::Zero();
+        Eigen::Matrix< T, 6, 1 > e = IDev * strain;
+        // P array results from the derivative of the double contraction e:e in voigt notation
+        return T( 1. / rhoStrain ) * PInv.array() * e.array();
+      }
 
-      Eigen::Matrix< T, 6, 1 > e = IDev * strain;
-      // P array results from the derivative of the double contraction e:e in voigt notation
-      return T( 1. / rhoStrain ) * PInv.array() * e.array();
-    }
+      /**
+       * @brief Computes the derivative of the lode angle \f$ \theta \f$
+       *        with respect to the stress vector.
+       *
+       * @param theta Lode angle \f$ \theta \f$.
+       * @param stress 6-component stress vector in Voigt notation.
+       * @return 6-component vector of partial derivatives
+       *         \f$ \tfrac{\partial \theta}{\partial \boldsymbol{\sigma}} \f$ in Voigt notation.
+       * @note Returns zero if \f$ \theta \leq 10^{-15} \f$ or if \f$ \theta \geq \frac{\pi}{3} - 10^{-15} \f$.
+       */
+      Marmot::Vector6d dTheta_dStress( double theta, const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative of the lode angle \f$ \theta \f$
-     *        with respect to the stress vector.
-     *
-     * @param theta Lode angle \f$ \theta \f$.
-     * @param stress 6-component stress vector in Voigt notation.
-     * @return 6-component vector of partial derivatives
-     *         \f$ \tfrac{\partial \theta}{\partial \boldsymbol{\sigma}} \f$ in Voigt notation.
-     * @note Returns zero if \f$ \theta \leq 10^{-15} \f$ or if \f$ \theta \geq \frac{\pi}{3} - 10^{-15} \f$.
-     */
-    Marmot::Vector6d dTheta_dStress( double theta, const Marmot::Vector6d& stress );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \theta}{\partial J_2}\f$ of the lode angle \f$ \theta
+       * \f$ with respect to the second deviatoric invariant \f$ J_2 \f$.
+       * @param stress 6-component stress vector in Voigt notation.
+       * @return Scalar derivative \f$ \tfrac{\partial \theta}{\partial J_2} \f$.
+       */
+      double dTheta_dJ2( const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \theta}{\partial J_2}\f$ of the lode angle \f$ \theta
-     * \f$ with respect to the second deviatoric invariant \f$ J_2 \f$.
-     * @param stress 6-component stress vector in Voigt notation.
-     * @return Scalar derivative \f$ \tfrac{\partial \theta}{\partial J_2} \f$.
-     */
-    double dTheta_dJ2( const Marmot::Vector6d& stress );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \theta}{\partial J_3}\f$ of the Lode angle
+       * \f$ \theta \f$ with respect to the third deviatoric invariant \f$ J_3 \f$.
+       *
+       * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
+       * @return Value of the derivative \f$ \frac{\partial \theta}{\partial J_3} \f$.
+       */
+      double dTheta_dJ3( const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \theta}{\partial J_3}\f$ of the Lode angle
-     * \f$ \theta \f$ with respect to the third deviatoric invariant \f$ J_3 \f$.
-     *
-     * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
-     * @return Value of the derivative \f$ \frac{\partial \theta}{\partial J_3} \f$.
-     */
-    double dTheta_dJ3( const Marmot::Vector6d& stress );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_2}\f$ of
+       * the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the second deviatoric invariant
+       * \f$ J^{(\varepsilon)}_2 \f$.
+       *
+       * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
+       * @return Value of the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_2} \f$.
+       */
+      double dThetaStrain_dJ2Strain( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_2}\f$ of
-     * the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the second deviatoric invariant
-     * \f$ J^{(\varepsilon)}_2 \f$.
-     *
-     * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
-     * @return Value of the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_2} \f$.
-     */
-    double dThetaStrain_dJ2Strain( const Marmot::Vector6d& strain );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_3}\f$ of
+       * the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the third deviatoric invariant
+       * \f$ J^{(\varepsilon)}_3 \f$.
+       *
+       * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
+       * @return Value of the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_3} \f$.
+       */
+      double dThetaStrain_dJ3Strain( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_3}\f$ of
-     * the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the third deviatoric invariant
-     * \f$ J^{(\varepsilon)}_3 \f$.
-     *
-     * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
-     * @return Value of the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial J^{(\varepsilon)}_3} \f$.
-     */
-    double dThetaStrain_dJ3Strain( const Marmot::Vector6d& strain );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial J_2}{\partial \boldsymbol{\sigma}}\f$ of the second
+       * deviatoric invariant \f$ J_2 \f$ with respect to the stress vector in Voigt notation.
+       *
+       * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
+       * @return Vector of partial derivatives \f$ \frac{\partial J_2}{\partial \boldsymbol{\sigma}} \f$ in Voigt
+       * notation.
+       */
+      Marmot::Vector6d dJ2_dStress( const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial J_2}{\partial \boldsymbol{\sigma}}\f$ of the second
-     * deviatoric invariant \f$ J_2 \f$ with respect to the stress vector in Voigt notation.
-     *
-     * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
-     * @return Vector of partial derivatives \f$ \frac{\partial J_2}{\partial \boldsymbol{\sigma}} \f$ in Voigt
-     * notation.
-     */
-    Marmot::Vector6d dJ2_dStress( const Marmot::Vector6d& stress );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial J_3}{\partial \boldsymbol{\sigma}}\f$ of the third deviatoric
+       * invariant \f$ J_3 \f$ with respect to the stress vector in Voigt notation.
+       *
+       * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
+       * @return Vector of partial derivatives \f$ \frac{\partial J_3}{\partial \boldsymbol{\sigma}} \f$ in Voigt
+       * notation.
+       */
+      Marmot::Vector6d dJ3_dStress( const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial J_3}{\partial \boldsymbol{\sigma}}\f$ of the third deviatoric
-     * invariant \f$ J_3 \f$ with respect to the stress vector in Voigt notation.
-     *
-     * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
-     * @return Vector of partial derivatives \f$ \frac{\partial J_3}{\partial \boldsymbol{\sigma}} \f$ in Voigt
-     * notation.
-     */
-    Marmot::Vector6d dJ3_dStress( const Marmot::Vector6d& stress );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial J^{(\varepsilon)}_2}{\partial \boldsymbol{\varepsilon}} \f$
+       * of the second deviatoric invariant \f$ J^{(\varepsilon)}_2 \f$ with respect to the strain vector in Voigt
+       * notation.
+       *
+       * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
+       * @return Vector of partial derivatives \f$ \frac{\partial J^{(\varepsilon)}_2}{\partial
+       * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
+       */
+      Marmot::Vector6d dJ2Strain_dStrain( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial J^{(\varepsilon)}_2}{\partial \boldsymbol{\varepsilon}} \f$
-     * of the second deviatoric invariant \f$ J^{(\varepsilon)}_2 \f$ with respect to the strain vector in Voigt
-     * notation.
-     *
-     * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
-     * @return Vector of partial derivatives \f$ \frac{\partial J^{(\varepsilon)}_2}{\partial
-     * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
-     */
-    Marmot::Vector6d dJ2Strain_dStrain( const Marmot::Vector6d& strain );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial J^{(\varepsilon)}_3}{\partial \boldsymbol{\varepsilon}} \f$
+       * of the third deviatoric invariant \f$ J^{(\varepsilon)}_3 \f$ with respect to the strain vector in Voigt
+       * notation.
+       *
+       * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
+       * @return Vector of partial derivatives \f$ \frac{\partial J^{(\varepsilon)}_3}{\partial
+       * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
+       */
+      Marmot::Vector6d dJ3Strain_dStrain( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial J^{(\varepsilon)}_3}{\partial \boldsymbol{\varepsilon}} \f$
-     * of the third deviatoric invariant \f$ J^{(\varepsilon)}_3 \f$ with respect to the strain vector in Voigt
-     * notation.
-     *
-     * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
-     * @return Vector of partial derivatives \f$ \frac{\partial J^{(\varepsilon)}_3}{\partial
-     * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
-     */
-    Marmot::Vector6d dJ3Strain_dStrain( const Marmot::Vector6d& strain );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial \boldsymbol{\varepsilon}}
+       * \f$ of the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the strain vector in Voigt
+       * notation.
+       *
+       * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
+       * @return Vector of partial derivatives \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial
+       * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
+       */
+      Marmot::Vector6d dThetaStrain_dStrain( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial \boldsymbol{\varepsilon}}
-     * \f$ of the Lode angle in strain space \f$ \theta^{(\varepsilon)} \f$ with respect to the strain vector in Voigt
-     * notation.
-     *
-     * @param strain Strain vector in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$).
-     * @return Vector of partial derivatives \f$ \frac{\partial \theta^{(\varepsilon)}}{\partial
-     * \boldsymbol{\varepsilon}} \f$ in Voigt notation.
-     */
-    Marmot::Vector6d dThetaStrain_dStrain( const Marmot::Vector6d& strain );
+      // derivatives of principalStess with respect to stress
 
-    // derivatives of principalStess with respect to stress
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \sigma_I}{\partial \boldsymbol{\sigma}} \f$ of the principal
+       * stresses
+       * \f$ \sigma_I \f$ with respect to the stress vector in Voigt notation.
+       *
+       * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
+       * @return Matrix of partial derivatives \f$ \frac{\partial \sigma_I}{\partial \boldsymbol{\sigma}} \f$,
+       * where each row corresponds to the gradient of one principal stress with respect to \f$ \boldsymbol{\sigma} \f$.
+       */
+      Marmot::Matrix36 dStressPrincipals_dStress( const Marmot::Vector6d& stress );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \sigma_I}{\partial \boldsymbol{\sigma}} \f$ of the principal
-     * stresses
-     * \f$ \sigma_I \f$ with respect to the stress vector in Voigt notation.
-     *
-     * @param stress Stress vector in Voigt notation (\f$ \boldsymbol{\sigma} \f$).
-     * @return Matrix of partial derivatives \f$ \frac{\partial \sigma_I}{\partial \boldsymbol{\sigma}} \f$,
-     * where each row corresponds to the gradient of one principal stress with respect to \f$ \boldsymbol{\sigma} \f$.
-     */
-    Marmot::Matrix36 dStressPrincipals_dStress( const Marmot::Vector6d& stress );
+      // derivatives of plastic strains with respect to strains
 
-    // derivatives of plastic strains with respect to strains
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \varepsilon^{vol}_{\ominus}}{\partial \varepsilon_I} \f$ of
+       * the volumetric compressive strain \f$ \varepsilon^{vol}_{\ominus} \f$ with respect to the principal strains
+       * \f$ \varepsilon_I \f$.
+       *
+       * @param strain Principal/total strain provided in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$), 6
+       * components.
+       * @return A 3-component vector (\f$ \partial \varepsilon^{vol}_{\ominus} / \partial \varepsilon_I \f$), where
+       * each entry is the partial derivative of the corresponding volumetric-compressive component with respect to the
+       * principal strains \f$ \varepsilon_1, \varepsilon_2, \varepsilon_3 \f$.
+       */
+      Eigen::Vector3d dStrainVolumetricNegative_dStrainPrincipal( const Marmot::Vector6d& strain );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \varepsilon^{vol}_{\ominus}}{\partial \varepsilon_I} \f$ of
-     * the volumetric compressive strain \f$ \varepsilon^{vol}_{\ominus} \f$ with respect to the principal strains
-     * \f$ \varepsilon_I \f$.
-     *
-     * @param strain Principal/total strain provided in Voigt notation (\f$ \boldsymbol{\varepsilon} \f$), 6
-     * components.
-     * @return A 3-component vector (\f$ \partial \varepsilon^{vol}_{\ominus} / \partial \varepsilon_I \f$), where
-     * each entry is the partial derivative of the corresponding volumetric-compressive component with respect to the
-     * principal strains \f$ \varepsilon_1, \varepsilon_2, \varepsilon_3 \f$.
-     */
-    Eigen::Vector3d dStrainVolumetricNegative_dStrainPrincipal( const Marmot::Vector6d& strain );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \boldsymbol{\varepsilon}^{p}}{\partial
+       * \boldsymbol{\varepsilon}} \f$ of the Voigt-notated plastic strain vector \f$ \boldsymbol{\varepsilon}^{p} \f$
+       * with respect to the Voigt-notated total strain vector \f$ \boldsymbol{\varepsilon} \f$.
+       *
+       * @details The relation used is
+       * \f[
+       *   \frac{\partial \boldsymbol{\varepsilon}^{p}}{\partial \boldsymbol{\varepsilon}}
+       *   \;=\; \boldsymbol{I} \;-\; \mathbb{C}^{-1}\,\mathbb{C}^{(ep)}
+       * \f]
+       * where \f$ \mathbb{C}^{-1} \f$ is the elastic compliance (6×6) and \f$ \mathbb{C}^{(ep)} \f$ the elastoplastic
+       * stiffness (6×6).
+       * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
+       * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
+       * @return 6×6 matrix \f$ \partial \boldsymbol{\varepsilon}^{p} / \partial \boldsymbol{\varepsilon} \f$ in Voigt
+       * form.
+       */
+      Matrix6d dEp_dE( const Matrix6d& CelInv, const Matrix6d& Cep );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \boldsymbol{\varepsilon}^{p}}{\partial
-     * \boldsymbol{\varepsilon}} \f$ of the Voigt-notated plastic strain vector \f$ \boldsymbol{\varepsilon}^{p} \f$
-     * with respect to the Voigt-notated total strain vector \f$ \boldsymbol{\varepsilon} \f$.
-     *
-     * @details The relation used is
-     * \f[
-     *   \frac{\partial \boldsymbol{\varepsilon}^{p}}{\partial \boldsymbol{\varepsilon}}
-     *   \;=\; \boldsymbol{I} \;-\; \mathbb{C}^{-1}\,\mathbb{C}^{(ep)}
-     * \f]
-     * where \f$ \mathbb{C}^{-1} \f$ is the elastic compliance (6×6) and \f$ \mathbb{C}^{(ep)} \f$ the elastoplastic
-     * stiffness (6×6).
-     * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
-     * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
-     * @return 6×6 matrix \f$ \partial \boldsymbol{\varepsilon}^{p} / \partial \boldsymbol{\varepsilon} \f$ in Voigt
-     * form.
-     */
-    Matrix6d dEp_dE( const Matrix6d& CelInv, const Matrix6d& Cep );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \Delta \varepsilon^{p,vol}}{\partial
+       * \boldsymbol{\varepsilon}} \f$ of the volumetric plastic strain increment \f$ \Delta \varepsilon^{p,vol} \f$
+       * with respect to the Voigt-notated total strain vector \f$ \boldsymbol{\varepsilon} \f$.
+       *
+       * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
+       * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
+       * @return Row vector (1×6) containing \f$ \partial \Delta \varepsilon^{p,vol} / \partial \boldsymbol{\varepsilon}
+       * \f$ in Voigt notation.
+       */
+      RowVector6d dDeltaEpv_dE( const Matrix6d& CelInv, const Matrix6d& Cep );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \Delta \varepsilon^{p,vol}}{\partial
-     * \boldsymbol{\varepsilon}} \f$ of the volumetric plastic strain increment \f$ \Delta \varepsilon^{p,vol} \f$
-     * with respect to the Voigt-notated total strain vector \f$ \boldsymbol{\varepsilon} \f$.
-     *
-     * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
-     * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
-     * @return Row vector (1×6) containing \f$ \partial \Delta \varepsilon^{p,vol} / \partial \boldsymbol{\varepsilon}
-     * \f$ in Voigt notation.
-     */
-    RowVector6d dDeltaEpv_dE( const Matrix6d& CelInv, const Matrix6d& Cep );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \varepsilon_I}{\partial \boldsymbol{\varepsilon}} \f$ of the
+       * principal strains \f$ \varepsilon_I \f$ with respect to the Voigt-notated strain vector \f$
+       * \boldsymbol{\varepsilon} \f$.
+       *
+       * @param dEp Input strain vector in Voigt notation (6 components).
+       * @return A 3×6 matrix where each row contains the partial derivatives of one principal strain
+       * \f$ \varepsilon_1, \varepsilon_2, \varepsilon_3 \f$ with respect to the 6 Voigt strain components.
+       */
+      Marmot::Matrix36 dSortedStrainPrincipal_dStrain( const Marmot::Vector6d& dEp );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \varepsilon_I}{\partial \boldsymbol{\varepsilon}} \f$ of the
-     * principal strains \f$ \varepsilon_I \f$ with respect to the Voigt-notated strain vector \f$
-     * \boldsymbol{\varepsilon} \f$.
-     *
-     * @param dEp Input strain vector in Voigt notation (6 components).
-     * @return A 3×6 matrix where each row contains the partial derivatives of one principal strain
-     * \f$ \varepsilon_1, \varepsilon_2, \varepsilon_3 \f$ with respect to the 6 Voigt strain components.
-     */
-    Marmot::Matrix36 dSortedStrainPrincipal_dStrain( const Marmot::Vector6d& dEp );
+      /**
+       * @brief Computes the derivative \f$ \frac{\partial \Delta \varepsilon^{p,vol}_{\ominus}}
+       * {\partial \boldsymbol{\varepsilon}} \f$ of the volumetric plastic strain increment in compression
+       * \f$ \Delta \varepsilon^{p,vol}_{\ominus} \f$ with respect to the strain vector in Voigt notation
+       * \f$ \boldsymbol{\varepsilon} \f$.
+       *
+       * @param dEp Incremental plastic strain vector in Voigt notation (\f$\Delta\boldsymbol{\varepsilon^{p}} \f$), 6
+       * components.
+       * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
+       * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
+       * @return Row vector (1×6) containing
+       * \f$ \partial \Delta \varepsilon^{p,vol}_{\ominus} / \partial \boldsymbol{\varepsilon} \f$
+       * in Voigt notation.
+       */
+      RowVector6d dDeltaEpvneg_dE( const Marmot::Vector6d& dEp, const Matrix6d& CelInv, const Matrix6d& Cep );
 
-    /**
-     * @brief Computes the derivative \f$ \frac{\partial \Delta \varepsilon^{p,vol}_{\ominus}}
-     * {\partial \boldsymbol{\varepsilon}} \f$ of the volumetric plastic strain increment in compression
-     * \f$ \Delta \varepsilon^{p,vol}_{\ominus} \f$ with respect to the strain vector in Voigt notation
-     * \f$ \boldsymbol{\varepsilon} \f$.
-     *
-     * @param dEp Incremental plastic strain vector in Voigt notation (\f$\Delta\boldsymbol{\varepsilon^{p}} \f$), 6
-     * components.
-     * @param CelInv Elastic compliance tensor \f$ \mathbb{C}^{-1} \f$ (6×6 matrix).
-     * @param Cep Elastoplastic stiffness tensor \f$ \mathbb{C}^{(ep)} \f$ (6×6 matrix).
-     * @return Row vector (1×6) containing
-     * \f$ \partial \Delta \varepsilon^{p,vol}_{\ominus} / \partial \boldsymbol{\varepsilon} \f$
-     * in Voigt notation.
-     */
-    RowVector6d dDeltaEpvneg_dE( const Marmot::Vector6d& dEp, const Matrix6d& CelInv, const Matrix6d& Cep );
-
-  } // namespace Derivatives
+    } // namespace FirstOrderDerived
+  }   // namespace Invariants
 
   namespace Transformations {
 

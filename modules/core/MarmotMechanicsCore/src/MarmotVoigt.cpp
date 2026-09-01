@@ -348,213 +348,212 @@ namespace Marmot::ContinuumMechanics::VoigtNotation {
       return voigtToStrain< double >( IDev * strain ).determinant();
     }
 
-  } // namespace Invariants
+    namespace FirstOrderDerived {
 
-  namespace Derivatives {
-    using namespace Invariants;
-
-    Vector6d dStressMean_dStress()
-    {
-      return 1. / 3 * I;
-    }
-
-    Vector6d dTheta_dStress( double theta, const Vector6d& stress )
-    {
-      if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
-        return Vector6d::Zero();
-
-      // const double J2_ = J2(stress);
-      // const double J3_ = J3(stress);
-
-      const double dThetadJ2 = dTheta_dJ2( stress );
-      const double dThetadJ3 = dTheta_dJ3( stress );
-
-      if ( Math::isNaN( dThetadJ2 ) || Math::isNaN( dThetadJ3 ) )
-        return Vector6d::Zero();
-
-      return dThetadJ2 * dJ2_dStress( stress ) + dThetadJ3 * dJ3_dStress( stress );
-    }
-
-    double dTheta_dJ2( const Vector6d& stress )
-    {
-      const HaighWestergaardCoordinates hw    = haighWestergaard( stress );
-      const double&                     theta = hw.theta;
-
-      if ( theta <= 1e-14 || theta >= Pi / 3 - 1e-14 )
-        return 1e16;
-
-      const double J2_ = J2( stress );
-      const double J3_ = J3( stress );
-
-      const double cos2_3theta = std::cos( 3 * theta ) * std::cos( 3 * theta );
-      const double dThetadJ2   = 3 * sqrt3 / 4 * J3_ / ( std::pow( J2_, 2.5 ) * std::sqrt( 1.0 - cos2_3theta ) );
-      return dThetadJ2;
-    }
-
-    double dTheta_dJ3( const Vector6d& stress )
-    {
-      const HaighWestergaardCoordinates hw    = haighWestergaard( stress );
-      const double&                     theta = hw.theta;
-
-      if ( theta <= 1e-14 || theta >= Pi / 3 - 1e-14 )
-        return -1e16;
-
-      const double J2_ = J2( stress );
-      // const double J3_ = J3(stress);
-
-      const double cos2_3theta = std::cos( 3 * theta ) * std::cos( 3 * theta );
-      const double dThetadJ3   = -sqrt3 / 2. * 1. / ( std::pow( J2_, 1.5 ) * std::sqrt( 1.0 - cos2_3theta ) );
-      return dThetadJ3;
-    }
-
-    double dThetaStrain_dJ2Strain( const Vector6d& strain )
-    {
-      const HaighWestergaardCoordinates hw    = haighWestergaardFromStrain( strain );
-      const double                      theta = hw.theta;
-
-      if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
-        return 1e16;
-      else
-        return 3. * std::sqrt( 3. ) / 4. * J3Strain( strain ) /
-               ( std::pow( J2Strain( strain ), 5. / 2 ) * std::sqrt( 1. - std::pow( std::cos( 3. * theta ), 2. ) ) );
-    }
-
-    double dThetaStrain_dJ3Strain( const Vector6d& strain )
-    {
-      const HaighWestergaardCoordinates hw    = haighWestergaardFromStrain( strain );
-      const double&                     theta = hw.theta;
-
-      if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
-        return -1e16;
-      else
-        return -std::sqrt( 3. ) / 2. * 1. /
-               ( std::pow( J2Strain( strain ), 3. / 2 ) * std::sqrt( 1. - std::pow( std::cos( 3. * theta ), 2. ) ) );
-    }
-
-    Vector6d dJ2_dStress( const Vector6d& stress )
-    {
-      return P.array() * ( IDev * stress ).array();
-    }
-
-    Vector6d dJ3_dStress( const Vector6d& stress )
-    {
-      Vector6d s = IDev * stress;
-      return ( P.array() * stressToVoigt< double >( voigtToStress( s ) * voigtToStress( s ) ).array() ).matrix() -
-             2. / 3. * J2( stress ) * I;
-    }
-
-    Vector6d dJ2Strain_dStrain( const Vector6d& strain )
-    {
-      return PInv.array() * ( IDev * strain ).array();
-    }
-
-    Vector6d dJ3Strain_dStrain( const Vector6d& strain )
-    {
-      Vector6d e = IDev * strain;
-      return ( PInv.array() * strainToVoigt( voigtToStrain( e ) * voigtToStrain( e ) ).array() ).matrix() -
-             2. / 3. * J2Strain( strain ) * I;
-    }
-
-    Vector6d dThetaStrain_dStrain( const Vector6d& strain )
-
-    {
-      return dThetaStrain_dJ2Strain( strain ) * dJ2Strain_dStrain( strain ) +
-             dThetaStrain_dJ3Strain( strain ) * dJ3Strain_dStrain( strain );
-    }
-
-    Matrix36 dStressPrincipals_dStress( const Vector6d& stress ) // derivative when principal stresses are
-                                                                 // computed from solving Eigenvalue-Problem
-    {
-      MatrixXd J( 3, 6 );
-
-      Vector6d leftX;
-      Vector6d rightX;
-
-      for ( size_t i = 0; i < 6; i++ ) {
-        double volatile h = std::max( 1.0, std::abs( stress( i ) ) ) * Constants::cubicRootEps();
-        leftX             = stress;
-        leftX( i ) -= h;
-        rightX = stress;
-        rightX( i ) += h;
-
-        J.col( i ) = 1. / ( 2 * h ) * ( principalStresses( rightX ) - principalStresses( leftX ) );
-      }
-      return J;
-    }
-
-    Vector3d dStrainVolumetricNegative_dStrainPrincipal( const Vector6d& strain )
-    {
-      Vector3d       dEvdEpPrinc  = Vector3d::Zero();
-      const Vector3d deltaEpPrinc = Invariants::sortedPrincipalStrains( strain );
-
-      for ( int i = 0; i < dEvdEpPrinc.size(); i++ )
-        dEvdEpPrinc( i ) = -Math::heaviside( -deltaEpPrinc( i ) );
-
-      return dEvdEpPrinc;
-    }
-
-    Matrix6d dEp_dE( const Matrix6d& CelInv, const Matrix6d& Cep )
-    {
-      return Matrix6d::Identity() - CelInv * Cep;
-    }
-
-    RowVector6d dDeltaEpv_dE( const Matrix6d& CelInv, const Matrix6d& Cep )
-    {
-      return I.transpose() * ( Matrix6d::Identity() - CelInv * Cep );
-    }
-
-    Matrix36 dSortedStrainPrincipal_dStrain(
-      const Vector6d& dEp ) // equations from page 218-219 PhD Thesis David Unteregger
-    {
-      Vector3d dEpPrinc_dEpvol   = Vector3d::Zero();
-      Vector3d dEpPrinc_dEprho   = Vector3d::Zero();
-      Vector3d dEPprinc_dEptheta = Vector3d::Zero();
-
-      const double                      sqrt2_3 = std::sqrt( 2. / 3. );
-      const HaighWestergaardCoordinates hw      = haighWestergaardFromStrain( dEp );
-      // const double& epsM =		hw(0);
-      const double& rhoE = hw.rho;
-      // const double& thetaE =		hw(2);
-
-      dEpPrinc_dEpvol = 1. / 3. * Vector3d::Ones();
-      dEpPrinc_dEprho << sqrt2_3 * std::cos( hw.theta ), sqrt2_3 * std::cos( hw.theta - 2. * Constants::Pi / 3. ),
-        sqrt2_3 * std::cos( hw.theta + 2. * Constants::Pi / 3. );
-
-      dEPprinc_dEptheta << -sqrt2_3 * hw.rho * std::sin( hw.theta ),
-        -sqrt2_3 * hw.rho * std::sin( hw.theta - 2. * Constants::Pi / 3. ),
-        -sqrt2_3 * hw.rho * std::sin( hw.theta + 2. * Constants::Pi / 3. );
-
-      RowVector6d dEpvol_dEp   = RowVector6d::Zero();
-      dEpvol_dEp               = I;
-      RowVector6d dEprho_dEp   = RowVector6d::Zero();
-      RowVector6d dEptheta_dEp = RowVector6d::Zero();
-
-      if ( std::abs( rhoE ) > 1e-16 ) {
-        dEprho_dEp   = 1. / rhoE * dJ2Strain_dStrain( dEp ).transpose();
-        dEptheta_dEp = ( dThetaStrain_dJ2Strain( dEp ) * dJ2Strain_dStrain( dEp ).transpose() ) +
-                       ( dThetaStrain_dJ3Strain( dEp ) * dJ3Strain_dStrain( dEp ).transpose() );
-      }
-      else {
-        dEprho_dEp << 1.e16, 1.e16, 1.e16, 1.e16, 1.e16,
-          1.e16; // 1e16 from Code David (Line 67,
-                 // D_2_Umatsub_damage3_derivatives)
-        dEptheta_dEp << 0., 0., 0., 0., 0., 0.;
+      Vector6d dStressMean_dStress()
+      {
+        return 1. / 3 * I;
       }
 
-      Matrix36 dEpPrincdEpAna;
-      dEpPrincdEpAna = ( dEpPrinc_dEpvol * dEpvol_dEp ) + ( dEpPrinc_dEprho * dEprho_dEp ) +
-                       ( dEPprinc_dEptheta * dEptheta_dEp );
+      Vector6d dTheta_dStress( double theta, const Vector6d& stress )
+      {
+        if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
+          return Vector6d::Zero();
 
-      return dEpPrincdEpAna;
-    }
+        // const double J2_ = J2(stress);
+        // const double J3_ = J3(stress);
 
-    RowVector6d dDeltaEpvneg_dE( const Vector6d& dEp, const Matrix6d& CelInv, const Matrix6d& Cep )
-    {
-      return dStrainVolumetricNegative_dStrainPrincipal( dEp ).transpose() * dSortedStrainPrincipal_dStrain( dEp ) *
-             dEp_dE( CelInv, Cep );
-    }
+        const double dThetadJ2 = dTheta_dJ2( stress );
+        const double dThetadJ3 = dTheta_dJ3( stress );
 
-  } // namespace Derivatives
+        if ( Math::isNaN( dThetadJ2 ) || Math::isNaN( dThetadJ3 ) )
+          return Vector6d::Zero();
+
+        return dThetadJ2 * dJ2_dStress( stress ) + dThetadJ3 * dJ3_dStress( stress );
+      }
+
+      double dTheta_dJ2( const Vector6d& stress )
+      {
+        const HaighWestergaardCoordinates hw    = haighWestergaard( stress );
+        const double&                     theta = hw.theta;
+
+        if ( theta <= 1e-14 || theta >= Pi / 3 - 1e-14 )
+          return 1e16;
+
+        const double J2_ = J2( stress );
+        const double J3_ = J3( stress );
+
+        const double cos2_3theta = std::cos( 3 * theta ) * std::cos( 3 * theta );
+        const double dThetadJ2   = 3 * sqrt3 / 4 * J3_ / ( std::pow( J2_, 2.5 ) * std::sqrt( 1.0 - cos2_3theta ) );
+        return dThetadJ2;
+      }
+
+      double dTheta_dJ3( const Vector6d& stress )
+      {
+        const HaighWestergaardCoordinates hw    = haighWestergaard( stress );
+        const double&                     theta = hw.theta;
+
+        if ( theta <= 1e-14 || theta >= Pi / 3 - 1e-14 )
+          return -1e16;
+
+        const double J2_ = J2( stress );
+        // const double J3_ = J3(stress);
+
+        const double cos2_3theta = std::cos( 3 * theta ) * std::cos( 3 * theta );
+        const double dThetadJ3   = -sqrt3 / 2. * 1. / ( std::pow( J2_, 1.5 ) * std::sqrt( 1.0 - cos2_3theta ) );
+        return dThetadJ3;
+      }
+
+      double dThetaStrain_dJ2Strain( const Vector6d& strain )
+      {
+        const HaighWestergaardCoordinates hw    = haighWestergaardFromStrain( strain );
+        const double                      theta = hw.theta;
+
+        if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
+          return 1e16;
+        else
+          return 3. * std::sqrt( 3. ) / 4. * J3Strain( strain ) /
+                 ( std::pow( J2Strain( strain ), 5. / 2 ) * std::sqrt( 1. - std::pow( std::cos( 3. * theta ), 2. ) ) );
+      }
+
+      double dThetaStrain_dJ3Strain( const Vector6d& strain )
+      {
+        const HaighWestergaardCoordinates hw    = haighWestergaardFromStrain( strain );
+        const double&                     theta = hw.theta;
+
+        if ( theta <= 1e-15 || theta >= Pi / 3 - 1e-15 )
+          return -1e16;
+        else
+          return -std::sqrt( 3. ) / 2. * 1. /
+                 ( std::pow( J2Strain( strain ), 3. / 2 ) * std::sqrt( 1. - std::pow( std::cos( 3. * theta ), 2. ) ) );
+      }
+
+      Vector6d dJ2_dStress( const Vector6d& stress )
+      {
+        return P.array() * ( IDev * stress ).array();
+      }
+
+      Vector6d dJ3_dStress( const Vector6d& stress )
+      {
+        Vector6d s = IDev * stress;
+        return ( P.array() * stressToVoigt< double >( voigtToStress( s ) * voigtToStress( s ) ).array() ).matrix() -
+               2. / 3. * J2( stress ) * I;
+      }
+
+      Vector6d dJ2Strain_dStrain( const Vector6d& strain )
+      {
+        return PInv.array() * ( IDev * strain ).array();
+      }
+
+      Vector6d dJ3Strain_dStrain( const Vector6d& strain )
+      {
+        Vector6d e = IDev * strain;
+        return ( PInv.array() * strainToVoigt( voigtToStrain( e ) * voigtToStrain( e ) ).array() ).matrix() -
+               2. / 3. * J2Strain( strain ) * I;
+      }
+
+      Vector6d dThetaStrain_dStrain( const Vector6d& strain )
+
+      {
+        return dThetaStrain_dJ2Strain( strain ) * dJ2Strain_dStrain( strain ) +
+               dThetaStrain_dJ3Strain( strain ) * dJ3Strain_dStrain( strain );
+      }
+
+      Matrix36 dStressPrincipals_dStress( const Vector6d& stress ) // derivative when principal stresses are
+                                                                   // computed from solving Eigenvalue-Problem
+      {
+        MatrixXd J( 3, 6 );
+
+        Vector6d leftX;
+        Vector6d rightX;
+
+        for ( size_t i = 0; i < 6; i++ ) {
+          double volatile h = std::max( 1.0, std::abs( stress( i ) ) ) * Constants::cubicRootEps();
+          leftX             = stress;
+          leftX( i ) -= h;
+          rightX = stress;
+          rightX( i ) += h;
+
+          J.col( i ) = 1. / ( 2 * h ) * ( principalStresses( rightX ) - principalStresses( leftX ) );
+        }
+        return J;
+      }
+
+      Vector3d dStrainVolumetricNegative_dStrainPrincipal( const Vector6d& strain )
+      {
+        Vector3d       dEvdEpPrinc  = Vector3d::Zero();
+        const Vector3d deltaEpPrinc = Invariants::sortedPrincipalStrains( strain );
+
+        for ( int i = 0; i < dEvdEpPrinc.size(); i++ )
+          dEvdEpPrinc( i ) = -Math::heaviside( -deltaEpPrinc( i ) );
+
+        return dEvdEpPrinc;
+      }
+
+      Matrix6d dEp_dE( const Matrix6d& CelInv, const Matrix6d& Cep )
+      {
+        return Matrix6d::Identity() - CelInv * Cep;
+      }
+
+      RowVector6d dDeltaEpv_dE( const Matrix6d& CelInv, const Matrix6d& Cep )
+      {
+        return I.transpose() * ( Matrix6d::Identity() - CelInv * Cep );
+      }
+
+      Matrix36 dSortedStrainPrincipal_dStrain(
+        const Vector6d& dEp ) // equations from page 218-219 PhD Thesis David Unteregger
+      {
+        Vector3d dEpPrinc_dEpvol   = Vector3d::Zero();
+        Vector3d dEpPrinc_dEprho   = Vector3d::Zero();
+        Vector3d dEPprinc_dEptheta = Vector3d::Zero();
+
+        const double                      sqrt2_3 = std::sqrt( 2. / 3. );
+        const HaighWestergaardCoordinates hw      = haighWestergaardFromStrain( dEp );
+        // const double& epsM =		hw(0);
+        const double& rhoE = hw.rho;
+        // const double& thetaE =		hw(2);
+
+        dEpPrinc_dEpvol = 1. / 3. * Vector3d::Ones();
+        dEpPrinc_dEprho << sqrt2_3 * std::cos( hw.theta ), sqrt2_3 * std::cos( hw.theta - 2. * Constants::Pi / 3. ),
+          sqrt2_3 * std::cos( hw.theta + 2. * Constants::Pi / 3. );
+
+        dEPprinc_dEptheta << -sqrt2_3 * hw.rho * std::sin( hw.theta ),
+          -sqrt2_3 * hw.rho * std::sin( hw.theta - 2. * Constants::Pi / 3. ),
+          -sqrt2_3 * hw.rho * std::sin( hw.theta + 2. * Constants::Pi / 3. );
+
+        RowVector6d dEpvol_dEp   = RowVector6d::Zero();
+        dEpvol_dEp               = I;
+        RowVector6d dEprho_dEp   = RowVector6d::Zero();
+        RowVector6d dEptheta_dEp = RowVector6d::Zero();
+
+        if ( std::abs( rhoE ) > 1e-16 ) {
+          dEprho_dEp   = 1. / rhoE * dJ2Strain_dStrain( dEp ).transpose();
+          dEptheta_dEp = ( dThetaStrain_dJ2Strain( dEp ) * dJ2Strain_dStrain( dEp ).transpose() ) +
+                         ( dThetaStrain_dJ3Strain( dEp ) * dJ3Strain_dStrain( dEp ).transpose() );
+        }
+        else {
+          dEprho_dEp << 1.e16, 1.e16, 1.e16, 1.e16, 1.e16,
+            1.e16; // 1e16 from Code David (Line 67,
+                   // D_2_Umatsub_damage3_derivatives)
+          dEptheta_dEp << 0., 0., 0., 0., 0., 0.;
+        }
+
+        Matrix36 dEpPrincdEpAna;
+        dEpPrincdEpAna = ( dEpPrinc_dEpvol * dEpvol_dEp ) + ( dEpPrinc_dEprho * dEprho_dEp ) +
+                         ( dEPprinc_dEptheta * dEptheta_dEp );
+
+        return dEpPrincdEpAna;
+      }
+
+      RowVector6d dDeltaEpvneg_dE( const Vector6d& dEp, const Matrix6d& CelInv, const Matrix6d& Cep )
+      {
+        return dStrainVolumetricNegative_dStrainPrincipal( dEp ).transpose() * dSortedStrainPrincipal_dStrain( dEp ) *
+               dEp_dE( CelInv, Cep );
+      }
+
+    } // namespace FirstOrderDerived
+  }   // namespace Invariants
+
   namespace Transformations {
     Matrix6d transformationMatrixStrainVoigt( const Matrix3d& transformedCoordinateSystem )
     {
