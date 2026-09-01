@@ -104,7 +104,7 @@ namespace Marmot::Materials {
     const double G23;
 
     /// @brief Generalized Maxwell model parameters.
-    const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
+    const ContinuumMechanics::Viscoelasticity::FiniteStrain::MaxwellProperties maxwellProperties;
 
     /// @brief Constant derivative of Biot stress with respect to right stretch tensor.
     const TensorUtility::FastorTensors::StandardTensors::Tensor3333t< autodiff::dual > dBiotStress_dU;

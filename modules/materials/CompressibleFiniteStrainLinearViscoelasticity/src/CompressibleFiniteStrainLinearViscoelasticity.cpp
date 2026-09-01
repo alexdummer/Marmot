@@ -98,7 +98,7 @@ namespace Marmot::Materials {
       onlyShearCreep( materialProperties[1] ),
       elasticProperties( &materialProperties[2], nElasticPropertiesMap.at( hyperelasticBase ) ),
       maxwellProperties(
-        ContinuumMechanics::FiniteStrain::Viscoelasticity::
+        ContinuumMechanics::Viscoelasticity::FiniteStrain::
           createMaxwellProperties( materialProperties[2 + nElasticPropertiesMap.at( hyperelasticBase )],
                                    &materialProperties[3 + nElasticPropertiesMap.at( hyperelasticBase )] ) )
   {
@@ -172,7 +172,7 @@ namespace Marmot::Materials {
     const Tensor333333d d2PK2dev_dEdE = d2PK2_dEdE - d2PK2vol_dEdE;
 
     // add viscoelastic contribution to (deviatoric if onlyShearCreep) PK2 stress
-    ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel( PK2dev,
+    ContinuumMechanics::Viscoelasticity::FiniteStrain::evaluateGeneralizedMaxwellModel( PK2dev,
                                                                                         dPK2dev_dE,
                                                                                         d2PK2dev_dEdE,
                                                                                         initialCompliance,

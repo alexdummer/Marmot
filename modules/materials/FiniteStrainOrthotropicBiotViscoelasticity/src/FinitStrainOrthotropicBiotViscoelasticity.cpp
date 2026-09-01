@@ -43,7 +43,7 @@ namespace Marmot::Materials {
       G13( materialProperties[7] ),
       G23( materialProperties[8] ),
       maxwellProperties(
-        ContinuumMechanics::FiniteStrain::Viscoelasticity::createMaxwellProperties( materialProperties[9],
+        ContinuumMechanics::Viscoelasticity::FiniteStrain::createMaxwellProperties( materialProperties[9],
                                                                                     &materialProperties[10] ) ),
       dBiotStress_dU( makeDual( ContinuumMechanics::VoigtNotation::voigtToStiffnessFastor(
         ContinuumMechanics::Elasticity::Orthotropic::
@@ -90,7 +90,7 @@ namespace Marmot::Materials {
     memcpy( stateLayout.getPtr( response.stateVars, "S0_old" ), makeReal( S_biot ).data(), 9 * sizeof( double ) );
 
     // add viscoelastic contribution to Biot stress
-    ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel<
+    ContinuumMechanics::Viscoelasticity::FiniteStrain::evaluateGeneralizedMaxwellModel<
       scalar >( S_biot,
                 dS_biot,
                 timeIncrement.dT,
