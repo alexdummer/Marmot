@@ -5,7 +5,7 @@
 
 namespace Marmot::ContinuumMechanics::Plasticity {
   using namespace Constants;
-  using namespace ContinuumMechanics::HaighWestergaard;
+  using namespace ContinuumMechanics::VoigtNotation::Invariants;
 
   MenetreyWillam::MenetreyWillam( const double ft, const MenetreyWillamType& type, const double fc )
   {

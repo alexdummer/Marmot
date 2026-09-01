@@ -205,11 +205,11 @@ void test_dRho_dStress()
   using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
   const Vector6d stress = { 1, 2, 3, 4, 5, 6 };
 
-  const auto hw = ContinuumMechanics::HaighWestergaard::haighWestergaard( stress );
+  const auto hw = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress );
 
   const auto rho = []( const Vector6d& stress ) {
     Eigen::MatrixXd rho( 1, 1 );
-    rho << ContinuumMechanics::HaighWestergaard::haighWestergaard( stress ).rho;
+    rho << ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress ).rho;
     return rho;
   };
 
@@ -229,11 +229,11 @@ void test_dRhoStrain_dStrain()
   using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
   const Vector6d strain = { 1, 2, 3, 4, 5, 6 };
 
-  const auto hw = ContinuumMechanics::HaighWestergaard::haighWestergaardFromStrain( strain );
+  const auto hw = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaardFromStrain( strain );
 
   const auto rho = []( const Vector6d& strain ) {
     Eigen::MatrixXd rho( 1, 1 );
-    rho << ContinuumMechanics::HaighWestergaard::haighWestergaardFromStrain( strain ).rho;
+    rho << ContinuumMechanics::VoigtNotation::Invariants::haighWestergaardFromStrain( strain ).rho;
     return rho;
   };
 
@@ -252,11 +252,11 @@ void test_dTheta_dStress()
 
   using namespace Marmot::ContinuumMechanics::VoigtNotation::Derivatives;
   const Vector6d stress = { 1, 2, 3, 4, 5, 6 };
-  const auto     hw     = ContinuumMechanics::HaighWestergaard::haighWestergaard( stress );
+  const auto     hw     = ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress );
 
   const auto theta = []( const Vector6d& stress ) {
     Eigen::MatrixXd theta( 1, 1 );
-    theta << ContinuumMechanics::HaighWestergaard::haighWestergaard( stress ).theta;
+    theta << ContinuumMechanics::VoigtNotation::Invariants::haighWestergaard( stress ).theta;
     return theta;
   };
 

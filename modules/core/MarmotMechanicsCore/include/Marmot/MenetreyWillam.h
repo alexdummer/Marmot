@@ -60,7 +60,7 @@ namespace Marmot::ContinuumMechanics::Plasticity {
      *   const double ft = 1.0;
      *   const double fc = 10.0;
      *   auto mw = MenetreyWillam( ft , MenetreyWillamType::MohrCoulomb, fc );
-     *   const HaighWestergaard::HaighWestergaardCoordinates hw = { 1.0, -10, 0 };
+     *   const ContinuumMechanics::VoigtNotation::Invariants::HaighWestergaardCoordinates hw = { 1.0, -10, 0 };
      *   if ( mw.yieldCriterion( hw ) >= 0 )
      *     std::cout << "Material is yielding!" << std::endl;
      *   else
@@ -270,8 +270,8 @@ namespace Marmot::ContinuumMechanics::Plasticity {
      * \note The yield function can be also used as plastic potential function if needed.
      */
     template < typename T >
-    T yieldFunction( const ContinuumMechanics::HaighWestergaard::HaighWestergaardCoordinates< T >& hw,
-                     const double                                                                  varEps = 0.0 ) const
+    T yieldFunction( const ContinuumMechanics::VoigtNotation::Invariants::HaighWestergaardCoordinates< T >& hw,
+                     const double varEps = 0.0 ) const
     {
       const T r_ = polarRadius( hw.theta, param.e );
       if ( varEps == 0 )
@@ -293,8 +293,8 @@ namespace Marmot::ContinuumMechanics::Plasticity {
      */
     template < typename T >
     std::tuple< T, T, T > dYieldFunction_dHaighWestergaard(
-      const ContinuumMechanics::HaighWestergaard::HaighWestergaardCoordinates< T >& hw,
-      const double                                                                  varEps = 0.0 ) const
+      const ContinuumMechanics::VoigtNotation::Invariants::HaighWestergaardCoordinates< T >& hw,
+      const double                                                                           varEps = 0.0 ) const
     {
       const auto [r_, dRdTheta_] = dPolarRadius_dTheta( hw.theta, param.e );
 

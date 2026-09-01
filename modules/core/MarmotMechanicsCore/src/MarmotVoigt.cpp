@@ -8,7 +8,7 @@ using namespace Eigen;
 
 namespace Marmot::ContinuumMechanics::VoigtNotation {
   using namespace Constants;
-  using namespace ContinuumMechanics::HaighWestergaard;
+  using namespace Invariants;
 
   const Vector6d P    = ( Vector6d() << 1, 1, 1, 2, 2, 2 ).finished();
   const Vector6d PInv = ( Vector6d() << 1, 1, 1, .5, .5, .5 ).finished();

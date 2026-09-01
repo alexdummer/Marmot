@@ -7,11 +7,9 @@
 
 using namespace Eigen;
 
-namespace Marmot::ContinuumMechanics::HaighWestergaard {
+namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants {
 
   using namespace Constants;
-  using namespace ContinuumMechanics::VoigtNotation;
-  using namespace ContinuumMechanics::VoigtNotation::Invariants;
 
   HaighWestergaardCoordinates< double > haighWestergaardFromStrain( const Vector6d& strain )
   {
@@ -39,4 +37,4 @@ namespace Marmot::ContinuumMechanics::HaighWestergaard {
     return hw;
   }
 
-} // namespace Marmot::ContinuumMechanics::HaighWestergaard
+} // namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants
