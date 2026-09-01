@@ -903,7 +903,7 @@ namespace Marmot::Elements {
 
           XiSized coordAtGauss = this->NB( this->N( qp.xi ) ) * this->coordinates;
 
-          const auto geostaticNormalStressComponents = Marmot::GeostaticStress::
+          const auto geostaticNormalStressComponents = Marmot::ContinuumMechanics::GeostaticStress::
             getGeostaticStressFromLinearDistribution( initialConditionDefinition, coordAtGauss[1] );
 
           const auto [F0_XX,
