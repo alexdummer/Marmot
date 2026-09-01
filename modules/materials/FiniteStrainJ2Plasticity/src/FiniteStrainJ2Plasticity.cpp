@@ -120,6 +120,7 @@ namespace Marmot::Materials {
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
+      using namespace ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -160,6 +161,7 @@ namespace Marmot::Materials {
     }
     else {
       using namespace Marmot::ContinuumMechanics;
+      using namespace Marmot::ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -269,6 +271,7 @@ namespace Marmot::Materials {
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
+      using namespace ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -316,6 +319,7 @@ namespace Marmot::Materials {
     }
     else {
       using namespace Marmot::ContinuumMechanics;
+      using namespace Marmot::ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -431,6 +435,7 @@ namespace Marmot::Materials {
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
+      using namespace ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -478,6 +483,7 @@ namespace Marmot::Materials {
     }
     else {
       using namespace Marmot::ContinuumMechanics;
+      using namespace Marmot::ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -595,6 +601,7 @@ namespace Marmot::Materials {
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
+      using namespace ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
@@ -642,6 +649,7 @@ namespace Marmot::Materials {
     }
     else {
       using namespace Marmot::ContinuumMechanics;
+      using namespace Marmot::ContinuumMechanics::Kinematics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;

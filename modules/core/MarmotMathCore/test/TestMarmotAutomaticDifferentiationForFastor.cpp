@@ -11,6 +11,7 @@ using namespace Marmot::NumericalAlgorithms::AutomaticDifferentiation;
 using namespace Marmot::Testing;
 using namespace Marmot::TensorUtility::FastorTensors::StandardTensors;
 using namespace Marmot::ContinuumMechanics;
+using namespace Marmot::ContinuumMechanics::Kinematics;
 
 void testTensorToScalar()
 {

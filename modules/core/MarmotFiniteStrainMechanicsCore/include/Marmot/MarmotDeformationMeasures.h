@@ -27,7 +27,7 @@
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include <Fastor/tensor_algebra/permute.h>
 
-namespace Marmot::ContinuumMechanics::DeformationMeasures {
+namespace Marmot::ContinuumMechanics::Kinematics::DeformationMeasures {
 
   namespace Spatial3D = TensorUtility::FastorTensors::StandardTensors::Spatial3D;
   using TensorUtility::FastorTensors::Indices::iI;
@@ -112,7 +112,7 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
     template < typename T >
     std::pair< Tensor33t< T >, Tensor3333t< T > > rightCauchyGreen( const Tensor33t< T >& F )
     {
-      const Tensor33t< T > C = Marmot::ContinuumMechanics::DeformationMeasures::rightCauchyGreen( F );
+      const Tensor33t< T > C = DeformationMeasures::rightCauchyGreen( F );
 
       const Tensor3333t< T > dC_dF = einsum< IK, kJ, to_IJkK >( Spatial3D::I, F ) +
                                      einsum< kI, JK, to_IJkK >( F, Spatial3D::I );
@@ -142,7 +142,7 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
     template < typename T >
     std::pair< Tensor33t< T >, Tensor3333t< T > > leftCauchyGreen( const Tensor33t< T >& F )
     {
-      Tensor33t< T > b = Marmot::ContinuumMechanics::DeformationMeasures::leftCauchyGreen( F );
+      Tensor33t< T > b = DeformationMeasures::leftCauchyGreen( F );
 
       const Tensor3333t< T > db_dF = einsum< ik, jK, to_ijkK >( Spatial3D::I, F ) +
                                      einsum< iK, jk, to_ijkK >( F, Spatial3D::I );
@@ -267,4 +267,4 @@ namespace Marmot::ContinuumMechanics::DeformationMeasures {
 
   } // namespace FirstOrderDerived
 
-} // namespace Marmot::ContinuumMechanics::DeformationMeasures
+} // namespace Marmot::ContinuumMechanics::Kinematics::DeformationMeasures

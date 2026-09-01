@@ -62,6 +62,7 @@ namespace Marmot::Materials {
     const auto& F = deformation.F;
 
     using namespace ContinuumMechanics;
+    using namespace ContinuumMechanics::Kinematics;
     // compute Cauchy-Green deformation
     const Tensor33t< scalar > C = DeformationMeasures::rightCauchyGreen( F );
 
