@@ -370,6 +370,12 @@ namespace Marmot::Elements {
      * \f$\hat{N} = \tfrac{1}{2}N + \tfrac{1}{2}N_\mathrm{lin}\f$,
      * where \f$N\f$ is the high-order shape function and \f$N_\mathrm{lin}\f$ is the corresponding
      * linear (corner-node) shape function on the same element.
+     *
+     * Hexa20 is special-cased to \f$\hat{N} = \tfrac{1}{3}N + \tfrac{2}{3}N_\mathrm{lin}\f$: with
+     * the default 1/2-1/2 split, the negative corner contribution of the Hexa20 serendipity shape
+     * function exactly cancels the positive corner contribution of the trilinear shape function
+     * for any regular (affinely-mapped) element, producing an exactly zero corner mass. Shifting
+     * weight towards the linear shape function keeps the corner contribution strictly positive.
      */
     void computeLumpedInertia( double* M );
 
@@ -863,14 +869,32 @@ namespace Marmot::Elements {
     Map< RhsSized > LMM( M );
     LMM.setZero();
 
-    constexpr int nNodesLinear  = ( 1 << nDim );
-    auto          linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
+    // Hexa20 special case: shift the split towards the linear shape function to avoid the exact
+    // corner-mass cancellation the default 1/2-1/2 split produces for this element (see the
+    // Doxygen comment on the declaration).
+    constexpr bool   isHexa20   = ( nDim == 3 && nNodes == 20 );
+    constexpr double wHighOrder = isHexa20 ? 1.0 / 3.0 : 0.5;
+    constexpr double wLinear    = isHexa20 ? 2.0 / 3.0 : 0.5;
+
+    constexpr int nNodesLinear = ( 1 << nDim );
+
+    // computeLumpedInertia() only knows how to weight the non-local block against either the
+    // displacement interpolation itself (equal-order, nNonLocalNodes == nNodes) or the linear
+    // corner-node interpolation (reduced-order, nNonLocalNodes == nNodesLinear); assigning N_lin
+    // to a differently-sized non-local weight vector below would silently misbehave for any other
+    // nNonLocalNodes.
+    static_assert( nNodes == nNonLocalNodes || nNonLocalNodes == nNodesLinear,
+                   "GeneralGradientEnhancedDisplacementFiniteElement::computeLumpedInertia requires the "
+                   "non-local field to use either the displacement interpolation order (nNonLocalNodes == "
+                   "nNodes) or linear corner-node interpolation (nNonLocalNodes == 2^nDim)." );
+
+    auto linGeometryEl = MarmotGeometryElement< nDim, nNodesLinear >();
     for ( const auto& qp : qps ) {
       const auto N_    = localGeometryElement.N( qp.xi );
       const auto N_lin = linGeometryEl.N( qp.xi );
 
-      VectorXd N_weighted = 0.5 * ( N_ );
-      N_weighted.head( nNodesLinear ) += 0.5 * N_lin;
+      VectorXd N_weighted = wHighOrder * ( N_ );
+      N_weighted.head( nNodesLinear ) += wLinear * N_lin;
 
       // when nNodes == nNonlocalNodes
       VectorXd N_weighted_nonlocal;
