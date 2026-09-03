@@ -20,7 +20,7 @@ namespace Marmot {
                                                       const timeInfo&         timeInfo ) const
   {
     using namespace Marmot;
-    using namespace ContinuumMechanics::VoigtNotation;
+    using namespace ContinuumMechanics::Voigt;
 
     Map< const Matrix< double, 3, 1 > > dStrain2D( dStrain2D_.data() );
     Map< Matrix< double, 3, 1 > >       stress2D( state2D_.stress.data() );
@@ -30,12 +30,12 @@ namespace Marmot {
     Matrix6d dStress_dStrain3D;
 
     VectorXd stateVarsOld  = stateVars;
-    Vector6d dStrain3DTemp = Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::TwoD >( dStrain2D );
+    Vector6d dStrain3DTemp = Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::TwoD >( dStrain2D );
 
     // assumption of isochoric deformation for initial guess
     dStrain3DTemp( 2 ) = ( -dStrain2D( 0 ) - dStrain2D( 1 ) );
 
-    state3D state( Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::TwoD >( stress2D ),
+    state3D state( Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::TwoD >( stress2D ),
                    state2D_.elasticEnergyDensity,
                    state2D_.dissipation,
                    stateVars.data() );
@@ -45,7 +45,7 @@ namespace Marmot {
 
       stateVars = stateVarsOld;
 
-      state.stress = Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::TwoD >( stress2D );
+      state.stress               = Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::TwoD >( stress2D );
       state.elasticEnergyDensity = state2D_.elasticEnergyDensity;
       state.dissipation          = state2D_.dissipation;
 
@@ -70,7 +70,7 @@ namespace Marmot {
       }
     }
 
-    state2D_.stress               = ContinuumMechanics::VoigtNotation::reduce3DVoigt< VoigtSize::TwoD >( state.stress );
+    state2D_.stress               = ContinuumMechanics::Voigt::reduce3DVoigt< VoigtSize::TwoD >( state.stress );
     state2D_.elasticEnergyDensity = state.elasticEnergyDensity;
     state2D_.dissipation          = state.dissipation;
     state2D_.stateVars            = stateVars.data();
@@ -84,7 +84,7 @@ namespace Marmot {
                                                          const timeInfo& timeInfo ) const
   {
     using namespace Marmot;
-    using namespace ContinuumMechanics::VoigtNotation;
+    using namespace ContinuumMechanics::Voigt;
 
     Map< const Matrix< double, 1, 1 > > dStrain1D( &dStrain1D_ );
     Map< Matrix< double, 1, 1 > >       stress1D( &state1D_.stress );
@@ -93,9 +93,9 @@ namespace Marmot {
     Matrix6d dStress_dStrain3D;
 
     VectorXd stateVarsOld  = stateVars;
-    Vector6d dStrain3DTemp = Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::OneD >( dStrain1D );
+    Vector6d dStrain3DTemp = Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::OneD >( dStrain1D );
 
-    state3D state( Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::OneD >( stress1D ),
+    state3D state( Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::OneD >( stress1D ),
                    state1D_.elasticEnergyDensity,
                    state1D_.dissipation,
                    stateVars.data() );
@@ -104,7 +104,7 @@ namespace Marmot {
     while ( true ) {
       stateVars = stateVarsOld;
 
-      state.stress = Marmot::ContinuumMechanics::VoigtNotation::make3DVoigt< VoigtSize::OneD >( stress1D );
+      state.stress               = Marmot::ContinuumMechanics::Voigt::make3DVoigt< VoigtSize::OneD >( stress1D );
       state.elasticEnergyDensity = state1D_.elasticEnergyDensity;
       state.dissipation          = state1D_.dissipation;
 
@@ -126,7 +126,7 @@ namespace Marmot {
       }
     }
 
-    state1D_.stress = ContinuumMechanics::VoigtNotation::reduce3DVoigt< VoigtSize::OneD >( state.stress )[0];
+    state1D_.stress               = ContinuumMechanics::Voigt::reduce3DVoigt< VoigtSize::OneD >( state.stress )[0];
     state1D_.elasticEnergyDensity = state.elasticEnergyDensity;
     state1D_.dissipation          = state.dissipation;
     state1D_.stateVars            = stateVars.data();

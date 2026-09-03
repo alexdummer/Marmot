@@ -37,7 +37,7 @@
  * and Lode angle \f$\theta\f$ from stress or strain tensors in Voigt notation.
  */
 
-namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants {
+namespace Marmot::ContinuumMechanics::Invariants {
 
   /**
    * Aggregate of the Haigh-Westergaard coordinates (invariants) \f$\xi\f$,
@@ -110,4 +110,4 @@ namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants {
    */
   HaighWestergaardCoordinates< double > haighWestergaardFromStrain( const Marmot::Vector6d& strain );
 
-} // namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants
+} // namespace Marmot::ContinuumMechanics::Invariants

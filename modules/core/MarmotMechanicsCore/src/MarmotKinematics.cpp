@@ -29,7 +29,7 @@ namespace Marmot::ContinuumMechanics::Kinematics {
         for ( int j = 0; j < 3; j++ )
           for ( int k = 0; k < 3; k++ )
             for ( int l = 0; l < 3; l++ ) {
-              dddl( ContinuumMechanics::VoigtNotation::toVoigt< 3 >( i, j ),
+              dddl( ContinuumMechanics::Voigt::toVoigt< 3 >( i, j ),
                     k,
                     l ) = 0.5 * ( ( i == k ? 1 : 0 ) * ( j == l ? 1 : 0 ) + ( j == k ? 1 : 0 ) * ( i == l ? 1 : 0 ) ) *
                           ( i == j ? 1 : 2 ); // strain-engineering-notation correction
@@ -47,8 +47,8 @@ namespace Marmot::ContinuumMechanics::Kinematics {
     Marmot::Vector6d GreenLagrange( const Eigen::Matrix3d& F )
     {
       Eigen::Matrix3d H = F - Eigen::Matrix3d::Identity();
-      return Marmot::ContinuumMechanics::VoigtNotation::voigtFromStrainMatrix< 3 >(
-        0.5 * ( H + H.transpose() + H.transpose() * H ) );
+      return Marmot::ContinuumMechanics::Voigt::voigtFromStrainMatrix< 3 >( 0.5 *
+                                                                            ( H + H.transpose() + H.transpose() * H ) );
     }
 
     Marmot::TensorUtility::EigenTensors::Tensor633d dGreenLagrangedDeformationGradient( const Eigen::Matrix3d& F )
@@ -57,7 +57,7 @@ namespace Marmot::ContinuumMechanics::Kinematics {
       auto                                    kron = Matrix3d::Identity();
 
       for ( int IJ = 0; IJ < 6; IJ++ ) {
-        auto [I, J] = Marmot::ContinuumMechanics::VoigtNotation::fromVoigt< 3 >( IJ );
+        auto [I, J] = Marmot::ContinuumMechanics::Voigt::fromVoigt< 3 >( IJ );
         for ( int k = 0; k < 3; k++ )
           for ( int L = 0; L < 3; L++ )
 

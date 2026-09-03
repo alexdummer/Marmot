@@ -16,10 +16,10 @@ namespace Marmot::ContinuumMechanics::LocalizationAnalysis {
 
     for ( int i = 0; i < 3; i++ ) {
       for ( int j = 0; j < 3; j++ ) {
-        indexRow = Marmot::ContinuumMechanics::VoigtNotation::toVoigt< 3 >( i, j );
+        indexRow = Marmot::ContinuumMechanics::Voigt::toVoigt< 3 >( i, j );
         for ( int k = 0; k < 3; k++ ) {
           for ( int l = 0; l < 3; l++ ) {
-            indexCol = Marmot::ContinuumMechanics::VoigtNotation::toVoigt< 3 >( k, l );
+            indexCol = Marmot::ContinuumMechanics::Voigt::toVoigt< 3 >( k, l );
 
             acousticTensor( j, k ) += normalVector( i ) * materialTangent( indexRow, indexCol ) * normalVector( l );
           }

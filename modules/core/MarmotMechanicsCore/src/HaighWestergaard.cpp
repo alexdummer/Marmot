@@ -7,7 +7,7 @@
 
 using namespace Eigen;
 
-namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants {
+namespace Marmot::ContinuumMechanics::Invariants {
 
   using namespace Constants;
 
@@ -37,4 +37,4 @@ namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants {
     return hw;
   }
 
-} // namespace Marmot::ContinuumMechanics::VoigtNotation::Invariants
+} // namespace Marmot::ContinuumMechanics::Invariants

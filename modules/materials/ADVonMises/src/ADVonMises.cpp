@@ -59,8 +59,9 @@ namespace Marmot::Materials {
     // compute elastic predictor
     const Vector6dual trialStress = S + Cel * dE;
 
-    using namespace ContinuumMechanics::VoigtNotation;
-    const dual rhoTrial = sqrt( 2. * Invariants::J2( trialStress ) );
+    using namespace ContinuumMechanics::Voigt;
+    using namespace ContinuumMechanics::Invariants;
+    const dual rhoTrial = sqrt( 2. * J2( trialStress ) );
 
     if ( Math::makeReal( f( rhoTrial, kappa ) ) >= 0.0 ) {
 
@@ -92,7 +93,7 @@ namespace Marmot::Materials {
       dLambda = Constants::sqrt3_2 * dKappa;
 
       // compute return mapping direction
-      const Vector6dual n = ContinuumMechanics::VoigtNotation::IDev * trialStress / rhoTrial;
+      const Vector6dual n = ContinuumMechanics::Voigt::IDev * trialStress / rhoTrial;
 
       // update stress and hardening variable
       S          = trialStress - 2. * G * dLambda * n;

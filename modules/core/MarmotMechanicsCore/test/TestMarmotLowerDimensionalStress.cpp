@@ -188,7 +188,7 @@ void test_compute_dStress_dDeformationGradient()
   Marmot::TensorUtility::EigenTensors::Tensor322d computedResult = compute_dStress_dDeformationGradient( inputTensor );
 
   // Expected results
-  using namespace Marmot::ContinuumMechanics::VoigtNotation;
+  using namespace Marmot::ContinuumMechanics::Voigt;
 
   Marmot::TensorUtility::EigenTensors::Tensor322d expectedResult;
   // clang-format off

@@ -41,7 +41,7 @@ namespace Marmot::ContinuumMechanics::Shrinkage::B4 {
     if ( end != 0 )
       deltaDrying = tanh( sqrt( end / dryingShrinkageHalfTime ) ) - tanh( sqrt( start / dryingShrinkageHalfTime ) );
 
-    return ContinuumMechanics::VoigtNotation::I *
+    return ContinuumMechanics::Voigt::I *
            ( ultimateAutogenousShrinkageStrain * deltaAutogenous + ultimateDryingShrinkageStrain * kHum * deltaDrying );
   }
 } // namespace Marmot::ContinuumMechanics::Shrinkage::B4

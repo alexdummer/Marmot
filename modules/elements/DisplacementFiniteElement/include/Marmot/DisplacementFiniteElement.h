@@ -538,7 +538,7 @@ namespace Marmot::Elements {
                                                                   double        dT )
   {
     using namespace Marmot;
-    using namespace ContinuumMechanics::VoigtNotation;
+    using namespace ContinuumMechanics::Voigt;
 
     Map< const RhsSized > QTotal( QTotal_ );
     Map< const RhsSized > dQ( dQ_ );
@@ -670,7 +670,7 @@ namespace Marmot::Elements {
                                                                           double        dT )
   {
     using namespace Marmot;
-    using namespace ContinuumMechanics::VoigtNotation;
+    using namespace ContinuumMechanics::Voigt;
 
     Map< const RhsSized > QTotal( QTotal_ );
     Map< const RhsSized > dQ( dQ_ );

@@ -79,7 +79,7 @@ namespace Marmot::ContinuumMechanics::LowerOrder {
       // projection to plane
       TensorUtility::EigenTensors::Tensor322d dS_dF = PlaneStrain::reduce3D_dStress_dDeformationGradient( dS_dF_3D );
 
-      using namespace ContinuumMechanics::VoigtNotation;
+      using namespace ContinuumMechanics::Voigt;
 
       // clang-format off
                 for ( int m = 0; m < 2; m ++ )
