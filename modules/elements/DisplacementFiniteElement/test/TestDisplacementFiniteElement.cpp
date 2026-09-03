@@ -640,6 +640,195 @@ void testLumpedInertiaHexa20ReducedIntegrationMatchesAnalyticValues()
                                    "ReducedIntegration" );
 }
 
+// ---------------------------------------------------------------------------------------------
+// Critical time step tests
+//
+// computeCriticalTimeStepForExplicitDynamics() scales the plain l/c estimate by the same
+// mass-distribution factor the lumped-mass fractions above imply (see MarmotMassLumping.h):
+// with n nodes and smallest lumped-mass fraction f_min, factor = sqrt(n * f_min). That gives
+//
+//   Quad4 / Hexa8 (linear): all fractions equal 1/n     -> factor = sqrt(n * 1/n)  = 1
+//   Quad8:  corner = 1/12, midside = 1/6, n = 8         -> factor = sqrt(8/12)     = sqrt(2/3)
+//   Hexa20: corner = 1/24, edge = 1/18, n = 20          -> factor = sqrt(20/24)    = sqrt(5/6)
+//
+// using the same analytic corner/edge fractions the lumped-mass tests above already establish.
+// All four elements here share the same unit-size regular geometry and LINEARELASTIC material
+// (E = 10000, nu = 0.2, density = 1), so the l/c part of the estimate is identical for all of
+// them and the expected critical time step is just that common l/c times the factor above.
+// ---------------------------------------------------------------------------------------------
+
+double linearElasticLcEstimateForUnitRegularElement()
+{
+  // Reproduces the closed-form 3D stiffness diagonal getMaximumWaveSpeed() evaluates at zero
+  // strain: C11 = E(1-nu) / ((1+nu)(1-2nu)) dominates the shear terms for nu = 0.2.
+  constexpr double E       = 10000.0;
+  constexpr double nu      = 0.2;
+  constexpr double density = 1.0;
+  const double     C11     = E * ( 1.0 - nu ) / ( ( 1.0 + nu ) * ( 1.0 - 2.0 * nu ) );
+  const double     c       = std::sqrt( C11 / density );
+  constexpr double l       = 1.0; // unit-size regular element: 2 * smallest Jacobian singular value (0.5)
+  return l / c;
+}
+
+void testCriticalTimeStepQuad4RegularElementMatchesUnitMassDistributionFactor()
+{
+  constexpr int nDim    = 2;
+  constexpr int nNodes  = 4; // Quad4 (linear)
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::PlaneStrain;
+
+  const std::vector< double > nodeCoordsVec = { 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 }; // unit square
+
+  auto element = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  element->assignNodeCoordinates( nodeCoordsVec.data() );
+
+  const std::vector< double > matProps = { 10000.0, 0.2, 1.0 };
+  MarmotMaterialSection       materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+  const std::vector< double > elPropsVec = { 1.0 }; // thickness
+  ElementProperties           elProps( elPropsVec.data(), elPropsVec.size() );
+
+  element->assignProperty( elProps );
+  element->assignProperty( materialSection );
+
+  const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
+  std::vector< double > stateVars( nStateVarsTotal, 0.0 );
+  element->assignStateVars( stateVars.data(), nStateVarsTotal );
+  element->initializeYourself();
+
+  const std::vector< double > QTotal( element->getNDofPerElement(), 0.0 );
+  double                      criticalTimeStep = 0.0;
+  element->computeCriticalTimeStepForExplicitDynamics( criticalTimeStep, QTotal.data() );
+
+  throwExceptionOnFailure( checkIfEqual( criticalTimeStep, linearElasticLcEstimateForUnitRegularElement(), 1e-8 ),
+                           "Quad4 critical time step does not match the unit mass-distribution factor." );
+}
+
+void testCriticalTimeStepHexa8RegularElementMatchesUnitMassDistributionFactor()
+{
+  constexpr int nDim    = 3;
+  constexpr int nNodes  = 8; // Hexa8 (linear)
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::Solid;
+
+  const std::vector< double > nodeCoordsVec = { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                                                0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0 }; // unit cube
+
+  auto element = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  element->assignNodeCoordinates( nodeCoordsVec.data() );
+
+  const std::vector< double > matProps = { 10000.0, 0.2, 1.0 };
+  MarmotMaterialSection       materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+
+  element->assignProperty( materialSection );
+
+  const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
+  std::vector< double > stateVars( nStateVarsTotal, 0.0 );
+  element->assignStateVars( stateVars.data(), nStateVarsTotal );
+  element->initializeYourself();
+
+  const std::vector< double > QTotal( element->getNDofPerElement(), 0.0 );
+  double                      criticalTimeStep = 0.0;
+  element->computeCriticalTimeStepForExplicitDynamics( criticalTimeStep, QTotal.data() );
+
+  throwExceptionOnFailure( checkIfEqual( criticalTimeStep, linearElasticLcEstimateForUnitRegularElement(), 1e-8 ),
+                           "Hexa8 critical time step does not match the unit mass-distribution factor." );
+}
+
+void testCriticalTimeStepQuad8RegularElementMatchesAnalyticMassDistributionFactor()
+{
+  constexpr int nDim    = 2;
+  constexpr int nNodes  = 8; // Quad8 (quadratic serendipity)
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::PlaneStrain;
+
+  // Unit square with midside nodes at exact edge midpoints (straight edges); same geometry as
+  // checkQuad8AnalyticLumpedMasses().
+  const std::vector< double > nodeCoordsVec = { 0.0,
+                                                0.0,
+                                                1.0,
+                                                0.0,
+                                                1.0,
+                                                1.0,
+                                                0.0,
+                                                1.0, // corners
+                                                0.5,
+                                                0.0,
+                                                1.0,
+                                                0.5,
+                                                0.5,
+                                                1.0,
+                                                0.0,
+                                                0.5 }; // midsides
+
+  auto element = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  element->assignNodeCoordinates( nodeCoordsVec.data() );
+
+  const std::vector< double > matProps = { 10000.0, 0.2, 1.0 };
+  MarmotMaterialSection       materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+  const std::vector< double > elPropsVec = { 1.0 }; // thickness
+  ElementProperties           elProps( elPropsVec.data(), elPropsVec.size() );
+
+  element->assignProperty( elProps );
+  element->assignProperty( materialSection );
+
+  const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
+  std::vector< double > stateVars( nStateVarsTotal, 0.0 );
+  element->assignStateVars( stateVars.data(), nStateVarsTotal );
+  element->initializeYourself();
+
+  const std::vector< double > QTotal( element->getNDofPerElement(), 0.0 );
+  double                      criticalTimeStep = 0.0;
+  element->computeCriticalTimeStepForExplicitDynamics( criticalTimeStep, QTotal.data() );
+
+  const double expected = linearElasticLcEstimateForUnitRegularElement() * std::sqrt( 2.0 / 3.0 );
+  throwExceptionOnFailure( checkIfEqual( criticalTimeStep, expected, 1e-8 ),
+                           "Quad8 critical time step does not match the analytic mass-distribution factor." );
+}
+
+void testCriticalTimeStepHexa20RegularElementMatchesAnalyticMassDistributionFactor()
+{
+  constexpr int nDim    = 3;
+  constexpr int nNodes  = 20; // Hexa20 (quadratic serendipity)
+  const int     elId    = 1;
+  const auto    intType = FiniteElement::Quadrature::IntegrationTypes::FullIntegration;
+  const auto    secType = DisplacementFiniteElement< nDim, nNodes >::SectionType::Solid;
+
+  // Unit cube with edge-midside nodes at exact midpoints (straight edges); same geometry as
+  // checkHexa20AnalyticLumpedMasses(). Node ordering per MarmotFiniteElement3D.cpp Hexa20::N:
+  // 0-7 corners, 8-19 edge midsides.
+  const std::vector< double > nodeCoordsVec = {
+    0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, // bottom corners
+    0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, // top corners
+    0.5, 0.0, 0.0, 1.0, 0.5, 0.0, 0.5, 1.0, 0.0, 0.0, 0.5, 0.0, // bottom-face edge midsides
+    0.5, 0.0, 1.0, 1.0, 0.5, 1.0, 0.5, 1.0, 1.0, 0.0, 0.5, 1.0, // top-face edge midsides
+    0.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5  // vertical edge midsides
+  };
+
+  auto element = std::make_unique< DisplacementFiniteElement< nDim, nNodes > >( elId, intType, secType );
+  element->assignNodeCoordinates( nodeCoordsVec.data() );
+
+  const std::vector< double > matProps = { 10000.0, 0.2, 1.0 };
+  MarmotMaterialSection       materialSection( "LINEARELASTIC", matProps.data(), matProps.size() );
+
+  element->assignProperty( materialSection );
+
+  const int             nStateVarsTotal = element->getNumberOfRequiredStateVars();
+  std::vector< double > stateVars( nStateVarsTotal, 0.0 );
+  element->assignStateVars( stateVars.data(), nStateVarsTotal );
+  element->initializeYourself();
+
+  const std::vector< double > QTotal( element->getNDofPerElement(), 0.0 );
+  double                      criticalTimeStep = 0.0;
+  element->computeCriticalTimeStepForExplicitDynamics( criticalTimeStep, QTotal.data() );
+
+  const double expected = linearElasticLcEstimateForUnitRegularElement() * std::sqrt( 5.0 / 6.0 );
+  throwExceptionOnFailure( checkIfEqual( criticalTimeStep, expected, 1e-8 ),
+                           "Hexa20 critical time step does not match the analytic mass-distribution factor." );
+}
+
 int main()
 {
   auto tests = std::vector< std::function< void() > >{
@@ -655,6 +844,10 @@ int main()
     testLumpedInertiaQuad8DistortedElementReducedIntegrationStaysNonSingular,
     testLumpedInertiaHexa20FullIntegrationMatchesAnalyticValues,
     testLumpedInertiaHexa20ReducedIntegrationMatchesAnalyticValues,
+    testCriticalTimeStepQuad4RegularElementMatchesUnitMassDistributionFactor,
+    testCriticalTimeStepHexa8RegularElementMatchesUnitMassDistributionFactor,
+    testCriticalTimeStepQuad8RegularElementMatchesAnalyticMassDistributionFactor,
+    testCriticalTimeStepHexa20RegularElementMatchesAnalyticMassDistributionFactor,
   };
 
   executeTestsAndCollectExceptions( tests );
