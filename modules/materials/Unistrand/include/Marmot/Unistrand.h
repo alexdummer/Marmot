@@ -61,21 +61,16 @@ namespace Marmot::Materials {
     const Vector3d nR, nT;
 
     void computeStress( state3D&        state,
-                        double*         dStressDDStrain,
-                        const double*   dStrain,
+                        Matrix6d&       dStress_dStrain,
+                        const Vector6d& dStrain,
                         const timeInfo& timeInfo ) const override;
 
     /**
      * @brief Get material density.
+     * @param stateVars Pointer to the state variable array
      * @return Density value.
      * @throw std::runtime_error if density is not defined.
      */
-    double getDensity() override;
-
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kappa", 9 );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
   };
 } // namespace Marmot::Materials

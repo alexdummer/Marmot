@@ -41,22 +41,23 @@ namespace Marmot::Materials {
     globalElasticStiffnessTensor = transformationMatrixStrainInv * localElasticStiffnessTensor *
                                    transformationMatrixStrain;
 
-    initializeStateLayout();
+    stateLayout.add( "kappa", 9 );
+    stateLayout.finalize();
   }
 
-  double Unistrand::getDensity()
+  double Unistrand::getDensity( const double* stateVars ) const
   {
     throw std::runtime_error( MakeString() << __PRETTY_FUNCTION__ << ": Density not implemented yet!" );
   }
 
   void Unistrand::computeStress( state3D&        state,
-                                 double*         dStress_dStrain,
-                                 const double*   dStrain,
+                                 Matrix6d&       dStress_dStrain,
+                                 const Vector6d& dStrain,
                                  const timeInfo& timeInfo ) const
   {
     mVector6d             S( state.stress.data() );
-    Map< const Vector6d > dE( dStrain );
-    mMatrix6d             mC( dStress_dStrain );
+    Map< const Vector6d > dE( dStrain.data() );
+    mMatrix6d             mC( dStress_dStrain.data() );
     Map< Vector9d >       alpha( stateLayout.getPtr( state.stateVars, "kappa" ) );
 
     // Zero strain  increment check
