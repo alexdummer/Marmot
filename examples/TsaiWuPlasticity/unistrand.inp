@@ -1,0 +1,103 @@
+*include, input=mesh.inp
+
+*material, name=TSAIWUPLASTICITY, id=top-bottom
+** E1, E2, E3
+9000, 4500, 130,
+** nu12, nu23, nu13
+0.21, 0.009, 0.0036,
+** G12, G23, G13
+1112, 100, 160,
+** strength in x1 (T1, C1)
+21.8, 26.3,
+** strength in x2 (T2, C2)
+7, 9.8,
+** strength in x3 (T3, C3)
+0.42, 0.42,
+** strength shear (S12, S23, S13)
+7.5, 1.4, 1.8,
+** Hardening parameters (HLin, deltaYieldStress, delta)
+0.0, 0.0, 0.0,
+** x-1 direction
+1, 0, 0,
+** x-2 direction
+0, 0, 1,
+** density and damping
+1e-9, 0.0
+
+*material, name=TSAIWUPLASTICITY, id=mid
+** E1, E2, E3
+9000, 4500, 130,
+** nu12, nu23, nu13
+0.21, 0.009, 0.0036,
+** G12, G23, G13
+1112, 100, 160,
+** strength in x1 (T1, C1)
+21.8, 26.3,
+** strength in x2 (T2, C2)
+7, 9.8,
+** strength in x3 (T3, C3)
+0.42, 0.42,
+** strength shear (S12, S23, S13)
+7.5, 1.4, 1.8,
+** Hardening parameters (HLin, deltaYieldStress, delta)
+0.0, 0.0, 0.0,
+** x-1 direction
+0, 1, 0,
+** x-2 direction
+0, 0, 1,
+** density and damping
+1e-9, 0.0
+
+*AnalyticalField, name=AnalyticalField-01, type=randomScalar
+model       = Gaussian
+mean        = 0
+variance    = 0.001
+lengthscale = 10
+seed        = 2
+
+*section, name=section1, material=top-bottom, type=solid
+top-bottom
+materialParameterFromField, index=0, field=AnalyticalField-01, type=setToValue, "f(p,f)=(1+f)*p"
+
+*section, name=section2, material=mid, type=solid
+mid-layer
+
+*job, name=c3d8job, domain=3d
+*solver, solver=NESTParallel, name=theSolver
+runge-kutta-stages=6
+
+*modelgenerator, generator=findclosestnode, executeAfterManualGeneration=True
+location='41.25,0,150', storeIn=support
+
+*modelgenerator, generator=findclosestnode, executeAfterManualGeneration=True
+location='495,82.5,150', storeIn=load-rp
+
+*constraint, type=linearizedrigidbody, name=bearing
+referencePoint=support
+nSet=bearing
+
+*constraint, type=linearizedrigidbody, name=load
+referencePoint=load-rp
+nSet=load
+
+*fieldOutput
+create=perNode, elSet=all, field=displacement, result=U, name=displacement
+create=perElement, elSet=all, field=displacement, result=stress, name=stress, quadraturePoint=0:8, f(x)="np.average(x, axis=1)"
+create=perElement, elSet=all, field=displacement, result=strain, name=strain, quadraturePoint=0:8, f(x)="np.average(x, axis=1)"
+create=perNode, nSet=bearing, field=displacement, result=P, name=support-force, export=RF, f(x)="np.sum(x, axis=0)"
+create=perNode, nSet=load-rp, field=displacement, result=U, name=load-disp, export=U
+
+*output, type=ensight, name=esExport
+create=perNode, fieldOutput=displacement
+create=perElement, fieldOutput=stress
+create=perElement, fieldOutput=strain
+configuration, overwrite=yes
+
+*step, solver=theSolver, maxInc=5e-2, minInc=1e-8, maxNumInc=1000, maxIter=100
+** options, category=NISTSolver, extrapolation=off, linesearch=on
+dirichlet, name=support, nSet=support,  field=displacement, 2=0, 3=0
+dirichlet, name=support-rot, nSet=support,  field=rotation, 1=0, 2=0
+dirichlet, name=load, nSet=load-rp,  field=displacement, 2=-33, 3=0
+dirichlet, name=load-rot, nSet=load-rp,  field=rotation, 1=0, 2=0
+dirichlet, name=sym-x, nSet=x-sym, field=displacement, 1=0
+** dirichlet, name=sym-z, nSet=z-sym, field=displacement, 3=0,
