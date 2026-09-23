@@ -24,14 +24,14 @@ namespace Marmot {
       case Quad4: {
         boundaryShape             = Bar2;
         nNodes                    = Spatial1D::Bar2::nNodes;
-        mapBoundaryToParentScalar = Spatial2D::Quad4::getBoundaryElementIndices( parentFaceNumber );
+        mapBoundaryToParentScalar = VectorXi( Spatial2D::Quad4::getBoundaryElementIndices( parentFaceNumber ) );
         break;
       }
 
       case Quad8: {
         boundaryShape             = Bar3;
         nNodes                    = Spatial1D::Bar3::nNodes;
-        mapBoundaryToParentScalar = Spatial2D::Quad8::getBoundaryElementIndices( parentFaceNumber );
+        mapBoundaryToParentScalar = VectorXi( Spatial2D::Quad8::getBoundaryElementIndices( parentFaceNumber ) );
         break;
       }
       case Hexa8: {
@@ -251,7 +251,7 @@ namespace Marmot {
       /** Condense any scalar quantiaty parent vector to the corresponding boundary child vector (e.g.
        * temperature fields ) dependent on the underlying indices mapping
        * */
-      VectorXd boundaryVector( nNodes * nDim );
+      VectorXd boundaryVector( nNodes );
 
       for ( int i = 0; i < mapBoundaryToParentScalar.size(); i++ )
         boundaryVector( i ) = parentVector( mapBoundaryToParentScalar( i ) );

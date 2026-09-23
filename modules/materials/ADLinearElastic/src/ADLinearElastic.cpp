@@ -14,20 +14,27 @@ namespace Marmot::Materials {
     : MarmotMaterialHypoElasticAD::MarmotMaterialHypoElasticAD( materialProperties,
                                                                 nMaterialProperties,
                                                                 materialNumber ),
-      E( materialProperties[0] ),
-      nu( materialProperties[1] )
+      C( Isotropic::stiffnessTensor( materialProperties[0], materialProperties[1] ) )
   {
-    assert( nMaterialProperties == 2 );
+    stateLayout.finalize();
   }
-  void ADLinearElastic::computeStressAD( state3DAD&            state,
-                                         const autodiff::dual* dStrain,
-                                         const timeInfo&       timeInfo ) const
+
+  double ADLinearElastic::getDensity( const double* stateVars ) const
   {
-    mVector6dual            s( state.stress );
-    const mVector6dualConst dE( dStrain );
+    if ( nMaterialProperties >= 3 )
+      return materialProperties[2];
+    throw std::runtime_error(
+      std::string( MakeString() << __PRETTY_FUNCTION__ << ": Density not specified for ADLinearElastic." ) );
+  }
 
-    const MatrixXdual C( ContinuumMechanics::Elasticity::Isotropic::stiffnessTensor( E, nu ) );
+  void ADLinearElastic::computeStressAD( state3DAD&                 state,
+                                         const Marmot::Vector6dual& dStrain,
+                                         const timeInfo&            timeInfo ) const
+  {
 
-    s = s + C * dE;
+    const Vector6dual dStress = C * dStrain;
+    state.stress += dStress;
+    state.elasticEnergyDensity += 0.5 * Math::makeReal( dStrain.dot( dStress ) );
+    state.dissipation = 0.0;
   }
 } // namespace Marmot::Materials

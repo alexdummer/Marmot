@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -29,6 +26,9 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include "Marmot/MarmotTypedefs.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 /**
  *
@@ -56,11 +56,17 @@
 class MarmotMaterialHypoElastic {
 
 protected:
-  const double* materialProperties;
-  const int     nMaterialProperties;
+  const double* materialProperties;  ///< Pointer to the array of material properties
+  const int     nMaterialProperties; ///< Number of material properties
 
 public:
-  const int materialNumber;
+  const int materialNumber; ///< Integer identifier for this material instance
+  /**
+   * @brief Constructs the material with a given set of material properties and an identifier.
+   * @param[in] matProperties_       Pointer to the array of material properties.
+   * @param[in] nMaterialProperties_ Number of entries in @p matProperties_.
+   * @param[in] materialNumber_      Integer identifying this material instance.
+   */
   MarmotMaterialHypoElastic( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : materialProperties( matProperties_ ),
       nMaterialProperties( nMaterialProperties_ ),
@@ -76,25 +82,60 @@ public:
 
   /// Structure to hold the material state at a material point in 3D
   struct state3D {
-    Marmot::Vector6d stress;              ///< Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector6d stress;               ///< Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+    /**
+     * @brief Default constructor for state3D
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
+    state3D()
+      : stress( Marmot::Vector6d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
+    /**
+     * @brief Constructor for initializing state3D
+     * @param stress_ Cauchy stress tensor in Voigt notation
+     * @param elasticEnergyDensity_ Elastic strain energy density
+     * @param dissipation_ Dissipation
+     * @param stateVars_ Pointer to array of state variables
+     */
+    state3D( Marmot::Vector6d stress_, double elasticEnergyDensity_, double dissipation_, double* stateVars_ )
+      : stress( stress_ ),
+        elasticEnergyDensity( elasticEnergyDensity_ ),
+        dissipation( dissipation_ ),
+        stateVars( stateVars_ )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 2D plane stress
+  /// @brief Structure holding the material state at a material point for 2D plane stress.
   struct state2D {
-    Marmot::Vector3d stress;              ///< 2D Cauchy stress tensor in Voigt notation
-    double           strainEnergyDensity; ///< Strain energy density
-    double*          stateVars;           ///< Pointer to array of state variables
+    Marmot::Vector3d stress;               ///< 2D Cauchy stress tensor in Voigt notation
+    double           elasticEnergyDensity; ///< Elastic strain energy density
+    double           dissipation;          ///< Dissipation
+    double*          stateVars;            ///< Pointer to array of state variables
+
+    state2D()
+      : stress( Marmot::Vector3d::Zero() ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr )
+    {
+    }
   };
 
   // Structure to hold the material state at a material point for 1D uniaxial stress
+  /// @brief Structure holding the material state at a material point for 1D uniaxial stress.
   struct state1D {
-    double  stress;              ///< 1D Cauchy stress
-    double  strainEnergyDensity; ///< Strain energy density
-    double* stateVars;           ///< Pointer to array of state variables
+    double  stress;               ///< 1D Cauchy stress
+    double  elasticEnergyDensity; ///< Elastic strain energy density
+    double  dissipation;          ///< Dissipation
+    double* stateVars;            ///< Pointer to array of state variables
+
+    state1D() : stress( 0.0 ), elasticEnergyDensity( 0.0 ), dissipation( 0.0 ), stateVars( nullptr ) {}
   };
 
+  /// @brief Structure carrying (pseudo-)time information passed to the material routines.
   struct timeInfo {
     double time; ///< Current (pseudo-)time
     double dT;   ///< (Pseudo-)time increment from the old (pseudo-)time to the current (pseudo-)time
@@ -117,40 +158,47 @@ public:
    * \f$\frac{\partial\boldsymbol{\sigma}^{(n+1)}}{\partial\boldsymbol{\varepsilon}^{(n+1)}}\f$.
    *
    * @param[in,out]	state  A state3D instance carrying stress, strain energy, and state variables
-   * @param[in,out]	dStressDDstrain	Algorithmic tangent representing the derivative of the Cauchy stress tensor with
+   * @param[in,out]	dStress_dStrain	Algorithmic tangent representing the derivative of the Cauchy stress tensor with
    * respect to the linearized strain
    * @param[in]	dStrain linearized strain increment
-   * @param[in]	timeOld	Old (pseudo-)time
-   * @param[in]	dt	(Pseudo-)time increment from the old (pseudo-)time to the current (pseudo-)time
+   * @param[in]	timeInfo Structure carrying the current (pseudo-)time and the (pseudo-)time increment
    */
-  virtual void computeStress( state3D&        state,
-                              double*         dStress_dStrain,
-                              const double*   dStrain,
-                              const timeInfo& timeInfo ) const = 0;
+  virtual void computeStress( state3D&                state,
+                              Marmot::Matrix6d&       dStress_dStrain,
+                              const Marmot::Vector6d& dStrain,
+                              const timeInfo&         timeInfo ) const = 0;
+
+  /**
+   * Explicit version of @ref computeStress for use in explicit time integration schemes.
+   * The algorithmic tangent is not needed in explicit schemes and will therefore not be computed.
+   * @param[in,out] state  A state3D instance carrying stress, strain energy, and state variables
+   * @param[in]   dStrain linearized strain increment
+   * @param[in]   timeInfo Structure carrying time information
+   *
+   * @note The default implementation calls @ref computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( state3D& state, const Marmot::Vector6d& dStrain, const timeInfo& timeInfo ) const
+  {
+    Marmot::Matrix6d dStress_dStrain = Marmot::Matrix6d::Zero();
+    computeStress( state, dStress_dStrain, dStrain, timeInfo );
+  }
 
   /**
    * Plane stress implementation of @ref computeStress.
    */
-  virtual void computePlaneStress( state2D&        stress2D,
-                                   double*         dStress_dStrain2D,
-                                   const double*   dStrain2D,
-                                   const timeInfo& timeInfo ) const;
+  virtual void computePlaneStress( state2D&                stress2D,
+                                   Marmot::Matrix3d&       dStress_dStrain2D,
+                                   const Marmot::Vector3d& dStrain2D,
+                                   const timeInfo&         timeInfo ) const;
 
   /**
    * Uniaxial stress implementation of @ref computeStress.
    */
   virtual void computeUniaxialStress( state1D&        stress1D,
-                                      double*         dStress_dStrain1D,
-                                      const double*   dStrain,
+                                      double&         dStress_dStrain1D,
+                                      const double    dStrain,
                                       const timeInfo& timeInfo ) const;
-
-  /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
 
   /**
    * @brief Get a view to the state variables.
@@ -168,6 +216,7 @@ public:
    * @return Total number of required state variables
    */
   int getNumberOfRequiredStateVars() const { return stateLayout.totalSize(); }
+
   /**
    * @brief Initialize the state variables at a material point.
    * @param stateVars Pointer to the state variable array
@@ -182,5 +231,19 @@ public:
     }
   }
 
-  virtual double getDensity() { return -1; }
+  /**
+   * @brief Get the maximum wave speed of the material.
+   * @param[in] state Current material state
+   * @return Maximum wave speed
+   * @details The default implementation computes the 3D algorithmic tangent and returns
+   *          `sqrt(max(C_ii) / rho)` with `C_ii` from the Voigt tangent diagonal entries.
+   */
+  virtual double getMaximumWaveSpeed( const state3D& state ) const;
+
+  /**
+   * @brief Get the mass density of the material.
+   * @param stateVars Pointer to the state variable array
+   * @return Mass density of the material
+   */
+  virtual double getDensity( const double* stateVars ) const = 0;
 };

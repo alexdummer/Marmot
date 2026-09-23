@@ -28,11 +28,10 @@
  */
 
 #pragma once
+#include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
-
-#define VOIGTFROMDIM( x ) ( ( ( x * x ) + x ) >> 1 )
 
 namespace Marmot {
   /**
@@ -56,6 +55,8 @@ namespace Marmot {
     {
       return (VoigtSize)( ( ( x * x ) + x ) >> 1 );
     }
+
+    inline constexpr int IndicesToVoigtIndex[3][3] = { { 0, 3, 4 }, { 3, 1, 5 }, { 4, 5, 2 } };
 
     /** @brief Predefined 6D vector with scaling factor (2x) for shear components in Voigt notation.
      * @details The vector contains scaling factors: {1, 1, 1, 2, 2, 2}.
@@ -314,7 +315,7 @@ namespace Marmot {
      * @note The input tensor `C` must follow the symmetry properties of a stiffness tensor for the
      *       conversion to be valid (minor symmetry).
      */
-    Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const Eigen::Tensor< double, 4 >& C );
+    Eigen::Matrix< double, 6, 6 > stiffnessToVoigt( const EigenTensors::Tensor3333d& C );
 
     /**
      * @brief Converts a stiffness matrix in Voigt notation (\f$ 6 \times 6 \f$ matrix) to a 4th-order stiffness tensor
@@ -323,7 +324,16 @@ namespace Marmot {
      * @return An Eigen::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
      *         The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
      */
-    Eigen::Tensor< double, 4 > voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness );
+    EigenTensors::Tensor3333d voigtToStiffness( const Eigen::Matrix< double, 6, 6 >& voigtStiffness );
+
+    /**
+     * @brief Converts a stiffness matrix in Voigt notation (\f$ 6 \times 6 \f$ matrix) to a 4th-order stiffness tensor
+     * (\f$ 3 \times 3 \times 3 \times 3 \f$ tensor).
+     * @param voigtStiffness The \f$ 6 \times 6 \f$ matrix representing the stiffness in Voigt notation.
+     * @return a Fastor::Tensor of rank 4 (4th-order tensor) representing the stiffness tensor.
+     *         The dimensions of the tensor are \f$ 3 \times 3 \times 3 \times 3 \f$.
+     */
+    Marmot::FastorStandardTensors::Tensor3333d voigtToStiffnessFastor( const Marmot::Matrix6d& voigtStiffness );
 
     /**
      * @brief Converts a stress vector in Voigt notation to its corresponding tensor form.

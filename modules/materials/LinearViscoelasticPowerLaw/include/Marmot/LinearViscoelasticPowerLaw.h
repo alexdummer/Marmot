@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -81,16 +79,12 @@ namespace Marmot::Materials {
 
     LinearViscoelasticPowerLaw( const double* materialProperties, int nMaterialProperties, int materialLabel );
 
-    void computeStress( state3D&        state,
-                        double*         dStressDDStrain,
-                        const double*   dStrain,
-                        const timeInfo& timeInfo ) const override;
+    void computeStress( state3D&                state,
+                        Marmot::Matrix6d&       dStressDDStrain,
+                        const Marmot::Vector6d& dStrain,
+                        const timeInfo&         timeInfo ) const override;
 
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kelvinStateVars", 6 * nKelvin );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
 
   private:
     /// @brief Young's modulus of the #nKelvin Kelvin units

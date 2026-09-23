@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -30,10 +28,11 @@
 #include "Marmot/MarmotEnergyDensityFunctions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotFiniteStrainPlasticity.h"
+#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
-#include <map>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 
@@ -70,7 +69,7 @@ namespace Marmot::Materials {
    * - @b 2: FDAF — Full return mapping; derivatives approximated via forward finite differences
    * - @b 3: FDAC — Full return mapping; derivatives approximated via central finite differences
    * - @b 4: CSDA — Full return mapping; derivatives via complex-step differentiation
-   * \ingroup materials_plasticity
+   * Plasticity material model.
    */
 
   class FiniteStrainJ2Plasticity : public MarmotMaterialFiniteStrain {
@@ -178,11 +177,17 @@ namespace Marmot::Materials {
                             const Deformation< 3 >&    deformation,
                             const TimeIncrement&       timeIncrement ) const;
 
-    void initializeStateLayout() override
+    /**
+     * @brief Get material density.
+     * @return Density value.
+     */
+    double getDensity( const double* stateVars ) const override
     {
-      stateLayout.add( "Fp", 9 );     // plastic deformation gradient
-      stateLayout.add( "alphaP", 1 ); // strain-like hardening variable
-      stateLayout.finalize();
+      if ( this->nMaterialProperties < 8 ) {
+        throw std::runtime_error(
+          std::string( MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 8." ) );
+      }
+      return this->density;
     }
 
     /** @brief Initialize state (sets @f$\boldsymbol F^{\mathrm p} = \boldsymbol I@f$) */

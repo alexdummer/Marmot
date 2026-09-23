@@ -1,6 +1,9 @@
 #include "Marmot/MarmotMaterialPointSolverHypoElastic.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotMaterialHypoElasticFactory.h"
 #include <fstream>
+
+using namespace Marmot::Solvers;
 
 MarmotMaterialPointSolverHypoElastic::MarmotMaterialPointSolverHypoElastic( std::string&         materialName,
                                                                             double*              materialProperties,
@@ -11,10 +14,8 @@ MarmotMaterialPointSolverHypoElastic::MarmotMaterialPointSolverHypoElastic( std:
   using namespace MarmotLibrary;
 
   // create material instance
-  material = MarmotMaterialHypoElasticFactory::createMaterial( materialName,
-                                                               materialProperties,
-                                                               nMaterialProperties,
-                                                               1 );
+  material = std::unique_ptr< MarmotMaterialHypoElastic >( dynamic_cast< MarmotMaterialHypoElastic* >(
+    MarmotMaterialHypoElasticFactory::createMaterial( materialName, materialProperties, nMaterialProperties, 1 ) ) );
 
   // get number of state variables
   nStateVars = material->getNumberOfRequiredStateVars();
@@ -91,17 +92,17 @@ void MarmotMaterialPointSolverHypoElastic::solveStep( const Step& step )
       stateVars = stateVarsTemp;
       counter++;
     }
-    catch ( std::runtime_error& e ) {
+    catch ( const Marmot::StressUpdateFailed& e ) {
       // if failed, reduce time step and retry
       std::cout << "    Increment failed: " << e.what() << ", reducing time step to " << dT / 2.0 << std::endl;
       if ( dT <= step.dTMin )
-        throw std::runtime_error( "Minimum time step reached, cannot proceed." );
+        throw Marmot::SolverTimestepExhausted( "Minimum time step reached, cannot proceed." );
       dT = std::max( dT / 2.0, step.dTMin );
     }
   }
 
   if ( std::abs( time - step.timeEnd ) > 1e-12 )
-    throw std::runtime_error( "Maximum number of increments reached, cannot proceed." );
+    throw Marmot::SolverIncrementsExhausted( "Maximum number of increments reached, cannot proceed." );
 }
 
 void MarmotMaterialPointSolverHypoElastic::solveIncrement( const Increment& increment )
@@ -140,17 +141,14 @@ void MarmotMaterialPointSolverHypoElastic::solveIncrement( const Increment& incr
     stressTemp = stress;
 
     // set up state and time info for material
-    MarmotMaterialHypoElastic::state3D state;
-    state.stress              = stressTemp;
-    state.strainEnergyDensity = 0.0;
-    state.stateVars           = stateVarsTemp.data();
+    MarmotMaterialHypoElastic::state3D state( stressTemp, 0.0, 0.0, stateVarsTemp.data() );
 
     MarmotMaterialHypoElastic::timeInfo timeInfo;
     timeInfo.time = increment.timeOld + increment.dT;
     timeInfo.dT   = increment.dT;
 
     // compute stress and tangent
-    material->computeStress( state, dStressDStrain.data(), dStrain.data(), timeInfo );
+    material->computeStress( state, dStressDStrain, dStrain, timeInfo );
 
     // get updated stress
     stressTemp = state.stress;
@@ -182,7 +180,7 @@ void MarmotMaterialPointSolverHypoElastic::solveIncrement( const Increment& incr
     counter++;
   }
   if ( counter >= options.maxIterations )
-    throw std::runtime_error( "Maximum number of iterations reached, no convergence." );
+    throw Marmot::SolverConvergenceFailed( "Maximum number of iterations reached, no convergence." );
 
   std::cout << "    Converged after " << counter << " iterations." << std::endl;
 
@@ -245,7 +243,8 @@ void MarmotMaterialPointSolverHypoElastic::exportHistoryToCSV( const std::string
 
   for ( int i = 0; i < nStateVars; i++ )
     file << std::setw( w - ( i < nStateVars - 1 ? 1 : 2 ) ) << "StateVar_" << i + 1
-         << ( i < nStateVars - 1 ? "," : "\n" );
+         << ( i < nStateVars - 1 ? "," : "" );
+  file << "\n";
 
   // write data with fixed-width formatting
   for ( const auto& entry : history ) {
@@ -258,7 +257,8 @@ void MarmotMaterialPointSolverHypoElastic::exportHistoryToCSV( const std::string
       file << std::setw( w - 1 ) << entry.strain[i] << ( i < 5 ? "," : "," );
 
     for ( int i = 0; i < nStateVars; i++ )
-      file << std::setw( w - 1 ) << entry.stateVars[i] << ( i < nStateVars - 1 ? "," : "\n" );
+      file << std::setw( w - 1 ) << entry.stateVars[i] << ( i < nStateVars - 1 ? "," : "" );
+    file << "\n";
   }
 
   file.close();

@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,19 +25,32 @@
 #pragma once
 #include "Marmot/MarmotStateHelpers.h"
 #include <Fastor/tensor/Tensor.h>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
+/**
+ * @class MarmotMaterialFiniteStrain
+ * @brief Abstract base class for mechanical materials in the finite strain regime.
+ *
+ * Derived classes implement computeStress() to provide the constitutive response
+ * (Kirchhoff stress, density, elastic energy density) and the algorithmic tangent.
+ */
 class MarmotMaterialFiniteStrain {
 
-  /**
-   * @class MarmotMaterialFiniteStrain
-   * @brief Abstract basic class for mechanical materials in the finite strain regime
-   */
 protected:
-  const double* materialProperties;
-  const int     nMaterialProperties;
+  const double* materialProperties;  ///< Pointer to the array of material property values.
+  const int     nMaterialProperties; ///< Number of material property values.
 
 public:
-  const int materialNumber;
+  const int materialNumber; ///< Unique identifier for this material instance.
+
+  /**
+   * @brief Construct a MarmotMaterialFiniteStrain.
+   * @param[in] matProperties_       Pointer to the array of material property values.
+   * @param[in] nMaterialProperties_ Number of material property values.
+   * @param[in] materialNumber_      Unique identifier for this material instance.
+   */
   MarmotMaterialFiniteStrain( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
     : materialProperties( matProperties_ ),
       nMaterialProperties( nMaterialProperties_ ),
@@ -64,9 +74,35 @@ public:
   template < int nDim >
   struct ConstitutiveResponse {
     Fastor::Tensor< double, nDim, nDim > tau;                  ///< Kirchhoff stress
-    double                               rho;                  ///< mass density
     double                               elasticEnergyDensity; ///< elastic energy per unit volume
+    double                               dissipation;          ///< dissipation per unit volume
     double*                              stateVars;            ///< pointer to state variables
+
+    /**
+     * @brief Default constructor.
+     * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+     */
+    ConstitutiveResponse()
+      : tau( Fastor::Tensor< double, nDim, nDim >( 0.0 ) ),
+        elasticEnergyDensity( 0.0 ),
+        dissipation( 0.0 ),
+        stateVars( nullptr )
+    {
+    }
+    /**
+     * @brief Constructor for initializing the constitutive response.
+     * @param tau_ Kirchhoff stress tensor.
+     * @param elasticEnergyDensity_ Elastic energy density.
+     * @param dissipation_ Dissipation per unit volume.
+     * @param stateVars_ Pointer to state variables.
+     */
+    ConstitutiveResponse( const Fastor::Tensor< double, nDim, nDim >& tau_,
+                          double                                      elasticEnergyDensity_,
+                          double                                      dissipation_,
+                          double*                                     stateVars_ )
+      : tau( tau_ ), elasticEnergyDensity( elasticEnergyDensity_ ), dissipation( dissipation_ ), stateVars( stateVars_ )
+    {
+    }
   };
 
   /**
@@ -123,8 +159,26 @@ public:
    * */
   virtual void computeStress( ConstitutiveResponse< 3 >& response,
                               AlgorithmicModuli< 3 >&    tangents,
-                              const Deformation< 3 >&,
-                              const TimeIncrement& ) const = 0;
+                              const Deformation< 3 >&    deformation,
+                              const TimeIncrement&       timeIncrement ) const = 0;
+
+  /**
+   * @brief Explicit version of computeStress for use in explicit time integration schemes.
+   * @param[inout] response ConstitutiveResponse instance
+   * @param[in] deformation Deformation instance
+   * @param[in] timeIncrement TimeIncrement instance
+   *
+   * @note The default implementation calls computeStress and ignores the algorithmic tangent.
+   * @note Derived classes may override this method for efficiency reasons.
+   */
+  virtual void computeStressExplicit( ConstitutiveResponse< 3 >& response,
+                                      const Deformation< 3 >&    deformation,
+                                      const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > tangents;
+    computeStress( response, tangents, deformation, timeIncrement );
+  }
+
   /**
    * @brief Computes the Kirchhoff stress given the deformation, time increment, and eigen deformation.
    * @param[inout] response ConstitutiveResponse instance
@@ -154,6 +208,19 @@ public:
                                    AlgorithmicModuli< 3 >&    algorithmicModuli,
                                    const Deformation< 3 >&    deformation,
                                    const TimeIncrement&       timeIncrement ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >& response,
+                                           const Deformation< 3 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement );
+  }
+
   /**
    * @brief Compute stress under plane strain conditions with eigen deformation.
    * @param[inout] response ConstitutiveResponse instance
@@ -170,6 +237,20 @@ public:
                                    const Deformation< 3 >&                     deformation,
                                    const TimeIncrement&                        timeIncrement,
                                    const std::tuple< double, double, double >& eigenDeformation ) const;
+
+  /**
+   * @brief Explicit version of computePlaneStrain with eigen deformation for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStrain and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStrainExplicit( ConstitutiveResponse< 3 >&                  response,
+                                           const Deformation< 3 >&                     deformation,
+                                           const TimeIncrement&                        timeIncrement,
+                                           const std::tuple< double, double, double >& eigenDeformation ) const
+  {
+    AlgorithmicModuli< 3 > algorithmicModuli;
+    computePlaneStrain( response, algorithmicModuli, deformation, timeIncrement, eigenDeformation );
+  }
+
   /**
    * @brief Compute stress under plane stress conditions.
    * @param[inout] response ConstitutiveResponse instance
@@ -186,9 +267,22 @@ public:
                                    const TimeIncrement&       timeIncrement ) const;
 
   /**
+   * @brief Explicit version of computePlaneStress for use in explicit time integration schemes.
+   * @note The default implementation calls computePlaneStress and ignores the algorithmic tangent.
+   */
+  virtual void computePlaneStressExplicit( ConstitutiveResponse< 2 >& response,
+                                           const Deformation< 2 >&    deformation,
+                                           const TimeIncrement&       timeIncrement ) const
+  {
+    AlgorithmicModuli< 2 > algorithmicModuli;
+    computePlaneStress( response, algorithmicModuli, deformation, timeIncrement );
+  }
+
+  /**
    * @brief Find the eigen deformation that corresponds to a given eigen stress.
    * @param initialGuess Initial guess for the eigen deformation.
    * @param eigenStress Target eigen stress.
+   * @param stateVars Pointer to the state variable array used during iteration.
    * @return Eigen deformation that corresponds to the given eigen stress.
    *
    * This function iteratively finds the eigen deformation that corresponds to a given eigen stress.
@@ -200,20 +294,12 @@ public:
     double*                                     stateVars ) const;
 
   /**
-   * @brief Initialize the layout of the state variables.
-   *
-   * This method has to be implemented in derived classes.
-   * @warning This method has to be called in the constructor of the derived class.
-   */
-  virtual void initializeStateLayout() = 0;
-
-  /**
    * @brief Get a view to the state variables.
    * @param stateName Name of the state variable
    * @param stateVars Pointer to the state variable array
    * @return StatView to access the state variable
    */
-  StateView getStateView( const std::string& stateName, double* stateVars ) const
+  virtual StateView getStateView( const std::string& stateName, double* stateVars ) const
   {
     return stateLayout.getStateView( stateVars, stateName );
   }
@@ -236,4 +322,70 @@ public:
       stateVars[i] = 0.0;
     }
   }
+
+  /**
+   * @brief Get the maximum wave speed of the material for a given deformation gradient.
+   * @param[in] stateVars Pointer to the state variable array
+   * @param[in] deformationGradient Current deformation gradient used as perturbation reference
+   * @return Maximum wave speed
+   * @details The default implementation computes diagonal Voigt tangent entries by centered
+   * finite differences and returns `sqrt(max(C_ii) / rho)`.
+   */
+  virtual double getMaximumWaveSpeed( const double*                         stateVars,
+                                      const Fastor::Tensor< double, 3, 3 >& deformationGradient ) const
+  {
+    constexpr double dEps = 1e-6;
+
+    const int nStateVars = getNumberOfRequiredStateVars();
+
+    double     maxStiffnessDiagonal = 0.0;
+    const auto timeIncrement        = TimeIncrement{ 0.0, 1.0 };
+
+    for ( int i = 0; i < 3; ++i ) {
+      std::vector< double > stateVarsPlus( nStateVars, 0.0 );
+      std::vector< double > stateVarsMinus( nStateVars, 0.0 );
+      if ( stateVars != nullptr && nStateVars > 0 ) {
+        std::copy_n( stateVars, nStateVars, stateVarsPlus.begin() );
+        std::copy_n( stateVars, nStateVars, stateVarsMinus.begin() );
+      }
+
+      auto FPlus  = deformationGradient;
+      auto FMinus = deformationGradient;
+      FPlus( i, i ) *= ( 1.0 + dEps );
+      FMinus( i, i ) *= ( 1.0 - dEps );
+
+      Deformation< 3 > deformationPlus{ FPlus };
+      Deformation< 3 > deformationMinus{ FMinus };
+
+      ConstitutiveResponse< 3 > responsePlus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsPlus.data() };
+      ConstitutiveResponse< 3 > responseMinus{ Fastor::Tensor< double, 3, 3 >( 0.0 ), 0.0, 0.0, stateVarsMinus.data() };
+
+      computeStressExplicit( responsePlus, deformationPlus, timeIncrement );
+      computeStressExplicit( responseMinus, deformationMinus, timeIncrement );
+
+      const double dLogStrain = std::log( 1.0 + dEps ) - std::log( 1.0 - dEps );
+      const double Cii        = ( responsePlus.tau( i, i ) - responseMinus.tau( i, i ) ) / dLogStrain;
+      maxStiffnessDiagonal    = std::max( maxStiffnessDiagonal, Cii );
+    }
+
+    const double density = getDensity( stateVars );
+    return density > 0.0 ? std::sqrt( std::max( 0.0, maxStiffnessDiagonal ) / density ) : 0.0;
+  }
+
+  /**
+   * @brief Set the characteristic element length at the considered evaluation point.
+   *
+   * Needed by materials whose softening behaviour is regularised via a mesh-adjusted softening modulus.
+   * The default implementation does nothing, so materials that do not depend on a length are unaffected.
+   *
+   * @param[in] length Characteristic element length.
+   */
+  virtual void setCharacteristicElementLength( double length ) {}
+
+  /**
+   * @brief Get the mass density of the material.
+   * @param[in] stateVars Pointer to the state variable array
+   * @return Mass density
+   */
+  virtual double getDensity( const double* stateVars ) const = 0;
 };

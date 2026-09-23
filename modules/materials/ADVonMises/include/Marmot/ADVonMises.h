@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -58,14 +56,12 @@ namespace Marmot::Materials {
 
     ADVonMises( const double* materialProperties, int nMaterialProperties, int materialNumber );
 
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kappa", 1 );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
 
   protected:
-    void computeStressAD( state3DAD& state, const autodiff::dual* dStrain, const timeInfo& timeInfo ) const override;
+    void computeStressAD( state3DAD&                 state,
+                          const Marmot::Vector6dual& dStrain,
+                          const timeInfo&            timeInfo ) const override;
 
     /**
      * @brief Hardening function.

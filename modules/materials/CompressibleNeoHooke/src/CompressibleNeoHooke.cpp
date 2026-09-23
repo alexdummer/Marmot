@@ -8,8 +8,6 @@
 #include <Fastor/tensor/Tensor.h>
 #include <Fastor/tensor_algebra/einsum_explicit.h>
 #include <Fastor/tensor_algebra/indicial.h>
-#include <autodiff/forward/dual/dual.hpp>
-#include <map>
 
 namespace Marmot::Materials {
 
@@ -23,7 +21,7 @@ namespace Marmot::Materials {
                                               int           materialLabel )
     : MarmotMaterialFiniteStrain( materialProperties, nMaterialProperties, materialLabel )
   {
-    initializeStateLayout();
+    stateLayout.finalize();
   }
 
   void CompressibleNeoHooke::computeStress( ConstitutiveResponse< 3 >& response,
@@ -48,8 +46,8 @@ namespace Marmot::Materials {
 
     const auto [tau, dTau_dPK2, dTau_dF] = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, F_ );
     response.tau                         = tau;
-    response.rho                         = 1.0;
     response.elasticEnergyDensity        = psi_;
+    response.dissipation                 = 0.0;
 
     // compute tangent operator
     tangents.dTau_dF = 2.0 * einsum< ijKL, KLMN >( einsum< ijKL, IJKL >( dTau_dPK2, d2Psi_dCdC ), dC_dF ) + dTau_dF;

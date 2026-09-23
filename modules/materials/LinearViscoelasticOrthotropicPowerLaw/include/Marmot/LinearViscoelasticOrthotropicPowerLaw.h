@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -52,13 +50,13 @@ namespace Marmot::Materials {
     /// @brief Young's modulus in x3 direction
     const double& E3;
 
-    /// @brief Poisson's ratio
+    /// @brief Poisson's ratio \f$\nu_{12} = -\varepsilon_2/\varepsilon_1\f$ for uniaxial stress in x1 direction
     const double& nu12;
 
-    /// @brief Poisson's ratio
+    /// @brief Poisson's ratio \f$\nu_{23} = -\varepsilon_3/\varepsilon_2\f$ for uniaxial stress in x2 direction
     const double& nu23;
 
-    /// @brief Poisson's ratio
+    /// @brief Poisson's ratio \f$\nu_{13} = -\varepsilon_3/\varepsilon_1\f$ for uniaxial stress in x1 direction
     const double& nu13;
 
     /// @brief Shear modulus in x1-x2 plane
@@ -108,17 +106,12 @@ namespace Marmot::Materials {
                                            int           nMaterialProperties,
                                            int           materialLabel );
 
-    void computeStress( state3D& state,
-                        double*  dStressDDStrain,
+    void computeStress( state3D&                state,
+                        Marmot::Matrix6d&       dStressDDStrain,
+                        const Marmot::Vector6d& dStrain,
+                        const timeInfo&         timeInfo ) const override;
 
-                        const double*   dStrain,
-                        const timeInfo& timeInfo ) const override;
-
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kelvinStateVars", 6 * nKelvin );
-      stateLayout.finalize();
-    }
+    double getDensity( const double* stateVars ) const override;
 
   private:
     /// @brief Elastic moduli of the Kelvin chain units

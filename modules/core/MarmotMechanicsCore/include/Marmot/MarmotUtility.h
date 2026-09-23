@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,6 +26,10 @@
 #pragma once
 #include "Marmot/MarmotTypedefs.h"
 
+/**
+ * @file MarmotUtility.h
+ * @brief Miscellaneous utility helpers for controlling increment sizes.
+ */
+
 namespace Marmot {
-  void discardTheIncrement( double& pNewDT, double value, const std::string& message );
 } // namespace Marmot
