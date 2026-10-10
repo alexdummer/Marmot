@@ -288,6 +288,144 @@ void testReproducingKernelApproximation()
     }
 }
 
+// the second derivatives of the basis are the derivatives of its gradient
+void testMonomialBasisHessian()
+{
+  for ( int dim = 1; dim <= 3; dim++ )
+    for ( int order = 0; order <= 3; order++ ) {
+      const int             n = Math::computeSizeOfMonomialBasisVector( order, dim );
+      const Eigen::VectorXd x = point( dim, 0.7 );
+      Eigen::MatrixXd       d2H( n, dim * dim );
+      Math::computeMonomialBasisHessian( order, x, d2H );
+      for ( int l = 0; l < dim; l++ ) {
+        const double    h  = 1e-6;
+        Eigen::VectorXd xp = x, xm = x;
+        xp[l] += h;
+        xm[l] -= h;
+        Eigen::MatrixXd dHp( n, dim ), dHm( n, dim );
+        Math::computeMonomialBasisGradient( order, xp, dHp );
+        Math::computeMonomialBasisGradient( order, xm, dHm );
+        const Eigen::MatrixXd fd = ( dHp - dHm ) / ( 2 * h );
+        for ( int k = 0; k < dim; k++ )
+          throwExceptionOnFailure( ( d2H.col( k * dim + l ) - fd.col( k ) ).norm() < 1e-7 * ( 1 + fd.norm() ),
+                                   MakeString() << "second derivative " << k << l << " of the basis of order " << order
+                                                << " in " << dim << "D" );
+      }
+    }
+}
+
+// the second derivatives of the 3rd order B-spline kernel are the derivatives of its gradient; the 2nd order B-spline
+// is only C^1 and provides none
+void testKernelFunctionHessian()
+{
+  for ( int dim = 1; dim <= 3; dim++ ) {
+    Eigen::VectorXd                                  c = point( dim, 0.2 );
+    const double                                     r = 1.3;
+    MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed kernel( c.data(), dim, r );
+    for ( double s : { 0.1, 0.3, 0.7 } ) {
+      Eigen::VectorXd x = c;
+      for ( int d = 0; d < dim; d++ )
+        x[d] += s * r * ( d % 2 ? -1 : 1 ) / ( d + 1 );
+      Eigen::MatrixXd hessian( dim, dim );
+      kernel.computeKernelFunctionHessian( x.data(), hessian.data() );
+      for ( int j = 0; j < dim; j++ ) {
+        const double    h  = 1e-6;
+        Eigen::VectorXd xp = x, xm = x, gp( dim ), gm( dim );
+        xp[j] += h;
+        xm[j] -= h;
+        kernel.computeKernelFunctionGradient( xp.data(), gp.data() );
+        kernel.computeKernelFunctionGradient( xm.data(), gm.data() );
+        const Eigen::VectorXd fd = ( gp - gm ) / ( 2 * h );
+        for ( int i = 0; i < dim; i++ )
+          throwExceptionOnFailure( std::abs( hessian( i, j ) - fd[i] ) < 1e-6 * ( 1 + std::abs( fd[i] ) ),
+                                   MakeString()
+                                     << "BSpline3rdOrderBoxed: second derivative " << i << j << " in " << dim << "D" );
+      }
+    }
+  }
+
+  Eigen::VectorXd                                  c = point( 2, 0.2 );
+  MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed kernel2( c.data(), 2, 1.3 );
+  double                                           hessian[4];
+  throwExceptionOnFailure( throws( [&]() { kernel2.computeKernelFunctionHessian( c.data(), hessian ); } ),
+                           "BSpline2ndOrderBoxed: the C^1 kernel must not provide second derivatives" );
+}
+
+// the RK second derivatives: values and gradients as computeShapeFunctionsAndGradients(), second derivatives that
+// are the derivatives of the gradients and that reproduce the second derivatives of the polynomial basis
+void testReproducingKernelApproximationHessian()
+{
+  using K3 = MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed;
+  for ( int dim = 1; dim <= 3; dim++ )
+    for ( int order = 1; order <= 3; order++ ) {
+      KernelGrid< K3 >                                   grid( dim, 7, order == 1 ? 1.6 : 2.4 + 0.4 * ( order - 2 ) );
+      const MarmotMeshfreeReproducingKernelApproximation approximation( dim, order );
+      const int                                          nNodes = grid.pointers.size();
+      const std::string label = MakeString() << "RK Hessians, order " << order << " in " << dim << "D";
+
+      auto gradients = [&]( const Eigen::VectorXd& x ) {
+        Eigen::VectorXd N( nNodes );
+        Eigen::MatrixXd dN( dim, nNodes );
+        approximation.computeShapeFunctionsAndGradients( x.data(), grid.pointers, N.data(), dN.data() );
+        return std::make_pair( N, dN );
+      };
+
+      for ( double offset : { 2.6, 3.05, 3.4 } ) {
+        const Eigen::VectorXd x = point( dim, offset );
+        Eigen::VectorXd       N( nNodes );
+        Eigen::MatrixXd       dN( dim, nNodes );
+        Eigen::VectorXd       d2N( nNodes * dim * dim );
+        approximation.computeShapeFunctionsGradientsAndHessians( x.data(),
+                                                                 grid.pointers,
+                                                                 N.data(),
+                                                                 dN.data(),
+                                                                 d2N.data() );
+
+        const auto [N0, dN0] = gradients( x );
+        throwExceptionOnFailure( ( N - N0 ).norm() < 1e-12 && ( dN - dN0 ).norm() < 1e-10,
+                                 label + ": values or gradients differ" );
+
+        for ( int j = 0; j < dim; j++ ) {
+          const double    h  = 1e-6;
+          Eigen::VectorXd xp = x, xm = x;
+          xp[j] += h;
+          xm[j] -= h;
+          const Eigen::MatrixXd fd  = ( gradients( xp ).second - gradients( xm ).second ) / ( 2 * h );
+          double                err = 0;
+          for ( int A = 0; A < nNodes; A++ )
+            for ( int i = 0; i < dim; i++ )
+              err = std::max( err, std::abs( d2N[A * dim * dim + i * dim + j] - fd( i, A ) ) );
+          throwExceptionOnFailure( err < 1e-6 * ( 1 + fd.cwiseAbs().maxCoeff() ),
+                                   MakeString() << label << ": second derivatives are not the derivatives of the "
+                                                << "gradients, error " << err );
+        }
+
+        // sum_A Psi_A,ij x_A^alpha = (x^alpha),ij for |alpha| <= order
+        const auto a = exponents( order, dim );
+        for ( const auto& alpha : a ) {
+          Eigen::MatrixXd reproduced = Eigen::MatrixXd::Zero( dim, dim );
+          for ( int A = 0; A < nNodes; A++ )
+            reproduced += Eigen::Map< const Eigen::MatrixXd >( &d2N[A * dim * dim], dim, dim ) *
+                          monomial( alpha, grid.centers[A] );
+          for ( int i = 0; i < dim; i++ )
+            for ( int j = 0; j < dim; j++ ) {
+              // (x^alpha),ij by lowering the exponents
+              std::vector< int > beta  = alpha;
+              double             coeff = beta[i];
+              beta[i]                  = std::max( beta[i] - 1, 0 );
+              coeff *= beta[j];
+              beta[j]               = std::max( beta[j] - 1, 0 );
+              const double expected = coeff == 0 ? 0.0 : coeff * monomial( beta, x );
+              throwExceptionOnFailure( std::abs( reproduced( i, j ) - expected ) < 1e-8,
+                                       MakeString() << label << ": second derivative " << i << j
+                                                    << " of a monomial not reproduced, " << reproduced( i, j ) << " vs "
+                                                    << expected );
+            }
+        }
+      }
+    }
+}
+
 void testImplicitGradientReproducingKernelApproximation()
 {
   using K2  = MarmotMeshfreeKernelFunctionBSpline2ndOrderBoxed;
@@ -489,8 +627,11 @@ void testFactories()
 int main()
 {
   auto testFunctions = std::vector< std::function< void() > >{ testMonomialBasis,
+                                                               testMonomialBasisHessian,
                                                                testKernelFunctions,
+                                                               testKernelFunctionHessian,
                                                                testReproducingKernelApproximation,
+                                                               testReproducingKernelApproximationHessian,
                                                                testImplicitGradientReproducingKernelApproximation,
                                                                testMomentMatrixGradient,
                                                                testCompletenessOrderIsReducedForFewNodes,

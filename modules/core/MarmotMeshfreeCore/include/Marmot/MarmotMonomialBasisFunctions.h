@@ -169,4 +169,68 @@ namespace Marmot::Math {
     _computeMonomialBasisGradientRecursion( order, x, res, 0, x.size() );
   }
 
+  /**
+   * @brief Recursive kernel of computeMonomialBasisHessian().
+   *
+   * Same traversal as _computeMonomialBasisRecursion(). By the product rule, column @f$ k d + l @f$ of an entry is
+   * multiplied by the @f$ m @f$-th derivative of @f$ x_c^i @f$ for each coordinate @f$ c @f$, where @f$ m @f$ is the
+   * number of indices among @f$ k, l @f$ equal to @f$ c @f$.
+   *
+   * @param[in]     order  Remaining total degree.
+   * @param[in]     x      Coordinates.
+   * @param[in,out] res    Hessian matrix (basis size @f$ \times d^2 @f$), initialized with ones by the caller.
+   * @param[in]     idxEnd First row of @p res treated by this call.
+   * @param[in]     dim    Number of (leading) coordinates treated by this call.
+   * @return One past the last row of @p res treated by this call.
+   */
+  inline int _computeMonomialBasisHessianRecursion( int                    order,
+                                                    const Eigen::VectorXd& x,
+                                                    Eigen::MatrixXd&       res,
+                                                    int                    idxEnd,
+                                                    int                    dim )
+  {
+    const int d = x.size();
+    for ( int i = 0; i <= order; i++ ) {
+
+      const int idxStart = idxEnd;
+
+      if ( dim > 1 )
+        idxEnd = _computeMonomialBasisHessianRecursion( order - i, x, res, idxEnd, dim - 1 );
+      else {
+        idxEnd++;
+      }
+
+      const double c                      = x[dim - 1];
+      const double factor                 = std::pow( c, i );
+      const double factorDerivative       = i > 0 ? i * std::pow( c, i - 1 ) : 0.0;
+      const double factorSecondDerivative = i > 1 ? i * ( i - 1 ) * std::pow( c, i - 2 ) : 0.0;
+
+      for ( int idx = idxStart; idx < idxEnd; idx++ )
+        for ( int k = 0; k < d; k++ )
+          for ( int l = 0; l < d; l++ ) {
+            const int m = ( k == dim - 1 ) + ( l == dim - 1 );
+            res( idx, k * d + l ) *= m == 0 ? factor : m == 1 ? factorDerivative : factorSecondDerivative;
+          }
+    }
+    return idxEnd;
+  }
+
+  /**
+   * @brief Evaluate the second derivatives @f$ \partial^2 \boldsymbol{H} / \partial x_k \partial x_l @f$ of the
+   * monomial basis.
+   *
+   * Row @f$ r @f$ corresponds to entry @f$ r @f$ of computeMonomialBasis() (same ordering), column @f$ k d + l @f$
+   * to @f$ \partial^2 / \partial x_k \partial x_l @f$.
+   *
+   * @param[in]  order Completeness order @f$ n @f$.
+   * @param[in]  x     Coordinates @f$ \boldsymbol{x} @f$ (the dimension @f$ d @f$ is taken from its size).
+   * @param[out] res   Hessian matrix; must already have the size computeSizeOfMonomialBasisVector( order, d )
+   *                   @f$ \times d^2 @f$.
+   */
+  inline void computeMonomialBasisHessian( int order, const Eigen::VectorXd& x, Eigen::MatrixXd& res )
+  {
+    res.setOnes();
+    _computeMonomialBasisHessianRecursion( order, x, res, 0, x.size() );
+  }
+
 } // namespace Marmot::Math

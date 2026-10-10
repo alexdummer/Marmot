@@ -115,6 +115,30 @@ namespace Marmot::Meshfree {
     double computeBSpline3rdOrderGradient( double coord_minus_center ) const;
 
     /**
+     * @brief Evaluate the kernel's second derivatives by the product rule.
+     *
+     * @f$ \partial^2 \phi_A / \partial x_i^2 = w''(x_i - x_{A,i}) \prod_{k \neq i} w(x_k - x_{A,k}) @f$ and, for
+     * @f$ i \neq j @f$, @f$ \partial^2 \phi_A / \partial x_i \partial x_j = w'(x_i - x_{A,i})\, w'(x_j - x_{A,j})
+     * \prod_{k \neq i, j} w(x_k - x_{A,k}) @f$.
+     *
+     * @param[in]  coord   Coordinates @f$ \boldsymbol{x} @f$ of the evaluation point (length @f$ d @f$).
+     * @param[out] hessian Second derivatives, @f$ d \times d @f$ (entry @f$ i d + j @f$).
+     */
+    void computeKernelFunctionHessian( const double* coord, double* hessian ) const override;
+
+    /**
+     * @brief Evaluate the second derivative @f$ \mathrm{d}^2 w / \mathrm{d}r^2 @f$ of the one-dimensional B-spline.
+     *
+     * @f[
+     *   \frac{\mathrm{d}^2 w}{\mathrm{d}r^2} = \frac{1}{a^2} \begin{cases} -8 + 24 z, & z \le \tfrac{1}{2}, \\
+     *   8 - 8 z, & \tfrac{1}{2} < z \le 1, \\ 0, & z > 1. \end{cases}
+     * @f]
+     * @param[in] coord_minus_center Signed distance @f$ r = x_i - x_{A,i} @f$ in one coordinate direction.
+     * @return @f$ \mathrm{d}^2 w / \mathrm{d}r^2 @f$.
+     */
+    double computeBSpline3rdOrderSecondDerivative( double coord_minus_center ) const;
+
+    /**
      * @brief Get the center coordinates.
      * @return The (non-owning) pointer passed to the constructor.
      */

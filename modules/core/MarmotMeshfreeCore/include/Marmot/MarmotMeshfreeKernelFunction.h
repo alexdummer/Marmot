@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <stdexcept>
+
 namespace Marmot::Meshfree {
 
   /**
@@ -62,6 +64,22 @@ namespace Marmot::Meshfree {
      * @param[out] grad  Gradient of the kernel with respect to @f$ \boldsymbol{x} @f$ (length @f$ d @f$).
      */
     virtual void computeKernelFunctionGradient( const double* coord, double* grad ) const = 0;
+
+    /**
+     * @brief Evaluate the second derivatives @f$ \partial^2 \phi_A / \partial x_i \partial x_j @f$ of the kernel.
+     *
+     * Only meaningful for @f$ C^2 @f$-continuous kernels; the default implementation throws.
+     *
+     * @param[in]  coord   Coordinates @f$ \boldsymbol{x} @f$ of the evaluation point (length @f$ d @f$).
+     * @param[out] hessian Second derivatives, @f$ d \times d @f$ (entry @f$ i d + j @f$ is
+     *                     @f$ \partial^2 \phi_A / \partial x_i \partial x_j @f$).
+     * @throws std::runtime_error if the kernel does not provide second derivatives.
+     */
+    virtual void computeKernelFunctionHessian( const double* coord, double* hessian ) const
+    {
+      throw std::runtime_error( "MarmotMeshfreeKernelFunction::computeKernelFunctionHessian: not provided by this "
+                                "kernel; a C^2-continuous kernel (e.g. the 3rd order B-spline) is required" );
+    }
 
     /**
      * @brief Get the axis-aligned bounding box of the support.

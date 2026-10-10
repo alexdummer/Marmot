@@ -333,4 +333,106 @@ namespace Marmot::Meshfree {
     }
   }
 
+  void MarmotMeshfreeReproducingKernelApproximation::computeShapeFunctionsGradientsAndHessians(
+    const double*                                             coord,
+    const std::vector< const MarmotMeshfreeKernelFunction* >& kernelFunctionCandidates,
+    double*                                                   shapeFunctionValues_,
+    double*                                                   shapeFunctionValueGradients_,
+    double*                                                   shapeFunctionValueHessians_ ) const
+  {
+    const auto coveringKernelFunctionIndices = findCoveringKernelFunctionIndices( coord, kernelFunctionCandidates );
+    const auto correctedCompletenessOrder    = getCorrectedCompletenessOrder( coveringKernelFunctionIndices.size() );
+
+    const int                                 d = _dim;
+    const Eigen::Map< const Eigen::VectorXd > coordVec( coord, d );
+    const auto sizeH = Math::computeSizeOfMonomialBasisVector( correctedCompletenessOrder, d );
+    if ( sizeH < 1 )
+      throw std::runtime_error( "Size of H vector is less than 1" );
+
+    const int                     nCandidates = kernelFunctionCandidates.size();
+    Eigen::Map< Eigen::VectorXd > N( shapeFunctionValues_, nCandidates );
+    Eigen::Map< Eigen::MatrixXd > dN( shapeFunctionValueGradients_, d, nCandidates );
+    Eigen::Map< Eigen::VectorXd > d2N( shapeFunctionValueHessians_, nCandidates * d * d );
+    N.setZero();
+    dN.setZero();
+    d2N.setZero();
+
+    // per covering kernel: the basis H at x - x_A with its first and second derivatives (columns i resp. i d + j),
+    // and the kernel with its first and second derivatives
+    struct Covering {
+      Eigen::VectorXd H, dPhi;
+      Eigen::MatrixXd dH, d2H, d2Phi;
+      double          phi;
+    };
+    const size_t            nCovering = coveringKernelFunctionIndices.size();
+    std::vector< Covering > cov( nCovering );
+
+    // the moment matrix and its first and second derivatives
+    Eigen::MatrixXd                M = Eigen::MatrixXd::Zero( sizeH, sizeH );
+    std::vector< Eigen::MatrixXd > dM( d, Eigen::MatrixXd::Zero( sizeH, sizeH ) );
+    std::vector< Eigen::MatrixXd > d2M( d * d, Eigen::MatrixXd::Zero( sizeH, sizeH ) );
+
+    for ( size_t k = 0; k < nCovering; k++ ) {
+      const auto*           kf = kernelFunctionCandidates[coveringKernelFunctionIndices[k]];
+      const Eigen::VectorXd r  = coordVec - Eigen::Map< const Eigen::VectorXd >( kf->getCenterCoordinates(), d );
+      Covering&             c  = cov[k];
+
+      c.H.resize( sizeH );
+      c.dH.resize( sizeH, d );
+      c.d2H.resize( sizeH, d * d );
+      Math::computeMonomialBasis( correctedCompletenessOrder, r, c.H );
+      Math::computeMonomialBasisGradient( correctedCompletenessOrder, r, c.dH );
+      Math::computeMonomialBasisHessian( correctedCompletenessOrder, r, c.d2H );
+
+      c.phi = kf->computeKernelFunction( coord );
+      c.dPhi.resize( d );
+      kf->computeKernelFunctionGradient( coord, c.dPhi.data() );
+      c.d2Phi.resize( d, d ); // symmetric, so the storage order does not matter
+      kf->computeKernelFunctionHessian( coord, c.d2Phi.data() );
+
+      const Eigen::MatrixXd HHT = c.H * c.H.transpose();
+      M += HHT * c.phi;
+      for ( int i = 0; i < d; i++ ) {
+        const Eigen::MatrixXd dHi_HT = c.dH.col( i ) * c.H.transpose();
+        dM[i] += ( dHi_HT + dHi_HT.transpose() ) * c.phi + HHT * c.dPhi( i );
+        for ( int j = 0; j < d; j++ ) {
+          const Eigen::MatrixXd d2Hij_HT = c.d2H.col( i * d + j ) * c.H.transpose();
+          const Eigen::MatrixXd dHi_dHjT = c.dH.col( i ) * c.dH.col( j ).transpose();
+          const Eigen::MatrixXd dHj_HT   = c.dH.col( j ) * c.H.transpose();
+          d2M[i * d + j] += ( d2Hij_HT + d2Hij_HT.transpose() + dHi_dHjT + dHi_dHjT.transpose() ) * c.phi +
+                            ( dHi_HT + dHi_HT.transpose() ) * c.dPhi( j ) +
+                            ( dHj_HT + dHj_HT.transpose() ) * c.dPhi( i ) + HHT * c.d2Phi( i, j );
+        }
+      }
+    }
+
+    // b = M^-1 H0, b_,i = -M^-1 M_,i b, b_,ij = -M^-1 ( M_,ij b + M_,i b_,j + M_,j b_,i )
+    const auto            MQr = factorizeMomentMatrix( M, coord, nCovering );
+    const Eigen::VectorXd b   = MQr.solve( H0Vector( sizeH ) );
+    Eigen::MatrixXd       db( sizeH, d );
+    for ( int i = 0; i < d; i++ )
+      db.col( i ) = -MQr.solve( dM[i] * b );
+    Eigen::MatrixXd d2b( sizeH, d * d );
+    for ( int i = 0; i < d; i++ )
+      for ( int j = 0; j < d; j++ )
+        d2b.col( i * d + j ) = -MQr.solve( d2M[i * d + j] * b + dM[i] * db.col( j ) + dM[j] * db.col( i ) );
+
+    for ( size_t k = 0; k < nCovering; k++ ) {
+      const int       A  = coveringKernelFunctionIndices[k];
+      const Covering& c  = cov[k];
+      const double    g  = b.dot( c.H );
+      Eigen::VectorXd dg = db.transpose() * c.H + c.dH.transpose() * b;
+
+      N( A )      = g * c.phi;
+      dN.col( A ) = dg * c.phi + g * c.dPhi;
+      for ( int i = 0; i < d; i++ )
+        for ( int j = 0; j < d; j++ ) {
+          const double d2g = d2b.col( i * d + j ).dot( c.H ) + db.col( i ).dot( c.dH.col( j ) ) +
+                             db.col( j ).dot( c.dH.col( i ) ) + b.dot( c.d2H.col( i * d + j ) );
+          d2N( A * d * d + i * d + j ) = d2g * c.phi + dg( i ) * c.dPhi( j ) + dg( j ) * c.dPhi( i ) +
+                                         g * c.d2Phi( i, j );
+        }
+    }
+  }
+
 }; // namespace Marmot::Meshfree

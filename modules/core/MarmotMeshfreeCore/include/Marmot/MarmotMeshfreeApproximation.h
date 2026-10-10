@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Marmot/MarmotMeshfreeKernelFunction.h"
+#include <stdexcept>
 #include <vector>
 
 namespace Marmot::Meshfree {
@@ -85,6 +86,31 @@ namespace Marmot::Meshfree {
       const std::vector< const MarmotMeshfreeKernelFunction* >& kernelFunctions,
       double*                                                   shapeFunctionValues,
       double*                                                   shapeFunctionValueGradients ) const = 0;
+
+    /**
+     * @brief Compute the shape function values, gradients and second derivatives in one pass.
+     *
+     * Requires kernels with second derivatives (MarmotMeshfreeKernelFunction::computeKernelFunctionHessian()); the
+     * default implementation throws.
+     *
+     * @param[in]  coord                       Coordinates @f$ \boldsymbol{x} @f$ of the evaluation point.
+     * @param[in]  kernelFunctions             The @f$ n @f$ candidate kernel functions.
+     * @param[out] shapeFunctionValues         Shape function values (length @f$ n @f$).
+     * @param[out] shapeFunctionValueGradients Shape function gradients, column-major @f$ d \times n @f$.
+     * @param[out] shapeFunctionValueHessians  Second derivatives (length @f$ n d^2 @f$): entry @f$ A d^2 + i d + j @f$
+     *                                         is @f$ \partial^2 \Psi_A / \partial x_i \partial x_j @f$.
+     * @throws std::runtime_error if the approximation does not provide second derivatives.
+     */
+    virtual void computeShapeFunctionsGradientsAndHessians(
+      const double*                                             coord,
+      const std::vector< const MarmotMeshfreeKernelFunction* >& kernelFunctions,
+      double*                                                   shapeFunctionValues,
+      double*                                                   shapeFunctionValueGradients,
+      double*                                                   shapeFunctionValueHessians ) const
+    {
+      throw std::runtime_error(
+        "MarmotMeshfreeApproximation::computeShapeFunctionsGradientsAndHessians: not provided by this approximation" );
+    }
   };
 
 } // namespace Marmot::Meshfree

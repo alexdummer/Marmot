@@ -302,6 +302,36 @@ namespace Marmot::Meshfree {
       const std::vector< const MarmotMeshfreeKernelFunction* >& kernelFunctions,
       double*                                                   shapeFunctionValues,
       double*                                                   shapeFunctionValueGradients_ColMajor ) const override;
+
+    /**
+     * @brief Compute the RK shape function values, their gradients and their exact second derivatives.
+     *
+     * With @f$ g_A = \boldsymbol{b}^T \boldsymbol{H} @f$ (@f$ \boldsymbol{H} @f$ at @f$ \boldsymbol{x} -
+     * \boldsymbol{x}_A @f$), by the product rule
+     * @f[
+     *   \Psi_{A,ij} = g_{A,ij}\, \phi_A + g_{A,i}\, \phi_{A,j} + g_{A,j}\, \phi_{A,i} + g_A\, \phi_{A,ij},
+     *   \qquad g_{A,ij} = \boldsymbol{b}_{,ij}^T \boldsymbol{H} + \boldsymbol{b}_{,i}^T \boldsymbol{H}_{,j} +
+     *   \boldsymbol{b}_{,j}^T \boldsymbol{H}_{,i} + \boldsymbol{b}^T \boldsymbol{H}_{,ij},
+     * @f]
+     * with @f$ \boldsymbol{b}_{,ij} = -\boldsymbol{M}^{-1} ( \boldsymbol{M}_{,ij} \boldsymbol{b} +
+     * \boldsymbol{M}_{,i} \boldsymbol{b}_{,j} + \boldsymbol{M}_{,j} \boldsymbol{b}_{,i} ) @f$ from differentiating
+     * @f$ \boldsymbol{M} \boldsymbol{b} = \boldsymbol{H}_0 @f$ twice. Requires kernels with second derivatives
+     * (MarmotMeshfreeKernelFunction::computeKernelFunctionHessian(), e.g. the 3rd order B-spline).
+     *
+     * @param[in]  coord               Evaluation point @f$ \boldsymbol{x} @f$ (length @f$ d @f$).
+     * @param[in]  kernelFunctions     The @f$ n_\mathrm{c} @f$ candidate kernel functions.
+     * @param[out] shapeFunctionValues Shape function values (length @f$ n_\mathrm{c} @f$).
+     * @param[out] shapeFunctionValueGradients_ColMajor Gradients, column-major @f$ d \times n_\mathrm{c} @f$.
+     * @param[out] shapeFunctionValueHessians Second derivatives (length @f$ n_\mathrm{c} d^2 @f$): entry
+     *                                 @f$ A d^2 + i d + j @f$ is @f$ \Psi_{A,ij} @f$; zero for non-covering candidates.
+     * @throws std::runtime_error if the basis is empty or a kernel provides no second derivatives.
+     */
+    virtual void computeShapeFunctionsGradientsAndHessians(
+      const double*                                             coord,
+      const std::vector< const MarmotMeshfreeKernelFunction* >& kernelFunctions,
+      double*                                                   shapeFunctionValues,
+      double*                                                   shapeFunctionValueGradients_ColMajor,
+      double*                                                   shapeFunctionValueHessians ) const override;
   };
 
 } // namespace Marmot::Meshfree

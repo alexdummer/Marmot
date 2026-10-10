@@ -93,6 +93,37 @@ namespace Marmot::Meshfree {
     return 0;
   }
 
+  double MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed::computeBSpline3rdOrderSecondDerivative(
+    double coord_minus_center ) const
+  {
+    const double z = std::abs( coord_minus_center ) / _supportRadius;
+
+    if ( z <= 1. / 2 )
+      return ( -8.0 + 24.0 * z ) / ( _supportRadius * _supportRadius );
+    if ( z <= 1 )
+      return ( 8.0 - 8.0 * z ) / ( _supportRadius * _supportRadius );
+    return 0;
+  }
+
+  void MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed::computeKernelFunctionHessian( const double* coord,
+                                                                                       double*       hessian ) const
+  {
+    for ( int i = 0; i < _dim; i++ )
+      for ( int j = 0; j < _dim; j++ ) {
+        double res = 1.0;
+        for ( int k = 0; k < _dim; k++ ) {
+          const double r = coord[k] - _centerCoord[k];
+          if ( k == i && k == j )
+            res *= computeBSpline3rdOrderSecondDerivative( r );
+          else if ( k == i || k == j )
+            res *= computeBSpline3rdOrderGradient( r );
+          else
+            res *= computeBSpline3rdOrder( r );
+        }
+        hessian[i * _dim + j] = res;
+      }
+  }
+
   const double* MarmotMeshfreeKernelFunctionBSpline3rdOrderBoxed::getCenterCoordinates() const
   {
     return _centerCoord;
