@@ -320,6 +320,18 @@ namespace Marmot::Meshfree {
      */
     virtual void getInterpolationVector( double* vec, const double* coordinates ) const = 0;
 
+    /// the particle's own center: grad(A,i) = d(shape function of node A)/dx_i, row-major
+    /// (nNodes x nDim). Used e.g. to weakly enforce a homogeneous Neumann (zero-flux) condition on
+    /// a field at a domain boundary via a penalty constraint on its normal gradient.
+    ///
+    /// Default implementation throws: only particle types that maintain a first-gradient
+    /// interpolation operator at their own center (e.g. GenericSmallStrainParticle's _dT_dx) need
+    /// to override this; it is not part of the universal particle interface.
+    virtual void getInterpolationGradientVectorAtCenter( double* grad ) const
+    {
+      throw std::runtime_error( "Not implemented for this particle type." );
+    };
+
     /// @brief Get the supported body load types.
     /// @return A map from the (upper case) load type name to the @c type integer of computeBodyLoad().
     virtual const std::unordered_map< std::string, int >& getSupportedBodyLoadTypes() const = 0;

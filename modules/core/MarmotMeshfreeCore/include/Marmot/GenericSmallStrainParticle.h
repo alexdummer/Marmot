@@ -187,6 +187,14 @@ namespace Marmot::Meshfree {
       _meshfreeApproximation.computeShapeFunctions( coordinates, _assignedKernelFunctions, vec );
     };
 
+    virtual void getInterpolationGradientVectorAtCenter( double* grad ) const override
+    {
+      // row-major (nNodes x nDim): grad[A * nDim + i] = d(shape function of node A)/dx_i
+      for ( int A = 0; A < _nNodes; A++ )
+        for ( int i = 0; i < nDim; i++ )
+          grad[A * nDim + i] = _dT_dx( i, A );
+    };
+
     virtual void getEvaluationCoordinates( double* coordinates ) const override { getVertexCoordinates( coordinates ); }
 
     virtual int getNumberOfEvaluationPoints() const override
@@ -243,6 +251,7 @@ namespace Marmot::Meshfree {
 
     virtual void vci_assignTestFunctionCorrectionTerms( const double* eta_AiC_RowMajor ) override
     {
+      _dT_dx = _dN_dx;
       for ( int A = 0; A < _nNodes; A++ ) {
         const double R_A = _assignedKernelFunctions[A]->isInSupport( _centerCoordinatesUndeformed.data() ) ? 1.0 : 0.0;
         for ( int i = 0; i < nDim; i++ ) {

@@ -96,7 +96,8 @@ namespace Marmot::Materials {
     // Deviatoric trial Cauchy stress and J2
     Tensor33t< dual > tTrial_dev = Marmot::deviatoric( tTrial );
     dual              J2_tTrial  = dual( 0.5 ) * einsum_ij_ij_hardcoded( tTrial_dev, tTrial_dev );
-    dual              f_tr       = sqrt( dual( 3.0 ) * J2_tTrial ) - fy( kappa, laplaceKappa );
+    dual              q_tr       = ( Math::makeReal( J2_tTrial ) > 1e-12 ) ? sqrt( dual( 3.0 ) * J2_tTrial ) : dual( 0.0 );
+    dual              f_tr       = q_tr - fy( kappa, laplaceKappa );
 
     // Flow direction: df_p/dt = (3/2) * t_dev / sqrt(3 J2)
     // df_p/dM_{KL} = (df_p/dt_{ij}) * (1/J) * F^{e,-1}_{Ki} * F^{e}_{jL}
