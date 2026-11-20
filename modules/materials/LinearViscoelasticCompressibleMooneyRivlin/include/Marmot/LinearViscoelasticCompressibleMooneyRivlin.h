@@ -36,9 +36,9 @@ namespace Marmot::Materials {
    * @brief Linear Viscoelastic Compressible Neo-Hookean hyperelastic material model
    * using the Pence–Gou potential, variant B.
    */
-  class LinearViscoelasticCompressibleMooneyRivlin : public MarmotMaterialFiniteStrain {
+  class LinearViscoelasticCompressibleMooneyRivlin : public Marmot::Materials::MaterialFiniteStrain {
   public:
-    using MarmotMaterialFiniteStrain::MarmotMaterialFiniteStrain;
+    using Marmot::Materials::MaterialFiniteStrain::MaterialFiniteStrain;
 
     /**
      * @brief Construct a LinearViscoelasticCompressibleMooneyRivlin material.
@@ -72,6 +72,12 @@ namespace Marmot::Materials {
                         const Deformation< 3 >&,
                         const TimeIncrement& ) const override;
 
+    /**
+     * @brief Mass density, which this model does not take as a material parameter.
+     * @return 1.0
+     */
+    double getDensity( const double* ) const override { return 1.0; }
+
   protected:
     /// @brief Mooney-Rivlin material parameter C1
     const double& C1;
@@ -80,10 +86,10 @@ namespace Marmot::Materials {
     /// @brief Bulk modulus
     const double& K;
     /// @brief Number of Maxwell elements
-    const ContinuumMechanics::FiniteStrain::Viscoelasticity::MaxwellProperties maxwellProperties;
+    const ContinuumMechanics::Viscoelasticity::MaxwellProperties maxwellProperties;
     /// @brief Initial compliance tensor
-    FastorStandardTensors::Tensor3333d initialCompliance;
-    void                               initializeStateLayout() override
+    Marmot::Math::Tensors::FastorTensors::Tensor3333d initialCompliance;
+    void                                              initializeStateLayout()
     {
       stateLayout.add( "S0_old", 9 );
       stateLayout.add( "creepStateVars", maxwellProperties.nMaxwell * 9 ); // plastic deformation gradient

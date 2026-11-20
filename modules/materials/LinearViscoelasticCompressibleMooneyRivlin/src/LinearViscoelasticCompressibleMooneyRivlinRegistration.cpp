@@ -1,14 +1,10 @@
 #include "Marmot/LinearViscoelasticCompressibleMooneyRivlin.h"
 #include "Marmot/MarmotMaterialFiniteStrainFactory.h"
 
-namespace Marmot::Materials {
+namespace {
+  using namespace Marmot::Materials;
 
-  namespace Registration {
-
-    using namespace MarmotLibrary;
-
-    const static bool LinearViscoelasticCompressibleMooneyRivlinRegistered = MarmotMaterialFiniteStrainFactory::
-      registerMaterial< LinearViscoelasticCompressibleMooneyRivlin >( "LINEARVISCOELASTICCOMPRESSIBLEMOONEYRIVLIN" );
-
-  } // namespace Registration
-} // namespace Marmot::Materials
+  const static bool LinearViscoelasticCompressibleMooneyRivlinRegistered = Marmot::Registry::
+    MaterialFiniteStrainFactory::registerMaterial< LinearViscoelasticCompressibleMooneyRivlin >(
+      "LINEARVISCOELASTICCOMPRESSIBLEMOONEYRIVLIN" );
+} // namespace
