@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,7 +26,7 @@
 #pragma once
 #include <Eigen/Core>
 
-namespace Marmot::NumericalAlgorithms {
+namespace Marmot::Math {
 
   /**
    * @class NewtonConvergenceChecker
@@ -158,4 +156,4 @@ namespace Marmot::NumericalAlgorithms {
                       const Eigen::VectorXd& dX,
                       int                    numberOfIterations );
   };
-} // namespace Marmot::NumericalAlgorithms
+} // namespace Marmot::Math

@@ -1,9 +1,7 @@
 #include "Marmot/LinearElastic.h"
 #include "Marmot/MarmotElasticity.h"
-#include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMath.h"
 #include "Marmot/MarmotTypedefs.h"
-#include "Marmot/MarmotUtility.h"
 #include "Marmot/MarmotVoigt.h"
 
 namespace Marmot::Materials {
@@ -13,9 +11,11 @@ namespace Marmot::Materials {
   using namespace ContinuumMechanics::Elasticity;
 
   LinearElastic::LinearElastic( const double* materialProperties, int nMaterialProperties, int materialNumber )
-    : MarmotMaterialHypoElastic::MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialNumber ),
+    : Marmot::Materials::MaterialHypoElastic::MaterialHypoElastic( materialProperties,
+                                                                   nMaterialProperties,
+                                                                   materialNumber ),
       // clang-format off
-          anisotropicType( nMaterialProperties == 2 || nMaterialProperties == 11 || nMaterialProperties == 15 ? static_cast< Type >( nMaterialProperties ) : static_cast< Type >( nMaterialProperties - 1 ) ),
+          anisotropicType( nMaterialProperties >= 15 ? Type::Orthotropic : (nMaterialProperties >= 11 ? Type::TransverseIsotropic : Type::Isotropic) ),
           E1(   materialProperties[0] ),
           E2(   anisotropicType == Type::Isotropic ? E1 : materialProperties[1] ),
           E3(   anisotropicType == Type::Orthotropic ? materialProperties[2] : E2 ),
@@ -41,18 +41,23 @@ namespace Marmot::Materials {
     }
     else {
       // set coordinate system for transversly isotropic and orthotropic materials
-      const int i          = nMaterialProperties % 2 == 0 ? nMaterialProperties - 7 : nMaterialProperties - 6;
-      Vector3d  direction1 = { materialProperties[i], materialProperties[i + 1], materialProperties[i + 2] };
-      Vector3d  direction2 = { materialProperties[i + 3], materialProperties[i + 4], materialProperties[i + 5] };
+      const int              i = nMaterialProperties % 2 == 0 ? nMaterialProperties - 7 : nMaterialProperties - 6;
+      Marmot::Math::Vector3d direction1 = { materialProperties[i],
+                                            materialProperties[i + 1],
+                                            materialProperties[i + 2] };
+      Marmot::Math::Vector3d direction2 = { materialProperties[i + 3],
+                                            materialProperties[i + 4],
+                                            materialProperties[i + 5] };
 
-      Matrix3d localCoordinateSystem = Marmot::Math::orthonormalCoordinateSystem( direction1, direction2 );
-      using namespace ContinuumMechanics::VoigtNotation::Transformations;
-      Matrix6d transformStrainToLocalSystem  = transformationMatrixStrainVoigt( localCoordinateSystem );
-      Matrix6d transformStressToGlobalSystem = transformationMatrixStressVoigt( localCoordinateSystem )
-                                                 .colPivHouseholderQr()
-                                                 .solve( Matrix6d::Identity() );
+      Marmot::Math::Matrix3d localCoordinateSystem = Marmot::Math::orthonormalCoordinateSystem( direction1,
+                                                                                                direction2 );
+      using namespace ContinuumMechanics::Voigt::Transformations;
+      Marmot::Math::Matrix6d transformStrainToLocalSystem  = transformationMatrixStrainVoigt( localCoordinateSystem );
+      Marmot::Math::Matrix6d transformStressToGlobalSystem = transformationMatrixStressVoigt( localCoordinateSystem )
+                                                               .colPivHouseholderQr()
+                                                               .solve( Marmot::Math::Matrix6d::Identity() );
 
-      Matrix6d localStiffnessTensor;
+      Marmot::Math::Matrix6d localStiffnessTensor;
 
       switch ( anisotropicType ) {
       case Type::Isotropic: globalStiffnessTensor = Isotropic::stiffnessTensor( E1, nu12 ); break;
@@ -68,31 +73,36 @@ namespace Marmot::Materials {
     }
   }
 
-  void LinearElastic::computeStress( state3D&        state,
-                                     double*         dStressDDStrain,
-                                     const double*   dStrain,
-                                     const timeInfo& timeInfo ) const
+  void LinearElastic::computeStress( state3D&                      state,
+                                     Marmot::Math::Matrix6d&       dStressDDStrain,
+                                     const Marmot::Math::Vector6d& dStrain,
+                                     const timeInfo&               timeInfo ) const
   {
 
     // map stress, strain increment and stiffness tensor
-    mVector6d             S( state.stress.data() );
-    Map< const Vector6d > dE( dStrain );
-    mMatrix6d             mC( dStressDDStrain );
-    mC = globalStiffnessTensor;
+    dStressDDStrain = globalStiffnessTensor;
 
     // Zero strain increment check
-    if ( ( dE.array() == 0 ).all() )
+    if ( ( dStrain.array() == 0 ).all() )
       return;
 
     // Compute stress increment
-    S += mC * dE;
+    const Marmot::Math::Vector6d dStress = dStressDDStrain * dStrain;
+
+    state.elasticEnergyDensity += ( state.stress + 0.5 * dStress ).dot( dStrain );
+
+    state.stress += dStress;
   }
 
-  double LinearElastic::getDensity()
+  double LinearElastic::getDensity( const double* stateVars ) const
   {
-    if ( nMaterialProperties == 3 || nMaterialProperties == 12 || nMaterialProperties == 16 )
-      return materialProperties[nMaterialProperties - 1];
-    else
-      throw std::runtime_error( "Density not specified for this material" );
+    int base_props = static_cast< int >( anisotropicType );
+    if ( nMaterialProperties >= base_props + 1 )
+      return materialProperties[base_props];
+    else {
+      throw std::runtime_error( std::string( Marmot::Utilities::MakeString()
+                                             << __PRETTY_FUNCTION__ << ": Density not specified for this material." ) );
+    }
   }
+
 } // namespace Marmot::Materials

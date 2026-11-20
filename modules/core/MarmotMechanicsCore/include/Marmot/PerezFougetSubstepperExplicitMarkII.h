@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -29,22 +27,41 @@
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotTypedefs.h"
 
-namespace Marmot::NumericalAlgorithms {
+/**
+ * @file PerezFougetSubstepperExplicitMarkII.h
+ * @brief Sub-stepper for semi-explicit return-mapping algorithms (Pérez–Fouget algorithm, Mark II).
+ */
 
-  /** Substepper for (linear elastic) elastoplastic materials, semi-explicit return mapping version
-   * */
+/// \cond DOXYGEN_SKIP
+// This file defines a class also named PerezFougetSubstepper in the same
+// namespace as PerezFougetSubstepperMarkII.h.  Having two Doxygen-documented
+// classes with the same fully-qualified name produces CRITICAL "Duplicate ID"
+// errors during the Sphinx build.  The semi-explicit variant is therefore
+// excluded from the generated API documentation; see PerezFougetSubstepperMarkII.h
+// for the documented interface.
+
+namespace Marmot::ContinuumMechanics::Algorithms {
+
+  /**
+   * @brief Sub-stepper for linear-elastic/elastoplastic materials using a semi-explicit return-mapping.
+   *
+   * Implements the Pérez–Fouget (CPPM) sub-stepping strategy for semi-explicit
+   * (forward-Euler-based) integration schemes.
+   *
+   * @tparam nSizeMatTangent Size of the square material tangent matrix.
+   */
   template < int nSizeMatTangent >
   class PerezFougetSubstepper {
 
   public:
     typedef Eigen::Matrix< double, nSizeMatTangent, nSizeMatTangent > TangentSizedMatrix;
     typedef Eigen::Matrix< double, nSizeMatTangent, 6 >               MatrixStateStrain;
-    PerezFougetSubstepper( double          initialStepSize,
-                           double          minimumStepSize,
-                           double          scaleUpFactor,
-                           double          scaleDownFactor,
-                           int             nPassesToIncrease,
-                           const Matrix6d& Cel );
+    PerezFougetSubstepper( double                        initialStepSize,
+                           double                        minimumStepSize,
+                           double                        scaleUpFactor,
+                           double                        scaleDownFactor,
+                           int                           nPassesToIncrease,
+                           const Marmot::Math::Matrix6d& Cel );
 
     /// check if subincrementation process has finished
     bool isFinished();
@@ -62,7 +79,7 @@ namespace Marmot::NumericalAlgorithms {
     void finishSubstep( const TangentSizedMatrix& dXdY, const TangentSizedMatrix& dYdXOld );
 
     /// get the consistent algorithmic tangent
-    Matrix6d consistentStiffness();
+    Marmot::Math::Matrix6d consistentStiffness();
 
   private:
     const double initialStepSize, minimumStepSize, scaleUpFactor, scaleDownFactor;
@@ -72,22 +89,22 @@ namespace Marmot::NumericalAlgorithms {
     double currentSubstepSize;
     int    passedSubsteps;
 
-    const Matrix6d&    Cel;
-    MatrixStateStrain  I76;
-    TangentSizedMatrix I77;
+    const Marmot::Math::Matrix6d& Cel;
+    MatrixStateStrain             I76;
+    TangentSizedMatrix            I77;
 
     MatrixStateStrain consistentTangent;
   };
-} // namespace Marmot::NumericalAlgorithms
+} // namespace Marmot::ContinuumMechanics::Algorithms
 
-namespace Marmot::NumericalAlgorithms {
+namespace Marmot::ContinuumMechanics::Algorithms {
   template < int n >
-  PerezFougetSubstepper< n >::PerezFougetSubstepper( double          initialStepSize,
-                                                     double          minimumStepSize,
-                                                     double          scaleUpFactor,
-                                                     double          scaleDownFactor,
-                                                     int             nPassesToIncrease,
-                                                     const Matrix6d& Cel )
+  PerezFougetSubstepper< n >::PerezFougetSubstepper( double                        initialStepSize,
+                                                     double                        minimumStepSize,
+                                                     double                        scaleUpFactor,
+                                                     double                        scaleDownFactor,
+                                                     int                           nPassesToIncrease,
+                                                     const Marmot::Math::Matrix6d& Cel )
     :
 
       initialStepSize( initialStepSize ),
@@ -102,7 +119,7 @@ namespace Marmot::NumericalAlgorithms {
   {
     consistentTangent = MatrixStateStrain::Zero();
     I76.setZero();
-    I76.topLeftCorner( 6, 6 ) = Matrix6d::Identity();
+    I76.topLeftCorner( 6, 6 ) = Marmot::Math::Matrix6d::Identity();
     I77                       = TangentSizedMatrix::Identity();
   }
 
@@ -138,9 +155,9 @@ namespace Marmot::NumericalAlgorithms {
     currentSubstepSize *= scaleDownFactor;
 
     if ( currentSubstepSize < minimumStepSize )
-      return MarmotJournal::warningToMSG( "UMAT: Substepper: Minimal stepzsize reached" );
+      return Marmot::Utilities::Journal::warningToMSG( "UMAT: Substepper: Minimal stepzsize reached" );
     else
-      return MarmotJournal::notificationToMSG( "UMAT: Substepper: Decreasing stepsize" );
+      return Marmot::Utilities::Journal::notificationToMSG( "UMAT: Substepper: Decreasing stepsize" );
   }
 
   template < int n >
@@ -158,8 +175,9 @@ namespace Marmot::NumericalAlgorithms {
   }
 
   template < int n >
-  Matrix6d PerezFougetSubstepper< n >::consistentStiffness()
+  Marmot::Math::Matrix6d PerezFougetSubstepper< n >::consistentStiffness()
   {
     return consistentTangent.topLeftCorner( 6, 6 );
   }
-} // namespace Marmot::NumericalAlgorithms
+} // namespace Marmot::ContinuumMechanics::Algorithms
+/// \endcond

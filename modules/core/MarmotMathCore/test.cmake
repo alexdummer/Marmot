@@ -5,7 +5,13 @@ SET(CURR_TEST_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/test")
 add_marmot_test("TestMarmotAutomaticDifferentiation" "${CURR_TEST_SOURCE_DIR}/TestMarmotAutomaticDifferentiation.cpp")
 
 # Tests for MarmotAutomaticDifferentiation
-add_marmot_test("TestMarmotAutomaticDifferentiationForFastor" "${CURR_TEST_SOURCE_DIR}/TestMarmotAutomaticDifferentiationForFastor.cpp")
+add_marmot_test("TestMarmotAutomaticDifferentiationForFastor" "${CURR_TEST_SOURCE_DIR}/TestMarmotAutomaticDifferentiationForFastor.cpp" REQUIRES MarmotFiniteStrainMechanicsCore)
+
+# Tests for Marmot's own scalar-mode (hyper-dual, Taylor) automatic differentiation
+add_marmot_test("TestMarmotAutomaticDifferentiationScalarMode" "${CURR_TEST_SOURCE_DIR}/TestMarmotAutomaticDifferentiationScalarMode.cpp")
+
+# Tests for Marmot's own vector-mode automatic differentiation
+add_marmot_test("TestMarmotAutomaticDifferentiationVectorMode" "${CURR_TEST_SOURCE_DIR}/TestMarmotAutomaticDifferentiationVectorMode.cpp")
 
 # Tests for MarmotMath
 add_marmot_test("TestMarmotMath" "${CURR_TEST_SOURCE_DIR}/TestMarmotMath.cpp")
@@ -27,3 +33,9 @@ add_marmot_test("TestNewtonConvergenceChecker" "${CURR_TEST_SOURCE_DIR}/TestNewt
 
 # Tests for MarmotTensorExponential
 add_marmot_test("TestMarmotTensorExponential" "${CURR_TEST_SOURCE_DIR}/TestMarmotTensorExponential.cpp")
+
+# Tests for MarmotEigenSystems
+add_marmot_test("TestMarmotEigenSystems" "${CURR_TEST_SOURCE_DIR}/TestMarmotEigenSystems.cpp")
+
+# Tests for MarmotFastorTensorBasics
+add_marmot_test("TestMarmotFastorTensorBasics" "${CURR_TEST_SOURCE_DIR}/TestMarmotFastorTensorBasics.cpp")

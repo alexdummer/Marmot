@@ -10,8 +10,8 @@ int main( int argc, char** argv )
 
   double appliedStrain = 0.1;
 
-  using namespace Marmot::Solvers;
-  using namespace Marmot::FastorStandardTensors;
+  using namespace Marmot::Materials;
+  using namespace Marmot::Math::Tensors::FastorTensors;
 
   // 1) Define the material model
   // std::string materialName = "COMPRESSIBLEFINITESTRAINLINEARVISCOELASTICITY_SUBSTEPPED";
@@ -20,19 +20,19 @@ int main( int argc, char** argv )
   // double properties[] = { 1, 0, 3500,1500, 1, 0.5, 1, 0.25, 10 };
   double properties[] = { 0, 3500, 1500, 2, 0.5, 10000000, 0.25, 10 };
   // double      properties[] = { 0, 3500, 1500,  double( nMaxwell ), 0.5, 1, 0.25, 10 };
-  int nProps = 6;
+  int nProps = 8;
 
   // 2) Configure solver options
-  MarmotMaterialPointSolverFiniteStrain::SolverOptions options;
+  MaterialPointSolverFiniteStrain::SolverOptions options;
   options.maxIterations       = 25;
   options.residualTolerance   = 1e-10;
   options.correctionTolerance = 1e-10;
 
   // 3) Create solver instance
-  MarmotMaterialPointSolverFiniteStrain solver( materialName, properties, nProps, options );
+  MaterialPointSolverFiniteStrain solver( materialName, properties, nProps, options );
 
   // 5) Define a loading step (Uniaxial extension in 11-direction)
-  MarmotMaterialPointSolverFiniteStrain::Step step;
+  MaterialPointSolverFiniteStrain::Step step;
   step.timeStart = 0.0;
   step.timeEnd   = 1e-4;
   step.dTStart   = 1e-5;
@@ -56,7 +56,7 @@ int main( int argc, char** argv )
   solver.addStep( step );
 
   // add a relaxation step
-  MarmotMaterialPointSolverFiniteStrain::Step relaxStep;
+  MaterialPointSolverFiniteStrain::Step relaxStep;
   relaxStep.timeStart                          = 1e-9;
   relaxStep.timeEnd                            = 20;
   relaxStep.dTStart                            = .1;

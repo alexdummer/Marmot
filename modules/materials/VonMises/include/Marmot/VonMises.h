@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -26,39 +24,74 @@
  */
 #pragma once
 #include "Marmot/MarmotMaterialHypoElastic.h"
+#include "Marmot/MarmotMaterialHypoElasticEnergyTangents.h"
 #include "Marmot/MarmotStateHelpers.h"
 
 namespace Marmot::Materials {
 
   /// @brief An implementation of classical J2 plasticity with isotropic hardening.
-  class VonMisesModel : public MarmotMaterialHypoElastic {
+  class VonMisesModel : public Marmot::Materials::MaterialHypoElastic,
+                        public Marmot::Materials::HypoElasticEnergyTangentProvider {
 
   public:
-    // using MarmotMaterialHypoElastic::MarmotMaterialHypoElastic;
+    /// @brief Numerical constants for the VonMises return-mapping algorithm.
+    struct Constants {
+      /// Convergence tolerance of the inner Newton iteration on \f$g(\Delta\kappa)\f$, relative to the norm of the
+      /// deviatoric trial stress: \f$|g| \leq \mathrm{tol}\, \|\boldsymbol{s}^\mathrm{trial}\|\f$. \f$g\f$ is a
+      /// difference of numbers of the size of \f$\|\boldsymbol{s}^\mathrm{trial}\|\f$, so its round-off is about
+      /// \f$\varepsilon \|\boldsymbol{s}^\mathrm{trial}\|\f$; an absolute tolerance cannot be met for large increments.
+      static constexpr double innerNewtonTol        = 1e-12;
+      static constexpr int    nMaxInnerNewtonCycles = 15; ///< Maximum number of inner Newton iterations.
+    };
 
-    VonMisesModel( const double* materialProperties, const int nMaterialProperties, const int materialLabel )
-      : MarmotMaterialHypoElastic( materialProperties, nMaterialProperties, materialLabel )
-    {
-      initializeStateLayout();
-    }
+  public:
+    VonMisesModel( const double* materialProperties, const int nMaterialProperties, const int materialLabel );
 
-    void computeStress( state3D&        state,
-                        double*         dStressDDStrain,
-                        const double*   dStrain,
-                        const timeInfo& timeInfo ) const override;
+    void computeStress( state3D&                      state,
+                        Marmot::Math::Matrix6d&       dStressDDStrain,
+                        const Marmot::Math::Vector6d& dStrain,
+                        const timeInfo&               timeInfo ) const override;
 
     /**
-     * @brief Get material density.
-     * @return Density value.
-     * @throw std::runtime_error if density is not defined.
+     * @brief computeStress(), which also yields the derivatives of the updated elastic energy density and
+     * dissipation wrt the strain increment (Marmot::Materials::HypoElasticEnergyTangentProvider).
+     * @param[in,out] state As for computeStress().
+     * @param[out] dStress_dStrain As for computeStress().
+     * @param[in] dStrain As for computeStress().
+     * @param[in] timeInfo As for computeStress().
+     * @param[out] dElasticEnergyDensity_dStrain Derivative of the updated elastic energy density.
+     * @param[out] dDissipation_dStrain Derivative of the updated dissipation.
      */
-    double getDensity() override;
+    void computeStressWithEnergyTangents( state3D&                      state,
+                                          Marmot::Math::Matrix6d&       dStress_dStrain,
+                                          const Marmot::Math::Vector6d& dStrain,
+                                          const timeInfo&               timeInfo,
+                                          Marmot::Math::Vector6d&       dElasticEnergyDensity_dStrain,
+                                          Marmot::Math::Vector6d&       dDissipation_dStrain ) const override;
 
-    void initializeStateLayout() override
-    {
-      stateLayout.add( "kappa", 1 );
-      stateLayout.finalize();
-    }
+    void computeStressExplicit( state3D&                      state,
+                                const Marmot::Math::Vector6d& dStrain,
+                                const timeInfo&               timeInfo ) const override;
+
+    double getDensity( const double* stateVars ) const override;
+
+  private:
+    /**
+     * @brief The implicit stress update of computeStress() and computeStressWithEnergyTangents(), with the check of
+     * its results; the energy tangents only if both pointers are given.
+     * @param[in,out] state Stress, energies and state variables.
+     * @param[out] dStress_dStrain Algorithmic tangent.
+     * @param[in] dStrain Strain increment.
+     * @param[in] timeInfo Time and time increment.
+     * @param[out] dElasticEnergyDensity_dStrain Derivative of the updated elastic energy density, or nullptr.
+     * @param[out] dDissipation_dStrain Derivative of the updated dissipation, or nullptr.
+     */
+    void computeStressImplicit( state3D&                      state,
+                                Marmot::Math::Matrix6d&       dStress_dStrain,
+                                const Marmot::Math::Vector6d& dStrain,
+                                const timeInfo&               timeInfo,
+                                Marmot::Math::Vector6d*       dElasticEnergyDensity_dStrain,
+                                Marmot::Math::Vector6d*       dDissipation_dStrain ) const;
   };
 
 } // namespace Marmot::Materials

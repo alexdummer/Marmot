@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -31,31 +28,35 @@
 #include <string>
 #include <unordered_map>
 
-namespace MarmotLibrary {
+namespace Marmot::Registry {
 
   /**
-   * @class MarmotElementFactory
+   * @class ElementFactory
    * @brief Factory class for creating element instances.
    * This class provides a mechanism to register elements by their code and name,
    * and to create element instances based on their properties.
    */
-  class MarmotElementFactory {
+  class MARMOT_API ElementFactory {
   public:
-    using elementFactoryFunction = MarmotElement* (*)( int elementNumber );
-    MarmotElementFactory()       = delete;
+    /// @brief Factory function pointer type: takes an element number and returns a new
+    /// Marmot::Discretizations::Elements::Element.
+    using elementFactoryFunction = Marmot::Discretizations::Elements::Element* (*)( int elementNumber );
+    ElementFactory()             = delete;
 
     /**
-     * @brief Create an element instance based on its code and number.
-     * @param[in] elementCode Unique code for the element.
+     * @brief Create an element instance based on its name and number.
+     * @param[in] elementName   Registered name of the element type.
      * @param[in] elementNumber Unique identifier for the element instance.
-     * @return Pointer to the created MarmotElement instance, or nullptr if creation failed.
+     * @return Pointer to the created Marmot::Discretizations::Elements::Element instance.
+     * @throws std::invalid_argument if @p elementName is not registered.
      */
-    static MarmotElement* createElement( const std::string& elementName, int elementNumber )
+    static Marmot::Discretizations::Elements::Element* createElement( const std::string& elementName,
+                                                                      int                elementNumber )
     {
       auto& map = elementFactoryFunctionByName();
       auto  it  = map.find( elementName );
       if ( it == map.end() ) {
-        throw std::invalid_argument( MakeString()
+        throw std::invalid_argument( Marmot::Utilities::MakeString()
                                      << __PRETTY_FUNCTION__ << "Element " + elementName + " not registered!" );
       }
 
@@ -64,8 +65,9 @@ namespace MarmotLibrary {
 
     /**
      * @brief Register an element with its name.
-     * @param[in] elementName Name of the element.
-     * @return True if registration was successful, false if the code already exists.
+     * @param[in] elementName     Name of the element type to register.
+     * @param[in] factoryFunction Factory function pointer that creates the element.
+     * @return True if registration was successful.
      */
     static bool registerElement( const std::string& elementName, elementFactoryFunction factoryFunction )
     {
@@ -82,4 +84,4 @@ namespace MarmotLibrary {
     static ElementFactoryMap& elementFactoryFunctionByName();
   };
 
-} // namespace MarmotLibrary
+} // namespace Marmot::Registry

@@ -1,52 +1,54 @@
 #include "Marmot/MarmotMaterialHypoElasticAD.h"
 #include "Marmot/MarmotAutomaticDifferentiation.h"
+#include "Marmot/MarmotAutomaticDifferentiationTypes.h"
 #include "Marmot/MarmotTypedefs.h"
 
 using namespace Eigen;
-using namespace autodiff;
+using namespace Marmot::Math::Differentiation::Automatic;
 
-void MarmotMaterialHypoElasticAD::computeStress( state3D&        state,
-                                                 double*         dStressDDStrain,
-                                                 const double*   dStrain,
-                                                 const timeInfo& timeInfo
+void Marmot::Materials::MaterialHypoElasticAD::computeStress( state3D&                      state,
+                                                              Marmot::Math::Matrix6d&       dStressDDStrain,
+                                                              const Marmot::Math::Vector6d& dStrain,
+                                                              const timeInfo&               timeInfo
 
 ) const
 {
 
   using namespace Marmot;
-  mVector6d       S( state.stress.data() );
-  const Vector6d  dEps = Map< const Vector6d >( dStrain );
-  Map< VectorXd > stateVars( state.stateVars, this->getNumberOfRequiredStateVars() );
+  Marmot::Math::mVector6d      S( state.stress.data() );
+  const Marmot::Math::Vector6d dEps = Map< const Marmot::Math::Vector6d >( dStrain.data() );
+  Map< VectorXd >              stateVars( state.stateVars, this->getNumberOfRequiredStateVars() );
 
   // remember old state
   const VectorXd stateVarsOld = stateVars;
-  const Vector6d SOld         = S;
 
-  mMatrix6d C( dStressDDStrain );
+  double elasticEnergyDensity;
+  double dissipation;
+
+  Marmot::Math::mMatrix6d C( dStressDDStrain.data() );
   // ----------------------------------------
   // autodiff part
   // ----------------------------------------
   // compute stress and tangent with autodiff
-  std::tie( S, C ) = Marmot::AutomaticDifferentiation::dF_dX(
-    [&]( const Marmot::Vector6dual dE_ ) {
+  std::tie( S, C ) = dF_dX< 6 >(
+    [&]( const Vector6AD& dE_ ) {
       // reset stateVars to old state
       stateVars = stateVarsOld;
 
-      Marmot::Vector6dual s( SOld );
-
       // construct AD state
-      state3DAD stateAD;
-      stateAD.stress              = s.data();
-      stateAD.strainEnergyDensity = state.strainEnergyDensity;
-      stateAD.stateVars           = stateVars.data();
-
+      state3DAD stateAD = state3DAD( state );
       // compute stress
-      computeStressAD( stateAD, dE_.data(), timeInfo );
+      computeStressAD( stateAD, dE_, timeInfo );
 
-      Marmot::Vector6dual stressAD( stateAD.stress );
+      elasticEnergyDensity = stateAD.elasticEnergyDensity;
+      dissipation          = stateAD.dissipation;
 
-      return stressAD;
+      Vector6AD res = stateAD.stress;
+      return res;
     },
     dEps );
   // ----------------------------------------
+
+  state.elasticEnergyDensity = elasticEnergyDensity;
+  state.dissipation          = dissipation;
 }

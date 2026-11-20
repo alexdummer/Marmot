@@ -1,0 +1,32 @@
+# This is a workflow to build the repo on macOS / arm64 (Apple Silicon), with the clang/libc++ toolchain of the
+# stack, which is stricter than the GCC/libstdc++ combination used by build_ubuntu.
+name: build_macos
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    # macos-latest is arm64 (Apple Silicon).
+    runs-on: macos-latest
+    steps:
+      - name: Check out Marmot
+        uses: actions/checkout@v7
+
+      # The compilers, CMake, Eigen, Fastor and Python of the stack: see .github/actions/setup-stack.
+      - uses: ./.github/actions/setup-stack
+
+      # Without the Python bindings until they build with the free-threaded Python of the stack (#154).
+      - name: Build, install and test Marmot
+        shell: bash -leo pipefail {0}
+        run: |
+          # Fail on compiler warnings (-Werror, /WX); local builds keep warnings non-fatal.
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" -DCMAKE_PREFIX_PATH="$CONDA_PREFIX" \
+            -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cmake --build build --parallel 4
+          cmake --install build
+          # --no-tests=error: ctest exits 0 on an empty test set, which would
+          # report success for a build that produced no tests at all.
+          ctest --test-dir build --output-on-failure --no-tests=error

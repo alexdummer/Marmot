@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,7 +26,6 @@
 #pragma once
 #include "Marmot/MarmotJournal.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
-#include <string>
 
 namespace Marmot::Materials {
 
@@ -43,12 +40,11 @@ namespace Marmot::Materials {
    * @par State variables
    * - No state variables required.
    *
-   * @ingroup materials_hyperelastic
    */
 
-  class CompressibleNeoHooke : public MarmotMaterialFiniteStrain {
+  class CompressibleNeoHooke : public Marmot::Materials::MaterialFiniteStrain {
   public:
-    using MarmotMaterialFiniteStrain::MarmotMaterialFiniteStrain;
+    using Marmot::Materials::MaterialFiniteStrain::MaterialFiniteStrain;
 
     /**
      * @brief Construct a CompressibleNeoHooke material.
@@ -81,9 +77,17 @@ namespace Marmot::Materials {
                         const TimeIncrement& ) const override;
 
     /**
-     * @brief Initialize the state layout (no state variables here).
+     * @brief Get material density.
+     * @return Density value.
      */
-    void initializeStateLayout() override { stateLayout.finalize(); }
+    double getDensity( const double* stateVars ) const override
+    {
+      if ( this->nMaterialProperties < 3 ) {
+        throw std::runtime_error( std::string(
+          Marmot::Utilities::MakeString() << __PRETTY_FUNCTION__ << ": No density given! nMaterialProperties < 3." ) );
+      }
+      return this->materialProperties[2];
+    }
   };
 
 } // namespace Marmot::Materials

@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,45 +25,49 @@
 #pragma once
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include <cassert>
+#include <functional>
 #include <string>
 #include <unordered_map>
 
-namespace MarmotLibrary {
+namespace Marmot::Registry {
 
   /**
-   * @class MarmotMaterialFactory
-   * @brief Factory class for creating material instances.
+   * @class MaterialFiniteStrainFactory
+   * @brief Factory class for creating finite-strain material instances.
    *
-   * This class provides a mechanism to register materials by their code and name,
+   * This class provides a mechanism to register materials by their name,
    * and to create material instances based on their properties.
    * It allows for dynamic material creation without hardcoding specific material types.
    */
-  class MarmotMaterialFiniteStrainFactory {
+  class MaterialFiniteStrainFactory {
   public:
+    /// Factory function type: creates a Marmot::Materials::MaterialFiniteStrain from properties and a material number.
     using materialFactoryFunction = std::function<
-      MarmotMaterialFiniteStrain*( const double* materialProperties, int nMaterialProperties, int materialNumber ) >;
+      Marmot::Materials::MaterialFiniteStrain*( const double* materialProperties,
+                                                int           nMaterialProperties,
+                                                int           materialNumber ) >;
 
-    MarmotMaterialFiniteStrainFactory() = delete;
+    MaterialFiniteStrainFactory() = delete;
 
     /**
-     * @brief Create a material instance based on its code and properties.
-     * @param[in] materialCode Unique code for the material.
+     * @brief Create a material instance based on its name and properties.
+     * @param[in] materialName       Registered name of the material type.
      * @param[in] materialProperties Array of material properties.
      * @param[in] nMaterialProperties Number of properties in the array.
      * @param[in] materialNumber Unique identifier for the material instance.
-     * @return Pointer to the created MarmotMaterial instance, or nullptr if creation failed.
+     * @return Pointer to the created Marmot::Materials::MaterialFiniteStrain instance.
      */
-    static MarmotMaterialFiniteStrain* createMaterial( const std::string& materialName,
-                                                       const double*      materialProperties,
-                                                       int                nMaterialProperties,
-                                                       int                materialNumber );
+    static Marmot::Materials::MaterialFiniteStrain* createMaterial( const std::string& materialName,
+                                                                    const double*      materialProperties,
+                                                                    int                nMaterialProperties,
+                                                                    int                materialNumber );
 
     /**
-     * @brief Register a material with its code and factory function.
-     * @param[in] materialCode Unique code for the material.
-     * @param[in] materialName Name of the material.
-     * @param[in] factoryFunction Function to create material instances.
-     * @return True if registration was successful, false if the code already exists.
+     * @brief Register a material type with its name.
+     * @tparam T  Concrete material class to register; must be constructible from
+     *            (const double* materialProperties, int nMaterialProperties, int materialNumber).
+     * @param[in] materialName Registered name for the material type.
+     * @return True if registration was successful.
      */
     template < class T >
     static bool registerMaterial( const std::string& materialName )
@@ -75,8 +76,11 @@ namespace MarmotLibrary {
 
       assert( map.find( materialName ) == map.end() && "Material already registered!" );
 
-      map[materialName] = []( const double* materialProperties, int nMaterialProperties, int materialNumber )
-        -> MarmotMaterialFiniteStrain* { return new T( materialProperties, nMaterialProperties, materialNumber ); };
+      map[materialName] = []( const double* materialProperties,
+                              int           nMaterialProperties,
+                              int           materialNumber ) -> Marmot::Materials::MaterialFiniteStrain* {
+        return new T( materialProperties, nMaterialProperties, materialNumber );
+      };
       return true;
     }
 
@@ -84,4 +88,4 @@ namespace MarmotLibrary {
     using MaterialFactoryMap = std::unordered_map< std::string, materialFactoryFunction >;
     static MaterialFactoryMap& materialFactoryFunctionByName();
   };
-} // namespace MarmotLibrary
+} // namespace Marmot::Registry

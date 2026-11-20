@@ -1,34 +1,37 @@
 #include "Marmot/FiniteStrainJ2Plasticity.h"
+#include "Marmot/MarmotAutomaticDifferentiationTypes.h"
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEnergyDensityFunctions.h"
+#include "Marmot/MarmotExceptions.h"
 #include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
 #include "Marmot/MarmotNumericalDifferentiation.h"
 #include "Marmot/MarmotNumericalDifferentiationForFastor.h"
 #include "Marmot/MarmotStressMeasures.h"
-#include <autodiff/forward/dual/dual.hpp>
 
 namespace Marmot::Materials {
 
   using namespace Marmot;
   using namespace Fastor;
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  using namespace Marmot::Math::Tensors::FastorIndices;
+  using namespace Marmot::Math::Tensors::FastorTensors;
 
   FiniteStrainJ2Plasticity::FiniteStrainJ2Plasticity( const double* materialProperties,
                                                       int           nMaterialProperties,
                                                       int           materialLabel )
-    : MarmotMaterialFiniteStrain( materialProperties, nMaterialProperties, materialLabel ),
+    : Marmot::Materials::MaterialFiniteStrain( materialProperties, nMaterialProperties, materialLabel ),
       K( materialProperties[0] ),
       G( materialProperties[1] ),
       fy( materialProperties[2] ),
       fyInf( materialProperties[3] ),
       eta( materialProperties[4] ),
       H( materialProperties[5] ),
-      implementationType( materialProperties[6] ),
+      implementationType( static_cast< int >( materialProperties[6] ) ),
       density( nMaterialProperties > 7 ? materialProperties[7] : 0.0 ) // TODO: make mandatory material parameter
   {
-    initializeStateLayout();
+    stateLayout.add( "Fp", 9 );                                        // plastic deformation gradient
+    stateLayout.add( "alphaP", 1 );                                    // strain-like hardening variable
+    stateLayout.finalize();
   }
 
   void FiniteStrainJ2Plasticity::computeStress( ConstitutiveResponse< 3 >& response,
@@ -63,7 +66,7 @@ namespace Marmot::Materials {
                                                                      const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -71,9 +74,9 @@ namespace Marmot::Materials {
     using namespace Marmot;
     using namespace Fastor;
     using namespace Eigen;
-    using namespace autodiff;
-    using namespace FastorIndices;
-    using namespace FastorStandardTensors;
+    using namespace Marmot::Math::Differentiation::Automatic;
+    using namespace Marmot::Math::Tensors::FastorIndices;
+    using namespace Marmot::Math::Tensors::FastorTensors;
 
     Tensor33d FeTrial = deformation.F % Fastor::inverse( FpOld );
     double    betaP, dBetaP_dAlphaP;
@@ -82,10 +85,10 @@ namespace Marmot::Materials {
     Tensor33d dFp;
     dFp.eye();
     Tensor33d Fe = FeTrial;
-    /* std::cout << "FeTrial: " << std::endl << FeTrial << std::endl; */
+
     if ( isYielding( FeTrial, betaP ) ) {
 
-      size_t counter = 0;
+      int counter = 0;
 
       using mV9d = Eigen::Map< Eigen::Matrix< double, 9, 1 > >;
       VectorXd X( 11 );
@@ -101,41 +104,49 @@ namespace Marmot::Materials {
       while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
         if ( counter > 10 )
-          throw std::runtime_error( "inner newton not converged" );
+          throw Marmot::Utilities::StressUpdateFailed( "inner newton not converged" );
 
         dX = -dR_dX.colPivHouseholderQr().solve( R );
         X += dX;
         std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial, alphaPOld );
         counter += 1;
       }
-      /* std::cout << "inner newton iters: " << counter << std::endl; */
 
       // update plastic deformation increment
-      Fe              = X.segment( 0, 9 ).data();
-      dFp             = Fastor::inverse( Fe ) % FeTrial;
-      alphaP          = X( 9 );
+      Fe     = X.segment( 0, 9 ).data();
+      dFp    = Fastor::inverse( Fe ) % FeTrial;
+      alphaP = X( 9 );
+#if defined( __GNUC__ ) && !defined( __clang__ )
+// GCC's -Wmaybe-uninitialized misfires on Fastor's AVX matmul copy of the state-variable TensorMap:
+// the mapped memory is initialized by the host, which GCC cannot see (observed with GCC 14 at x86-64-v3).
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       Tensor33d FpNew = dFp % Fp;
+#if defined( __GNUC__ ) && !defined( __clang__ )
+#  pragma GCC diagnostic pop
+#endif
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
-      std::tie( psi_, dPsi_dCe, d2Psi_dCedCe ) = EnergyDensityFunctions::SecondOrderDerived::PenceGouPotentialB( Ce,
-                                                                                                                 K,
-                                                                                                                 G );
+      std::tie( psi_, dPsi_dCe, d2Psi_dCedCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::
+        SecondOrder::PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      auto [betaP_new, _]           = computeBetaP( alphaP );
+      response.dissipation += 0.5 * ( betaP_new - betaP ) * ( alphaP - alphaPOld );
 
       // compute tangent operator
       using mM9d = Eigen::Map< Eigen::Matrix< double, 9, 9 > >;
@@ -148,13 +159,12 @@ namespace Marmot::Materials {
                                                .transpose();
       MatrixXd dXdDeformation = dR_dX.colPivHouseholderQr().solve( dYdDeformation );
 
-      Tensor3333d dFe_dF = Tensor3333d( Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
+      Tensor3333d dFe_dF = Tensor3333d(
+        Marmot::Math::Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
 
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
       Tensor3333d dPK2_dF  = einsum< ijKL, KLMN >( dPK2_dFe, dFe_dF );
 
-      /* tangents.dTau_dF = einsum< IJKL, KLMN >( dTau_dPK2, dPK2_dF ) +
-       * dTau_dF_partial; */
       tangents.dTau_dF = einsum< IJKL, KLMN >( dTau_dPK2, dPK2_dF ) + einsum< ijKL, KLMN >( dTau_dFe_partial, dFe_dF );
     }
     else {
@@ -162,29 +172,26 @@ namespace Marmot::Materials {
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
-      std::tie( psi_, dPsi_dCe, d2Psi_dCedCe ) = EnergyDensityFunctions::SecondOrderDerived::PenceGouPotentialB( Ce,
-                                                                                                                 K,
-                                                                                                                 G );
+      std::tie( psi_, dPsi_dCe, d2Psi_dCedCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::
+        SecondOrder::PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      response.dissipation += 0.0;
 
       // compute tangent operator
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
       Tensor3333d dFe_dF   = einsum< IK, JL, to_IJKL >( Spatial3D::I, transpose( Fastor::inverse( FpOld ) ) );
       Tensor3333d dPK2_dF  = einsum< ijKL, KLMN >( dPK2_dFe, dFe_dF );
 
-      /* tangents.dTau_dF = einsum< IJKL, KLMN >( dTau_dPK2, dPK2_dF ) +
-       * dTau_dF_partial; */
       tangents.dTau_dF = einsum< IJKL, KLMN >( dTau_dPK2, dPK2_dF ) + einsum< ijKL, KLMN >( dTau_dFe_partial, dFe_dF );
     }
   }
@@ -195,7 +202,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -203,9 +210,9 @@ namespace Marmot::Materials {
     using namespace Marmot;
     using namespace Fastor;
     using namespace Eigen;
-    using namespace autodiff;
-    using namespace FastorIndices;
-    using namespace FastorStandardTensors;
+    using namespace Marmot::Math::Differentiation::Automatic;
+    using namespace Marmot::Math::Tensors::FastorIndices;
+    using namespace Marmot::Math::Tensors::FastorTensors;
 
     Tensor33d FeTrial = deformation.F % Fastor::inverse( FpOld );
     double    betaP, dBetaP_dAlphaP;
@@ -231,7 +238,7 @@ namespace Marmot::Materials {
       /* std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial,
        * alphaPOld ); */
       R     = computeResidualVector( X, FeTrial, alphaP );
-      dR_dX = NumericalAlgorithms::Differentiation::forwardDifference(
+      dR_dX = Marmot::Math::Differentiation::Numerical::forwardDifference(
         [&]( const VectorXd& X_ ) {
           VectorXd Xout = computeResidualVector( X_, FeTrial, alphaP );
           return Xout;
@@ -241,14 +248,14 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw Marmot::Utilities::StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
           /* std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial,
            * alphaPOld ); */
           R     = computeResidualVector( X, FeTrial, alphaP );
-          dR_dX = NumericalAlgorithms::Differentiation::forwardDifference(
+          dR_dX = Marmot::Math::Differentiation::Numerical::forwardDifference(
             [&]( const VectorXd& X_ ) {
               VectorXd Xout = computeResidualVector( X_, FeTrial, alphaP );
               return Xout;
@@ -258,41 +265,53 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw Marmot::Utilities::StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
       // update plastic deformation increment
-      Fe              = X.segment( 0, 9 ).data();
-      dFp             = Fastor::inverse( Fe ) % FeTrial;
-      alphaP          = X( 9 );
+      Fe     = X.segment( 0, 9 ).data();
+      dFp    = Fastor::inverse( Fe ) % FeTrial;
+      alphaP = X( 9 );
+#if defined( __GNUC__ ) && !defined( __clang__ )
+// GCC's -Wmaybe-uninitialized misfires on Fastor's AVX matmul copy of the state-variable TensorMap:
+// the mapped memory is initialized by the host, which GCC cannot see (observed with GCC 14 at x86-64-v3).
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       Tensor33d FpNew = dFp % Fp;
+#if defined( __GNUC__ ) && !defined( __clang__ )
+#  pragma GCC diagnostic pop
+#endif
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
       using func_type    = std::function< Tensor33d( const Tensor33d& ) >;
       func_type computeS = [&]( const Tensor33d& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::TensorToTensor::forwardDifference( computeS, Ce );
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::TensorToTensor::forwardDifference( computeS, Ce, true );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      auto [betaP_new, _]           = computeBetaP( alphaP );
+      response.dissipation += 0.5 * ( betaP_new - betaP ) * ( alphaP - alphaPOld );
 
       // compute tangent operator
       using mM9d = Eigen::Map< Eigen::Matrix< double, 9, 9 > >;
@@ -305,7 +324,8 @@ namespace Marmot::Materials {
                                                .transpose();
       MatrixXd dXdDeformation = dR_dX.colPivHouseholderQr().solve( dYdDeformation );
 
-      Tensor3333d dFe_dF = Tensor3333d( Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
+      Tensor3333d dFe_dF = Tensor3333d(
+        Marmot::Math::Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
 
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
       Tensor3333d dPK2_dF  = einsum< ijKL, KLMN >( dPK2_dFe, dFe_dF );
@@ -319,26 +339,27 @@ namespace Marmot::Materials {
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
       using func_type    = std::function< Tensor33d( const Tensor33d& ) >;
       func_type computeS = [&]( const Tensor33d& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::TensorToTensor::forwardDifference( computeS, Ce );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::TensorToTensor::forwardDifference( computeS, Ce, true );
 
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -357,7 +378,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -365,9 +386,9 @@ namespace Marmot::Materials {
     using namespace Marmot;
     using namespace Fastor;
     using namespace Eigen;
-    using namespace autodiff;
-    using namespace FastorIndices;
-    using namespace FastorStandardTensors;
+    using namespace Marmot::Math::Differentiation::Automatic;
+    using namespace Marmot::Math::Tensors::FastorIndices;
+    using namespace Marmot::Math::Tensors::FastorTensors;
 
     Tensor33d FeTrial = deformation.F % Fastor::inverse( FpOld );
     double    betaP, dBetaP_dAlphaP;
@@ -393,7 +414,7 @@ namespace Marmot::Materials {
       /* std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial,
        * alphaPOld ); */
       R     = computeResidualVector( X, FeTrial, alphaP );
-      dR_dX = NumericalAlgorithms::Differentiation::centralDifference(
+      dR_dX = Marmot::Math::Differentiation::Numerical::centralDifference(
         [&]( const VectorXd& X_ ) {
           VectorXd Xout = computeResidualVector( X_, FeTrial, alphaP );
           return Xout;
@@ -403,14 +424,14 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw Marmot::Utilities::StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
           /* std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial,
            * alphaPOld ); */
           R     = computeResidualVector( X, FeTrial, alphaP );
-          dR_dX = NumericalAlgorithms::Differentiation::centralDifference(
+          dR_dX = Marmot::Math::Differentiation::Numerical::centralDifference(
             [&]( const VectorXd& X_ ) {
               VectorXd Xout = computeResidualVector( X_, FeTrial, alphaP );
               return Xout;
@@ -420,41 +441,53 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw Marmot::Utilities::StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
       // update plastic deformation increment
-      Fe              = X.segment( 0, 9 ).data();
-      dFp             = Fastor::inverse( Fe ) % FeTrial;
-      alphaP          = X( 9 );
+      Fe     = X.segment( 0, 9 ).data();
+      dFp    = Fastor::inverse( Fe ) % FeTrial;
+      alphaP = X( 9 );
+#if defined( __GNUC__ ) && !defined( __clang__ )
+// GCC's -Wmaybe-uninitialized misfires on Fastor's AVX matmul copy of the state-variable TensorMap:
+// the mapped memory is initialized by the host, which GCC cannot see (observed with GCC 14 at x86-64-v3).
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       Tensor33d FpNew = dFp % Fp;
+#if defined( __GNUC__ ) && !defined( __clang__ )
+#  pragma GCC diagnostic pop
+#endif
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
       using func_type    = std::function< Tensor33d( const Tensor33d& ) >;
       func_type computeS = [&]( const Tensor33d& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::TensorToTensor::centralDifference( computeS, Ce );
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::TensorToTensor::centralDifference( computeS, Ce, true );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      auto [betaP_new, _]           = computeBetaP( alphaP );
+      response.dissipation += 0.5 * ( betaP_new - betaP ) * ( alphaP - alphaPOld );
 
       // compute tangent operator
       using mM9d = Eigen::Map< Eigen::Matrix< double, 9, 9 > >;
@@ -467,7 +500,8 @@ namespace Marmot::Materials {
                                                .transpose();
       MatrixXd dXdDeformation = dR_dX.colPivHouseholderQr().solve( dYdDeformation );
 
-      Tensor3333d dFe_dF = Tensor3333d( Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
+      Tensor3333d dFe_dF = Tensor3333d(
+        Marmot::Math::Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
 
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
       Tensor3333d dPK2_dF  = einsum< ijKL, KLMN >( dPK2_dFe, dFe_dF );
@@ -481,27 +515,30 @@ namespace Marmot::Materials {
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
       using func_type    = std::function< Tensor33d( const Tensor33d& ) >;
       func_type computeS = [&]( const Tensor33d& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::TensorToTensor::centralDifference( computeS, Ce );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::TensorToTensor::centralDifference( computeS, Ce, true );
 
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      auto [betaP_new, _]           = computeBetaP( alphaP );
+      response.dissipation += 0.5 * ( betaP_new - betaP ) * ( alphaP - alphaPOld );
 
       // compute tangent operator
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
@@ -520,7 +557,7 @@ namespace Marmot::Materials {
                                                     const TimeIncrement&       timeIncrement ) const
   {
 
-    Tensor33d&      Fp = stateLayout.getAs< Tensor33d& >( response.stateVars, "Fp" );
+    TensorMap33d    Fp = stateLayout.getAs< TensorMap33d >( response.stateVars, "Fp" );
     const Tensor33d FpOld( Fp );
     double&         alphaP    = stateLayout.getAs< double& >( response.stateVars, "alphaP" );
     const double    alphaPOld = alphaP;
@@ -528,9 +565,9 @@ namespace Marmot::Materials {
     using namespace Marmot;
     using namespace Fastor;
     using namespace Eigen;
-    using namespace autodiff;
-    using namespace FastorIndices;
-    using namespace FastorStandardTensors;
+    using namespace Marmot::Math::Differentiation::Automatic;
+    using namespace Marmot::Math::Tensors::FastorIndices;
+    using namespace Marmot::Math::Tensors::FastorTensors;
 
     Tensor33d FeTrial = deformation.F % Fastor::inverse( FpOld );
     double    betaP, dBetaP_dAlphaP;
@@ -556,7 +593,7 @@ namespace Marmot::Materials {
       /* std::tie( R, dR_dX ) = computeResidualVectorAndTangent( X, FeTrial,
        * alphaPOld ); */
       /* R     = computeResidualVector( X, FeTrial, alphaP ); */
-      std::tie( R, dR_dX ) = NumericalAlgorithms::Differentiation::Complex::forwardDifference(
+      std::tie( R, dR_dX ) = Marmot::Math::Differentiation::Numerical::Complex::forwardDifference(
         [&]( const VectorXcd& X_ ) {
           VectorXcd Xout = computeResidualVector( X_, FeTrial, alphaP );
           return Xout;
@@ -567,11 +604,11 @@ namespace Marmot::Materials {
         while ( R.norm() > 1e-12 || dX.norm() > 1e-12 ) {
 
           if ( counter > 10 )
-            throw std::runtime_error( "inner newton not converged" );
+            throw Marmot::Utilities::StressUpdateFailed( "inner newton not converged" );
 
           dX = -dR_dX.colPivHouseholderQr().solve( R );
           X += dX;
-          std::tie( R, dR_dX ) = NumericalAlgorithms::Differentiation::Complex::forwardDifference(
+          std::tie( R, dR_dX ) = Marmot::Math::Differentiation::Numerical::Complex::forwardDifference(
             [&]( const VectorXcd& X_ ) {
               VectorXcd Xout = computeResidualVector( X_, FeTrial, alphaP );
               return Xout;
@@ -582,41 +619,56 @@ namespace Marmot::Materials {
         }
       }
       catch ( std::exception& e ) {
-        throw std::runtime_error( "return mapping failed: " + std::string( e.what() ) );
+        throw Marmot::Utilities::StressUpdateFailed( "return mapping failed: " + std::string( e.what() ) );
       }
       /* std::cout << "inner newton iters: " << counter << std::endl; */
 
       // update plastic deformation increment
-      Fe              = X.segment( 0, 9 ).data();
-      dFp             = Fastor::inverse( Fe ) % FeTrial;
-      alphaP          = X( 9 );
+      Fe     = X.segment( 0, 9 ).data();
+      dFp    = Fastor::inverse( Fe ) % FeTrial;
+      alphaP = X( 9 );
+#if defined( __GNUC__ ) && !defined( __clang__ )
+// GCC's -Wmaybe-uninitialized misfires on Fastor's AVX matmul copy of the state-variable TensorMap:
+// the mapped memory is initialized by the host, which GCC cannot see (observed with GCC 14 at x86-64-v3).
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       Tensor33d FpNew = dFp % Fp;
+#if defined( __GNUC__ ) && !defined( __clang__ )
+#  pragma GCC diagnostic pop
+#endif
       memcpy( Fp.data(), FpNew.data(), 9 * sizeof( double ) );
 
       using namespace ContinuumMechanics;
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
-      using func_type    = std::function< Tensor33t< complexDouble >( const Tensor33t< complexDouble >& ) >;
-      func_type computeS = [&]( const Tensor33t< complexDouble >& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+      using func_type    = std::function< Tensor33t< Marmot::Math::complexDouble >(
+        const Tensor33t< Marmot::Math::complexDouble >& ) >;
+      func_type computeS = [&]( const Tensor33t< Marmot::Math::complexDouble >& Ce_ ) {
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::Complex::TensorToTensor::forwardDifference( computeS, Ce );
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::Complex::TensorToTensor::forwardDifference( computeS,
+                                                                                                           Ce,
+                                                                                                           true );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
+      auto [betaP_new, _]           = computeBetaP( alphaP );
+      response.dissipation += 0.5 * ( betaP_new - betaP ) * ( alphaP - alphaPOld );
 
       // compute tangent operator
       using mM9d = Eigen::Map< Eigen::Matrix< double, 9, 9 > >;
@@ -629,7 +681,8 @@ namespace Marmot::Materials {
                                                .transpose();
       MatrixXd dXdDeformation = dR_dX.colPivHouseholderQr().solve( dYdDeformation );
 
-      Tensor3333d dFe_dF = Tensor3333d( Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
+      Tensor3333d dFe_dF = Tensor3333d(
+        Marmot::Math::Matrix9d( dXdDeformation.block< 9, 9 >( 0, 0 ).transpose() ).data() );
 
       Tensor3333d dPK2_dFe = einsum< ijKL, KLMN >( 2. * d2Psi_dCedCe, dCe_dFe );
       Tensor3333d dPK2_dF  = einsum< ijKL, KLMN >( dPK2_dFe, dFe_dF );
@@ -643,26 +696,30 @@ namespace Marmot::Materials {
       double      psi_;
       Tensor33d   Ce, dPsi_dCe;
       Tensor3333d dCe_dFe, d2Psi_dCedCe;
-      std::tie( Ce, dCe_dFe ) = DeformationMeasures::FirstOrderDerived::rightCauchyGreen( Fe );
+      std::tie( Ce, dCe_dFe ) = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::FirstOrder::
+        rightCauchyGreen( Fe );
 
       // compute energy density, first and second partial derivatives wrt Cauchy
       // Green deformation
-      using func_type    = std::function< Tensor33t< complexDouble >( const Tensor33t< complexDouble >& ) >;
-      func_type computeS = [&]( const Tensor33t< complexDouble >& Ce_ ) {
-        const auto [_psi, _dPsi_dCe] = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce_, K, G );
+      using func_type    = std::function< Tensor33t< Marmot::Math::complexDouble >(
+        const Tensor33t< Marmot::Math::complexDouble >& ) >;
+      func_type computeS = [&]( const Tensor33t< Marmot::Math::complexDouble >& Ce_ ) {
+        const auto [_psi, _dPsi_dCe] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+          PenceGouPotentialB( Ce_, K, G );
         return _dPsi_dCe;
       };
 
-      d2Psi_dCedCe = NumericalAlgorithms::Differentiation::Complex::TensorToTensor::forwardDifference( computeS, Ce );
+      d2Psi_dCedCe = Marmot::Math::Differentiation::Numerical::Complex::TensorToTensor::forwardDifference( computeS,
+                                                                                                           Ce,
+                                                                                                           true );
 
-      std::tie( psi_, dPsi_dCe ) = EnergyDensityFunctions::FirstOrderDerived::PenceGouPotentialB( Ce, K, G );
+      std::tie( psi_, dPsi_dCe ) = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+        PenceGouPotentialB( Ce, K, G );
       // compute Kirchhoff stress
       Tensor33d   PK2 = 2. * dPsi_dCe;
       Tensor3333d dTau_dPK2, dTau_dFe_partial;
-      std::tie( response.tau,
-                dTau_dPK2,
-                dTau_dFe_partial )  = StressMeasures::FirstOrderDerived::KirchhoffStressFromPK2( PK2, Fe );
-      response.rho                  = 1.0;
+      std::tie( response.tau, dTau_dPK2, dTau_dFe_partial ) = Marmot::ContinuumMechanics::StressMeasures::FirstOrder::
+        KirchhoffStressFromPK2( PK2, Fe );
       response.elasticEnergyDensity = psi_;
 
       // compute tangent operator
@@ -683,7 +740,7 @@ namespace Marmot::Materials {
       stateVars[i] = 0.0;
     }
 
-    Tensor33d& Fp = stateLayout.getAs< Tensor33d& >( stateVars, "Fp" );
+    TensorMap33d Fp = stateLayout.getAs< TensorMap33d >( stateVars, "Fp" );
     memcpy( Fp.data(), Spatial3D::I.data(), 9 * sizeof( double ) );
   }
 } // namespace Marmot::Materials

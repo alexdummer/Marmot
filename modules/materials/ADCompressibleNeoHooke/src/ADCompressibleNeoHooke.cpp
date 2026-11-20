@@ -1,0 +1,54 @@
+#include "Marmot/ADCompressibleNeoHooke.h"
+#include "Marmot/MarmotAutomaticDifferentiationTypes.h"
+#include "Marmot/MarmotDeformationMeasures.h"
+#include "Marmot/MarmotEnergyDensityFunctions.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
+#include "Marmot/MarmotMath.h"
+#include "Marmot/MarmotStressMeasures.h"
+#include <Fastor/expressions/linalg_ops/unary_trans_op.h>
+#include <Fastor/tensor/Tensor.h>
+#include <Fastor/tensor_algebra/einsum_explicit.h>
+#include <Fastor/tensor_algebra/indicial.h>
+
+namespace Marmot::Materials {
+
+  using namespace Marmot;
+  using namespace Fastor;
+  using namespace Marmot::Math::Tensors::FastorIndices;
+  using namespace Marmot::Math::Tensors::FastorTensors;
+
+  ADCompressibleNeoHooke::ADCompressibleNeoHooke( const double* materialProperties,
+                                                  int           nMaterialProperties,
+                                                  int           materialLabel )
+    : Marmot::Materials::MaterialFiniteStrainAD( materialProperties, nMaterialProperties, materialLabel )
+  {
+    stateLayout.finalize();
+  }
+
+  void ADCompressibleNeoHooke::computeStressAD( ConstitutiveResponseAD< 3 >& response,
+                                                const DeformationAD< 3 >&    deformation,
+                                                const TimeIncrement&         timeIncrement ) const
+  {
+    const double& K = materialProperties[0];
+    const double& G = materialProperties[1];
+
+    const auto& F_ = deformation.F;
+
+    using namespace ContinuumMechanics;
+    // compute Cauchy-Green deformation
+    const auto C = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::rightCauchyGreen( F_ );
+
+    // compute energy density and first derivative w.r.t Cauchy Green deformation
+    const auto [psi_, dPsi_dC] = Marmot::ContinuumMechanics::Elasticity::EnergyDensityFunctions::FirstOrder::
+      PenceGouPotentialB( C, K, G );
+
+    // compute Kirchhoff stress
+    Tensor33t< ADScalar< 3 > > PK2 = Marmot::Math::Tensors::multiplyFastorTensorWithScalar( dPsi_dC,
+                                                                                            ADScalar< 3 >( 2.0 ) );
+
+    const auto tau                = Marmot::ContinuumMechanics::StressMeasures::KirchhoffStressFromPK2( PK2, F_ );
+    response.tau                  = tau;
+    response.elasticEnergyDensity = Math::Tensors::makeReal( psi_ );
+    response.dissipation          = 0.0;
+  }
+} // namespace Marmot::Materials

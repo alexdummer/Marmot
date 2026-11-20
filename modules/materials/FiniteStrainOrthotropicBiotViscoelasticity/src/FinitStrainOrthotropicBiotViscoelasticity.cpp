@@ -1,5 +1,6 @@
 #include "Marmot/FiniteStrainOrthotropicBiotViscoelasticity.h"
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
+#include "Marmot/MarmotAutomaticDifferentiationTypes.h"
 #include "Marmot/MarmotDeformationMeasures.h"
 #include "Marmot/MarmotEigenSystems.h"
 #include "Marmot/MarmotElasticity.h"
@@ -11,20 +12,27 @@
 #include <Fastor/tensor/Tensor.h>
 #include <Fastor/tensor_algebra/einsum_explicit.h>
 #include <Fastor/tensor_algebra/indicial.h>
-#include <autodiff/forward/dual/dual.hpp>
 
 namespace Marmot::Materials {
 
   using namespace Marmot;
   using namespace Fastor;
-  using namespace FastorIndices;
-  using namespace FastorStandardTensors;
+  using namespace Marmot::Math::Tensors::FastorIndices;
+  using namespace Marmot::Math::Tensors::FastorTensors;
+
+  double FiniteStrainOrthotropicBiotViscoelasticity::getDensity( const double* stateVars ) const
+  {
+    if ( nMaterialProperties < ( 9 + 1 + maxwellProperties.nMaxwell * 2 ) ) {
+      throw std::runtime_error( "Not enough material properties provided to compute density." );
+    }
+    return materialProperties[nMaterialProperties - 1];
+  }
 
   FiniteStrainOrthotropicBiotViscoelasticity::FiniteStrainOrthotropicBiotViscoelasticity(
     const double* materialProperties,
     int           nMaterialProperties,
     int           materialLabel )
-    : MarmotMaterialFiniteStrainAD( materialProperties, nMaterialProperties, materialLabel ),
+    : Marmot::Materials::MaterialFiniteStrainAD( materialProperties, nMaterialProperties, materialLabel ),
       E1( materialProperties[0] ),
       E2( materialProperties[1] ),
       E3( materialProperties[2] ),
@@ -35,58 +43,13 @@ namespace Marmot::Materials {
       G13( materialProperties[7] ),
       G23( materialProperties[8] ),
       maxwellProperties(
-        ContinuumMechanics::FiniteStrain::Viscoelasticity::createMaxwellProperties( materialProperties[9],
-                                                                                    &materialProperties[10] ) )
+        ContinuumMechanics::Viscoelasticity::createMaxwellProperties( static_cast< int >( materialProperties[9] ),
+                                                                      &materialProperties[10] ) ),
+      dBiotStress_dU(
+        Marmot::Math::Tensors::makeOtherScalarType< ADScalar< 3 > >( ContinuumMechanics::Voigt::voigtToStiffness(
+          ContinuumMechanics::Elasticity::Orthotropic::
+            stiffnessTensor( E1, E2, E3, nu12, nu23, nu13, G12, G23, G13 ) ) ) )
   {
-
-    Matrix6d C_voigt = ContinuumMechanics::Elasticity::Orthotropic::stiffnessTensor( E1,
-                                                                                     E2,
-                                                                                     E3,
-                                                                                     nu12,
-                                                                                     nu23,
-                                                                                     nu13,
-                                                                                     G12,
-                                                                                     G23,
-                                                                                     G13 );
-
-    // populate dBiotStress_dU tensor from voigt matrix
-    // Voigt notation: 11->0, 22->1, 33->2, 23->3, 13->4, 12->5
-    dBiotStress_dU( 0, 0, 0, 0 ) = C_voigt( 0, 0 );
-    dBiotStress_dU( 1, 1, 1, 1 ) = C_voigt( 1, 1 );
-    dBiotStress_dU( 2, 2, 2, 2 ) = C_voigt( 2, 2 );
-    dBiotStress_dU( 1, 1, 0, 0 ) = dBiotStress_dU( 0, 0, 1, 1 ) = C_voigt( 1, 0 );
-    dBiotStress_dU( 2, 2, 0, 0 ) = dBiotStress_dU( 0, 0, 2, 2 ) = C_voigt( 2, 0 );
-    dBiotStress_dU( 2, 2, 1, 1 ) = dBiotStress_dU( 1, 1, 2, 2 ) = C_voigt( 2, 1 );
-    dBiotStress_dU( 0, 1, 0, 1 ) = dBiotStress_dU( 1,
-                                                   0,
-                                                   0,
-                                                   1 ) = dBiotStress_dU( 0,
-                                                                         1,
-                                                                         1,
-                                                                         0 ) = dBiotStress_dU( 1,
-                                                                                               0,
-                                                                                               1,
-                                                                                               0 ) = C_voigt( 3, 3 );
-    dBiotStress_dU( 1, 2, 1, 2 ) = dBiotStress_dU( 2,
-                                                   1,
-                                                   1,
-                                                   2 ) = dBiotStress_dU( 1,
-                                                                         2,
-                                                                         2,
-                                                                         1 ) = dBiotStress_dU( 2,
-                                                                                               1,
-                                                                                               2,
-                                                                                               1 ) = C_voigt( 5, 5 );
-    dBiotStress_dU( 0, 2, 0, 2 ) = dBiotStress_dU( 2,
-                                                   0,
-                                                   0,
-                                                   2 ) = dBiotStress_dU( 0,
-                                                                         2,
-                                                                         2,
-                                                                         0 ) = dBiotStress_dU( 2,
-                                                                                               0,
-                                                                                               2,
-                                                                                               0 ) = C_voigt( 4, 4 );
 
     initializeStateLayout();
   }
@@ -96,37 +59,49 @@ namespace Marmot::Materials {
                                                                     const TimeIncrement&         timeIncrement ) const
   {
 
-    using scalar  = autodiff::dual;
+    using scalar  = ADScalar< 3 >;
     const auto& F = deformation.F;
 
     using namespace ContinuumMechanics;
     // compute Cauchy-Green deformation
-    const Tensor33t< scalar > C = DeformationMeasures::rightCauchyGreen( F );
+    const Tensor33t< scalar > C = Marmot::ContinuumMechanics::Kinematics::DeformationMeasures::rightCauchyGreen( F );
 
+    // compute principal stretches and directions
     auto [lam, Q] = Math::computeEigenSystemJacobi( C );
     Tensor33t< scalar > principalStretch( 0. );
     for ( int i = 0; i < 3; ++i ) {
       principalStretch( i, i ) = sqrt( lam( i ) );
     }
+
+    // compute right stretch tensor in the original configuration
     const Tensor33t< scalar > U = Q % principalStretch % transpose( Q );
 
-    const Tensor33t< scalar > I = makeDual( Spatial3D::I );
+    const Tensor33t< scalar > I = Marmot::Math::Tensors::makeOtherScalarType< scalar >( Spatial3D::I );
 
-    Tensor33t< scalar > S_biot = einsum< ijkl, kl >( makeDual( dBiotStress_dU ), evaluate( U - I ) );
+    // compute Biot stress
+    Tensor33t< scalar > S_biot = einsum< ijkl, kl >( dBiotStress_dU, evaluate( U - I ) );
 
-    Tensor33d& S_biot_old = stateLayout.getAs< Tensor33d& >( response.stateVars, "S0_old" );
+    // get old Biot stress from state variables
+    Tensor33d S_biot_old( stateLayout.getPtr( response.stateVars, "S0_old" ) );
 
-    const Tensor33t< scalar > dS_biot = S_biot - makeDual( S_biot_old );
-    memcpy( S_biot_old.data(), makeReal( S_biot ).data(), 9 * sizeof( double ) );
+    // compute change in Biot stress
+    const Tensor33t< scalar > dS_biot = S_biot - Marmot::Math::Tensors::makeOtherScalarType< scalar >( S_biot_old );
 
-    // add viscoelastic contribution to deviatoric PK2 stress
-    ContinuumMechanics::FiniteStrain::Viscoelasticity::evaluateGeneralizedMaxwellModel<
-      scalar >( S_biot,
-                dS_biot,
-                timeIncrement.dT,
-                maxwellProperties,
-                stateLayout.getPtr( response.stateVars, "creepStateVars" ) );
+    // store current Biot stress in state variables
+    memcpy( stateLayout.getPtr( response.stateVars, "S0_old" ),
+            Marmot::Math::Tensors::makeReal( S_biot ).data(),
+            9 * sizeof( double ) );
 
+    // add viscoelastic contribution to Biot stress
+    ContinuumMechanics::Viscoelasticity::evaluateGeneralizedMaxwellModel< scalar >( S_biot,
+                                                                                    dS_biot,
+                                                                                    timeIncrement.dT,
+                                                                                    maxwellProperties,
+                                                                                    stateLayout
+                                                                                      .getPtr( response.stateVars,
+                                                                                               "creepStateVars" ) );
+
+    // transform to PK2 stress
     Tensor33t< scalar > S_biot_rotated = transpose( Q ) % S_biot % Q;
     Tensor33t< scalar > PK2_rotated( 0 );
 
@@ -137,9 +112,11 @@ namespace Marmot::Materials {
     }
     Tensor33t< scalar > PK2 = Q % PK2_rotated % transpose( Q );
 
-    const Tensor33t< scalar > tau = StressMeasures::KirchhoffStressFromPK2( PK2, F );
+    // transform to Kirchhoff stress
+    const Tensor33t< scalar > tau = Marmot::ContinuumMechanics::StressMeasures::KirchhoffStressFromPK2( PK2, F );
     response.tau                  = tau;
-    response.rho                  = 1.0;
-    response.elasticEnergyDensity = -1;
+    response.elasticEnergyDensity = 0.5 * einsum< ij, ij >( Marmot::Math::Tensors::makeReal( S_biot ),
+                                                            Marmot::Math::Tensors::makeReal( evaluate( U - I ) ) )
+                                            .toscalar();
   }
 } // namespace Marmot::Materials

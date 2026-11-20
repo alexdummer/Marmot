@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -29,16 +27,34 @@
 #include <map>
 #include <vector>
 
-namespace Marmot {
+namespace Marmot::Discretizations::Elements {
 
-  namespace FiniteElement {
+  /**
+   * @brief Utilities for constructing DOF-layout structures in finite element assemblies.
+   */
 
-    const std::vector< std::vector< std::string > > makeNodeFieldLayout(
-      const std::map< std::string, std::pair< int, int > >& fieldSizes );
+  /**
+   * @brief Builds a node-field layout from a map of field names to their DOF dimensions.
+   *
+   * @param fieldSizes Map from field name to a pair (dofsPerNode, nodesForField): the number of
+   * scalar components the field has at each of its nodes, and how many of the element's nodes
+   * carry that field (<= the element's total node count for a reduced-order field, e.g. corner-
+   * only pressure in a mixed Taylor-Hood-style element).
+   * @return A 2-D vector where each row corresponds to a node and each entry is a field name.
+   */
+  const std::vector< std::vector< std::string > > makeNodeFieldLayout(
+    const std::map< std::string, std::pair< int, int > >& fieldSizes );
 
-    std::vector< int > makeBlockedLayoutPermutationPattern(
-      const std::vector< std::vector< std::string > >&      nodeFields,
-      const std::map< std::string, std::pair< int, int > >& fieldSizes );
+  /**
+   * @brief Computes the DOF permutation pattern for a blocked (field-major) layout.
+   *
+   * @param nodeFields     Node-field layout as returned by makeNodeFieldLayout().
+   * @param fieldSizes     Map from field name to a pair (dofsPerNode, nodesForField); see
+   * makeNodeFieldLayout().
+   * @return Integer permutation vector that reorders DOFs from node-major to field-major order.
+   */
+  std::vector< int > makeBlockedLayoutPermutationPattern(
+    const std::vector< std::vector< std::string > >&      nodeFields,
+    const std::map< std::string, std::pair< int, int > >& fieldSizes );
 
-  } // namespace FiniteElement
-} // namespace Marmot
+} // namespace Marmot::Discretizations::Elements

@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,17 +26,26 @@
 #pragma once
 #include "Marmot/MarmotTypedefs.h"
 
-namespace Marmot::NumericalAlgorithms {
+/**
+ * @file PerezFougetSubstepperTime.h
+ * @brief Time-variant variant of the Pérez–Fouget sub-stepper.
+ *
+ * A modified version of the Pérez–Fouget sub-stepper that accounts for a
+ * time-variant elastic stiffness tensor \f$ \mathbb{C}^\mathrm{el}(t_{n+1}) \f$.
+ * The algorithmic formulation is unchanged; the only difference is that the
+ * current elastic tangent must be supplied when extending the consistent tangent.
+ */
+
+namespace Marmot::ContinuumMechanics::Algorithms {
   /**
-  * Modified Version of the Perez-Fouget Substepper,
-  * to account for time-variant elastic Stiffness Tensor Cel(t_n+1)
-  * NO changes in algorithmic formulation!
-
-  * modifications:
-  * - elastic substep consistent tangent matrix update needs current Cel(t) for update
-  * - No need for Cel for object construction anymore
-  */
-
+   * @brief Pérez–Fouget sub-stepper with time-dependent elastic stiffness.
+   *
+   * Compared to @ref PerezFougetSubstepper, this variant does not require the
+   * elastic stiffness @c Cel at construction time; instead it is passed
+   * explicitly to @c extendConsistentTangent at each sub-step.
+   *
+   * @tparam sizeMaterialState  Total size of the material state vector.
+   */
   template < int sizeMaterialState >
   class PerezFougetSubstepperTime {
 
@@ -46,6 +53,14 @@ namespace Marmot::NumericalAlgorithms {
     /// Matrix to carry the Jacobian of a material state
     typedef Eigen::Matrix< double, sizeMaterialState, sizeMaterialState > TangentSizedMatrix;
 
+    /**
+     * @brief Construct a PerezFougetSubstepperTime.
+     * @param initialStepSize   Initial sub-step size as a fraction of the total increment (0, 1].
+     * @param minimumStepSize   Minimum allowable sub-step size; triggers a warning if reached.
+     * @param scaleUpFactor     Factor by which the sub-step size is increased after @p nPassesToIncrease successes.
+     * @param scaleDownFactor   Factor applied to the sub-step size when convergence fails.
+     * @param nPassesToIncrease Number of successful sub-steps before the step size may be increased.
+     */
     PerezFougetSubstepperTime( double initialStepSize,
                                double minimumStepSize,
                                double scaleUpFactor,
@@ -60,9 +75,24 @@ namespace Marmot::NumericalAlgorithms {
     /// decrease the next subincrement
     bool decreaseSubstepSize();
 
-    void     extendConsistentTangent( const Matrix6d& CelT );
-    void     extendConsistentTangent( const Matrix6d& CelT, const TangentSizedMatrix& matTangent );
-    Matrix6d consistentStiffness();
+    /**
+     * @brief Accumulate the consistent tangent for an elastic sub-step.
+     * @param CelT  Elastic stiffness matrix (6×6) at the current (end-of-sub-step) time.
+     */
+    void extendConsistentTangent( const Marmot::Math::Matrix6d& CelT );
+
+    /**
+     * @brief Accumulate the consistent tangent for an elastoplastic sub-step.
+     * @param CelT        Elastic stiffness matrix (6×6) at the current time.
+     * @param matTangent  Inverse algorithmic tangent (`TangentSizedMatrix`); left-applied to the current accumulation.
+     */
+    void extendConsistentTangent( const Marmot::Math::Matrix6d& CelT, const TangentSizedMatrix& matTangent );
+
+    /**
+     * @brief Return the assembled consistent algorithmic stiffness after all sub-steps are finished.
+     * @return  The 6×6 consistent tangent operator.
+     */
+    Marmot::Math::Matrix6d consistentStiffness();
 
   private:
     const double initialStepSize, minimumStepSize, scaleUpFactor, scaleDownFactor;
@@ -75,11 +105,11 @@ namespace Marmot::NumericalAlgorithms {
     TangentSizedMatrix elasticTangent;
     TangentSizedMatrix consistentTangent;
   };
-} // namespace Marmot::NumericalAlgorithms
+} // namespace Marmot::ContinuumMechanics::Algorithms
 
 #include "Marmot/MarmotJournal.h"
 
-namespace Marmot::NumericalAlgorithms {
+namespace Marmot::ContinuumMechanics::Algorithms {
   template < int s >
   PerezFougetSubstepperTime< s >::PerezFougetSubstepperTime( double initialStepSize,
                                                              double minimumStepSize,
@@ -137,13 +167,13 @@ namespace Marmot::NumericalAlgorithms {
     currentSubstepSize *= scaleDownFactor;
 
     if ( currentSubstepSize < minimumStepSize )
-      return MarmotJournal::warningToMSG( "UMAT: Substepper: Minimal stepzsize reached" );
+      return Marmot::Utilities::Journal::warningToMSG( "UMAT: Substepper: Minimal stepzsize reached" );
     else
-      return MarmotJournal::notificationToMSG( "UMAT: Substepper: Decreasing stepsize" );
+      return Marmot::Utilities::Journal::notificationToMSG( "UMAT: Substepper: Decreasing stepsize" );
   }
 
   template < int s >
-  void PerezFougetSubstepperTime< s >::extendConsistentTangent( const Matrix6d& CelT )
+  void PerezFougetSubstepperTime< s >::extendConsistentTangent( const Marmot::Math::Matrix6d& CelT )
   {
 
     elasticTangent.topLeftCorner( 6, 6 ) = CelT;
@@ -151,16 +181,16 @@ namespace Marmot::NumericalAlgorithms {
   }
 
   template < int s >
-  void PerezFougetSubstepperTime< s >::extendConsistentTangent( const Matrix6d&           CelT,
-                                                                const TangentSizedMatrix& matTangent )
+  void PerezFougetSubstepperTime< s >::extendConsistentTangent( const Marmot::Math::Matrix6d& CelT,
+                                                                const TangentSizedMatrix&     matTangent )
   {
     extendConsistentTangent( CelT );
     consistentTangent.applyOnTheLeft( matTangent );
   }
 
   template < int s >
-  Matrix6d PerezFougetSubstepperTime< s >::consistentStiffness()
+  Marmot::Math::Matrix6d PerezFougetSubstepperTime< s >::consistentStiffness()
   {
     return consistentTangent.topLeftCorner( 6, 6 );
   }
-} // namespace Marmot::NumericalAlgorithms
+} // namespace Marmot::ContinuumMechanics::Algorithms

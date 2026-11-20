@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Magdalena Schreter magdalena.schreter@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -26,37 +23,64 @@
  * ---------------------------------------------------------------------
  */
 #pragma once
+#include "Marmot/MarmotPortability.h"
 #include <string>
 
-/** @struct MarmotMaterialSection
- * @brief Structure to hold material section properties.
- *
- * This structure is used to define a material section with its code and properties,
- * allowing for flexible material definitions in finite element analysis.
- */
-class MarmotMaterialSection {
-public:
-  const std::string materialName;
-  const double*     materialProperties;
-  int               nMaterialProperties;
+#ifdef _MSC_VER
+// C4251: the std::string member is only used inside the library's inline interface; the standard library types are
+// not exported (no dll-interface), which is harmless as long as consumers are built with the same toolset.
+#  pragma warning( push )
+#  pragma warning( disable : 4251 )
+#endif
 
-  MarmotMaterialSection( const std::string materialName, const double* materialProperties, int nMaterialProperties )
-    : materialName( materialName ),
-      materialProperties( materialProperties ),
-      nMaterialProperties( nMaterialProperties ){};
-};
+namespace Marmot::Discretizations {
 
-/** @struct ElementProperties
- * @brief Structure to hold element properties.
- *
- * This structure is used to define properties of a finite element,
- * allowing for flexible element definitions in finite element analysis.
- */
-class ElementProperties {
-public:
-  const double* elementProperties;
-  int           nElementProperties;
+  /** @struct MaterialSection
+   * @brief Structure to hold material section properties.
+   *
+   * This structure is used to define a material section with its code and properties,
+   * allowing for flexible material definitions in finite element analysis.
+   */
+  class MARMOT_API MaterialSection {
+  public:
+    const std::string materialName;        ///< Name identifying the material model.
+    const double*     materialProperties;  ///< Pointer to the array of material property values.
+    int               nMaterialProperties; ///< Number of material property values.
 
-  ElementProperties( const double* elementProperties, int nElementProperties )
-    : elementProperties( elementProperties ), nElementProperties( nElementProperties ){};
-};
+    /**
+     * @brief Construct a MaterialSection.
+     * @param[in] materialName       Name identifying the material model.
+     * @param[in] materialProperties Pointer to the array of material property values.
+     * @param[in] nMaterialProperties Number of material property values.
+     */
+    MaterialSection( const std::string materialName, const double* materialProperties, int nMaterialProperties )
+      : materialName( materialName ),
+        materialProperties( materialProperties ),
+        nMaterialProperties( nMaterialProperties ){};
+  };
+
+#ifdef _MSC_VER
+#  pragma warning( pop )
+#endif
+
+  /** @struct ElementProperties
+   * @brief Structure to hold element properties.
+   *
+   * This structure is used to define properties of a finite element,
+   * allowing for flexible element definitions in finite element analysis.
+   */
+  class MARMOT_API ElementProperties {
+  public:
+    const double* elementProperties;  ///< Pointer to the array of element property values.
+    int           nElementProperties; ///< Number of element property values.
+
+    /**
+     * @brief Construct an ElementProperties object.
+     * @param[in] elementProperties  Pointer to the array of element property values.
+     * @param[in] nElementProperties Number of element property values.
+     */
+    ElementProperties( const double* elementProperties, int nElementProperties )
+      : elementProperties( elementProperties ), nElementProperties( nElementProperties ){};
+  };
+
+} // namespace Marmot::Discretizations

@@ -11,8 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Thomas Mader  thomas.mader@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -28,17 +26,46 @@
 #pragma once
 #include "Marmot/MarmotTypedefs.h"
 
-namespace Marmot {
-  namespace ContinuumMechanics::LocalizationAnalysis {
+/**
+ * @file MarmotLocalization.h
+ * @brief Localization (strain-softening band) analysis via the acoustic tensor.
+ *
+ * Functions for checking material instability by evaluating whether the acoustic
+ * tensor \f$\mathbf{Q}(\mathbf{n}) = \mathbf{n} \cdot \mathbb{C} \cdot \mathbf{n}\f$
+ * loses positive definiteness for some normal vector \f$\mathbf{n}\f$.
+ */
 
-    Marmot::Matrix3d computeAcousticTensor( const Marmot::Matrix6d& materialTangent,
-                                            const Marmot::Vector3d& normalVector );
+namespace Marmot::ContinuumMechanics::LocalizationAnalysis {
 
-    bool localizationChecker( const Marmot::Matrix3d& acousticTensor );
+  /**
+   * @brief Computes the acoustic tensor for a given material tangent and normal vector.
+   * @param materialTangent  Fourth-order material tangent in Voigt notation.
+   * @param normalVector     Candidate band normal \f$\mathbf{n}\f$.
+   * @return Acoustic tensor \f$\mathbf{Q} = \mathbf{n} \cdot \mathbb{C} \cdot \mathbf{n}\f$.
+   */
+  Marmot::Math::Matrix3d computeAcousticTensor( const Marmot::Math::Matrix6d& materialTangent,
+                                                const Marmot::Math::Vector3d& normalVector );
 
-    Marmot::Vector3d computeNormalVector( double alpha, double beta );
+  /**
+   * @brief Checks whether the given acoustic tensor indicates localization.
+   * @param acousticTensor Acoustic tensor to test.
+   * @return @c true if \f$\det(\mathbf{Q}) \le 0\f$ (localization detected).
+   */
+  bool localizationChecker( const Marmot::Math::Matrix3d& acousticTensor );
 
-    double minimumDeterminantAcousticTensor( const Marmot::Matrix6d& materialTangent );
+  /**
+   * @brief Constructs a unit normal vector from spherical angles.
+   * @param alpha Polar angle (rad).
+   * @param beta  Azimuthal angle (rad).
+   * @return Unit normal vector \f$\mathbf{n}\f$.
+   */
+  Marmot::Math::Vector3d computeNormalVector( double alpha, double beta );
 
-  } // namespace ContinuumMechanics::LocalizationAnalysis
-} // namespace Marmot
+  /**
+   * @brief Computes the minimum determinant of the acoustic tensor over all band normals.
+   * @param materialTangent Fourth-order material tangent in Voigt notation.
+   * @return Minimum determinant of the acoustic tensor.
+   */
+  double minimumDeterminantAcousticTensor( const Marmot::Math::Matrix6d& materialTangent );
+
+} // namespace Marmot::ContinuumMechanics::LocalizationAnalysis

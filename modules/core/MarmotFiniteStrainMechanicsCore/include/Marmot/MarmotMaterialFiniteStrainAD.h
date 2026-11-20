@@ -11,9 +11,6 @@
  *
  * festigkeitslehre@uibk.ac.at
  *
- * Matthias Neuner matthias.neuner@uibk.ac.at
- * Alexander Dummer alexander.dummer@uibk.ac.at
- *
  * This file is part of the MAteRialMOdellingToolbox (marmot).
  *
  * This library is free software; you can redistribute it and/or
@@ -27,88 +24,187 @@
  */
 #pragma once
 #include "Marmot/MarmotAutomaticDifferentiationForFastor.h"
+#include "Marmot/MarmotFastorTensorBasics.h"
 #include "Marmot/MarmotMaterialFiniteStrain.h"
+#include <Eigen/Core>
+#include <functional>
 
-class MarmotMaterialFiniteStrainAD : public MarmotMaterialFiniteStrain {
-
-public:
-  MarmotMaterialFiniteStrainAD( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
-    : MarmotMaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
-  {
-  }
-  /**
-   * @struct ConstitutiveResponse
-   * @brief Constitutive response of a material at given state.
-   * @tparam nDim Number of spatial dimensions (2 or 3).
-   *
-   *  Contains stress, density and elastic energy density.
-   */
-  template < int nDim >
-  struct ConstitutiveResponseAD {
-    Fastor::Tensor< autodiff::dual, nDim, nDim > tau;                  ///< Kirchhoff stress
-    double                                       rho;                  ///< mass density
-    double                                       elasticEnergyDensity; ///< elastic energy per unit volume
-    double*                                      stateVars;            ///< pointer to state variables
-  };
+namespace Marmot::Materials {
 
   /**
-   * @struct Deformation
-   * @brief Represents the deformation state of a material.
+   * @brief Base class for finite strain materials using automatic differentiation.
    *
-   * This struct holds the deformation gradient \f$\boldsymbol{F}\f$ which describes the local deformation of a
-   * material.
+   * This class extends MaterialFiniteStrain by providing an interface for
+   * computing stresses and algorithmic tangent moduli using automatic
+   * differentiation. Derived material models implement computeStressAD() to
+   * supply the AD-based constitutive response.
    */
-  template < int nDim >
-  struct DeformationAD {
-    Fastor::Tensor< autodiff::dual, nDim, nDim > F; ///< deformation gradient
+  class MaterialFiniteStrainAD : public MaterialFiniteStrain {
+
+  public:
+    /**
+     * @brief Construct a MaterialFiniteStrainAD.
+     * @param[in] matProperties_       Pointer to the array of material property values.
+     * @param[in] nMaterialProperties_ Number of material property values.
+     * @param[in] materialNumber_      Unique identifier for this material instance.
+     */
+    MaterialFiniteStrainAD( const double* matProperties_, int nMaterialProperties_, int materialNumber_ )
+      : MaterialFiniteStrain( matProperties_, nMaterialProperties_, materialNumber_ )
+    {
+    }
+    /**
+     * @brief Number type of computeStressAD(), carrying the derivatives with respect to the nDim x nDim components of
+     * the deformation gradient.
+     *
+     * Derived classes must use this type, not Marmot::Math::Differentiation::Automatic::dual, for all quantities that
+     * depend on the deformation gradient, so that they work with every AD backend (see
+     * MarmotAutomaticDifferentiationTypes.h).
+     * @tparam nDim Number of spatial dimensions (2 or 3).
+     */
+    template < int nDim >
+    using ADScalar = Marmot::Math::Differentiation::Automatic::JacobianDual< nDim * nDim >;
+
+    /**
+     * @struct ConstitutiveResponseAD
+     * @brief Constitutive response of a material at given state.
+     * @tparam nDim Number of spatial dimensions (2 or 3).
+     *
+     *  Contains stress, density and elastic energy density.
+     */
+    template < int nDim >
+    struct ConstitutiveResponseAD {
+      Fastor::Tensor< ADScalar< nDim >, nDim, nDim > tau;                  ///< Kirchhoff stress
+      double                                         elasticEnergyDensity; ///< elastic energy per unit volume
+      double  dissipation; ///< dissipation per unit volume (for inelastic materials)
+      double* stateVars;   ///< pointer to state variables
+
+      /**
+       * @brief Default constructor.
+       * Initializes stress to zero, energy and dissipation to zero, and stateVars to nullptr.
+       */
+      ConstitutiveResponseAD()
+        : tau( Fastor::Tensor< ADScalar< nDim >, nDim, nDim >( 0.0 ) ),
+          elasticEnergyDensity( 0.0 ),
+          dissipation( 0.0 ),
+          stateVars( nullptr )
+      {
+      }
+
+      /**
+       * @brief Constructor for initializing the AD constitutive response.
+       * @param response ConstitutiveResponse instance to initialize from.
+       */
+      ConstitutiveResponseAD( const ConstitutiveResponse< nDim >& response )
+        : tau( Marmot::Math::Tensors::makeOtherScalarType< ADScalar< nDim > >( response.tau ) ),
+          elasticEnergyDensity( response.elasticEnergyDensity ),
+          dissipation( response.dissipation ),
+          stateVars( response.stateVars )
+      {
+      }
+    };
+
+    /**
+     * @struct DeformationAD
+     * @brief Represents the deformation state of a material.
+     *
+     * This struct holds the deformation gradient \f$\boldsymbol{F}\f$ which describes the local deformation of a
+     * material.
+     */
+    template < int nDim >
+    struct DeformationAD {
+      Fastor::Tensor< ADScalar< nDim >, nDim, nDim > F; ///< deformation gradient
+    };
+
+    /**
+     * @brief Compute Kirchhoff stress and algorithmic tangent using automatic differentiation.
+     *
+     * This method overrides MaterialFiniteStrain::computeStress() and provides a generic
+     * AD-based implementation for finite strain material models.
+     *
+     * The child class must implement computeStressAD(), which evaluates the constitutive response
+     * (Kirchhoff stress and any state updates) for a dual-valued deformation gradient. This base
+     * implementation then uses Marmot::Math::Differentiation::Automatic::dF_dT() to:
+     *  - compute the Kirchhoff stress \f$\boldsymbol{\tau}\f$ for the given deformation, and
+     *  - compute the consistent algorithmic tangent \f$\partial \boldsymbol{\tau} / \partial \boldsymbol{F}\f$.
+     *
+     * @note Automatic differentiation requires multiple seeded evaluations of computeStressAD().
+     *       Therefore, the state variables are reset to their "old" values before each seeded call.
+     *       Implementations of computeStressAD() must update state based only on primal values of
+     *       the dual inputs and must not branch or accumulate history based on derivative components.
+     *
+     * @param[out] response     Constitutive response container (stress, density, energy, state variables).
+     * @param[out] tangents     Algorithmic moduli container; filled with \f$\partial \tau / \partial F\f$.
+     * @param[in]  deformation  Deformation state (deformation gradient \f$\boldsymbol{F}\f$).
+     * @param[in]  timeIncrement Time increment information for rate-/history-dependent models.
+     */
+    void computeStress( ConstitutiveResponse< 3 >& response,
+                        AlgorithmicModuli< 3 >&    tangents,
+                        const Deformation< 3 >&    deformation,
+                        const TimeIncrement&       timeIncrement ) const override
+    {
+      using namespace Marmot;
+      using namespace Marmot::Math::Tensors::FastorTensors;
+      using scalar = ADScalar< 3 >;
+
+      Eigen::Map< Eigen::VectorXd > stateVars( response.stateVars, this->getNumberOfRequiredStateVars() );
+
+      // Remember old state to reset during potential multiple AD evaluations
+      const Eigen::VectorXd stateVarsOld = stateVars;
+      const Tensor33d       tauOld       = response.tau;
+
+      ConstitutiveResponseAD< 3 > responseAD( response );
+
+      std::function< Tensor33t< scalar >( const Tensor33t< scalar >& ) > computeTauAD =
+        [&]( const Tensor33t< scalar >& F_ ) {
+          // Reset stateVars to old state
+          stateVars = stateVarsOld;
+
+          // Construct AD state
+          DeformationAD< 3 > deformationAD;
+          deformationAD.F = F_;
+
+          responseAD.tau = Marmot::Math::Tensors::makeOtherScalarType< scalar >(
+            tauOld ); // Initialize tau with old value for consistency
+          responseAD.elasticEnergyDensity = response.elasticEnergyDensity; // Initialize energy density
+          responseAD.dissipation          = response.dissipation;          // Initialize dissipation
+
+          // Compute stress utilizing the child class's AD implementation
+          this->computeStressAD( responseAD, deformationAD, timeIncrement );
+
+          // Extract and return the dual stress tensor for differentiation
+          Tensor33t< scalar > res = responseAD.tau;
+
+          return res;
+        };
+
+      // Compute Kirchhoff stress (tau) and algorithmic tangent (dTau_dF) with autodiff
+      std::tie( response.tau, tangents.dTau_dF ) = Marmot::Math::Differentiation::Automatic::dF_dT( computeTauAD,
+                                                                                                    deformation.F );
+      response.elasticEnergyDensity              = responseAD.elasticEnergyDensity;
+      response.dissipation                       = responseAD.dissipation;
+    }
+
+    /**
+     * @brief Compute the constitutive response in automatic differentiation (AD) form.
+     *
+     * This pure virtual function must be implemented by derived material models to compute
+     * the Kirchhoff stress tensor in \p response.tau for a given deformation in dual number
+     * form. The base class uses this AD formulation together with
+     * Marmot::Math::Differentiation::Automatic utilities to obtain algorithmic tangents by
+     * differentiating the stress with respect to the deformation gradient.
+     *
+     * Implementations may update the provided state variables via \p response.stateVars
+     * according to the given time increment.
+     *
+     * @param[out] response    Constitutive response in AD form (3D), with \p response.tau
+     *                         to be filled with the computed Kirchhoff stress.
+     * @param[in]  deformation Deformation state in AD form (3D), providing the deformation
+     *                         gradient \f$\boldsymbol{F}\f$ as dual numbers.
+     * @param[in]  timeIncrement Current time increment information for the constitutive update.
+     */
+    virtual void computeStressAD( ConstitutiveResponseAD< 3 >& response,
+                                  const DeformationAD< 3 >&    deformation,
+                                  const TimeIncrement&         timeIncrement ) const = 0;
   };
-  void computeStress( ConstitutiveResponse< 3 >& response,
-                      AlgorithmicModuli< 3 >&    tangents,
-                      const Deformation< 3 >&    deformation,
-                      const TimeIncrement&       timeIncrement ) const override
-  {
-    using namespace Marmot; // Assuming Marmot::AutomaticDifferentiation is in this namespace
-    using namespace FastorStandardTensors;
-    using scalar = autodiff::dual;
 
-    Eigen::Map< Eigen::VectorXd > stateVars( response.stateVars, this->getNumberOfRequiredStateVars() );
-
-    // Remember old state to reset during potential multiple AD evaluations
-    const Eigen::VectorXd stateVarsOld = stateVars;
-    const Tensor33d       tauOld       = response.tau;
-
-    std::function< Tensor33t< scalar >( const Tensor33t< scalar >& ) > computeTauAD =
-      [&]( const Tensor33t< scalar >& F_ ) {
-        // Reset stateVars to old state
-        stateVars = stateVarsOld;
-
-        // Promote old stress to dual (Fastor usually handles this implicit cast natively)
-        Tensor33t< scalar > tauAD = makeDual( tauOld );
-
-        // Construct AD state
-        DeformationAD< 3 > deformationAD;
-        deformationAD.F = F_;
-
-        ConstitutiveResponseAD< 3 > responseAD;
-        responseAD.tau                  = tauAD;
-        responseAD.rho                  = response.rho;
-        responseAD.elasticEnergyDensity = response.elasticEnergyDensity;
-        responseAD.stateVars            = stateVars.data();
-
-        // Compute stress utilizing the child class's AD implementation
-        this->computeStressAD( responseAD, deformationAD, timeIncrement );
-
-        // Extract and return the dual stress tensor for differentiation
-        Tensor33t< scalar > res = responseAD.tau;
-
-        return res;
-      };
-
-    // Compute Kirchhoff stress (tau) and algorithmic tangent (dTau_dF) with autodiff
-    std::tie( response.tau, tangents.dTau_dF ) = Marmot::AutomaticDifferentiation::dF_dT( computeTauAD, deformation.F );
-  }
-
-  virtual void computeStressAD( ConstitutiveResponseAD< 3 >& response,
-                                const DeformationAD< 3 >&    deformation,
-                                const TimeIncrement&         timeIncrement ) const = 0;
-};
+} // namespace Marmot::Materials
